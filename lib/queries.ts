@@ -187,6 +187,7 @@ export async function getOverview() {
     drawdown: dd.series.map((p) => ({ ts: p.ts.getTime(), dd: p.dd })),
     performance,
     recentTrades: trades.slice(-5).reverse().map(serializeTrade),
+    positions,
   };
 }
 

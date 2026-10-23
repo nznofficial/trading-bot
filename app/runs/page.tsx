@@ -8,7 +8,7 @@ import { getRuns } from "@/lib/queries";
 export default function RunsPage() {
   return (
     <>
-      <PageHeader title="Runs" subtitle="Every bot tick, triggered every 15 minutes around the clock by GitHub Actions." />
+      <PageHeader title="Activity Log" subtitle="Each scheduled run of the trading bot, every 15 minutes around the clock." />
       <div className="grid grid-cols-1 gap-4">
         <Suspense fallback={<Skeleton />}>
           <Runs />
@@ -41,12 +41,12 @@ async function Runs() {
             {runs.map((r) => (
               <tr key={r.id}>
                 <td className="text-muted">{r.id}</td>
-                <td className="num text-xs whitespace-nowrap text-ink-2">{dateTime(r.startedAt)}</td>
+                <td className="num whitespace-nowrap text-ink-2">{dateTime(r.startedAt)}</td>
                 <td className="whitespace-nowrap"><StatusBadge status={r.status} /></td>
                 <td className="num text-right">{r.signals}</td>
                 <td className="num text-right">{r.ordersPlaced}</td>
                 <td className="num text-right text-ink-2">{r.durationMs === null ? "—" : `${(r.durationMs / 1000).toFixed(1)}s`}</td>
-                <td className={r.error ? "text-down" : "text-ink-2"}>{r.error ?? r.message ?? ""}</td>
+                <td className={r.error ? "text-loss" : "text-ink-2"}>{r.error ?? r.message ?? ""}</td>
               </tr>
             ))}
           </tbody>

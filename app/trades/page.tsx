@@ -8,7 +8,7 @@ import { getTrades, parseClassFilter } from "@/lib/queries";
 export default function TradesPage({ searchParams }: PageProps<"/trades">) {
   return (
     <>
-      <PageHeader title="Trades" subtitle="Closed round trips (FIFO-matched fills) and the raw order log." />
+      <PageHeader title="Transaction History" subtitle="Closed trades, matched first-in first-out, and every order the bot placed." />
       <Suspense fallback={<Skeleton />}>
         <Trades searchParams={searchParams} />
       </Suspense>
@@ -71,9 +71,9 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
             <tbody>
               {trades.map((t, i) => (
                 <tr key={i}>
-                  <td className="num text-xs text-ink-2">{dateTime(t.entryTs)}</td>
-                  <td className="num text-xs text-ink-2">{dateTime(t.exitTs)}</td>
-                  <td className="font-medium text-ink">{t.symbol}</td>
+                  <td className="num whitespace-nowrap text-ink-2">{dateTime(t.entryTs)}</td>
+                  <td className="num whitespace-nowrap text-ink-2">{dateTime(t.exitTs)}</td>
+                  <td className="font-semibold text-accent">{t.symbol}</td>
                   <td className="text-ink-2">{strategyLabel(t.strategy)}</td>
                   <td className="num text-right">{qty(t.qty)}</td>
                   <td className="num text-right">{usd(t.entryPrice)}</td>
@@ -111,8 +111,8 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
             <tbody>
               {orders.map((o) => (
                 <tr key={o.id}>
-                  <td className="num text-xs text-ink-2">{dateTime(o.submittedAt)}</td>
-                  <td className="font-medium text-ink">{o.symbol}</td>
+                  <td className="num whitespace-nowrap text-ink-2">{dateTime(o.submittedAt)}</td>
+                  <td className="font-semibold text-accent">{o.symbol}</td>
                   <td>
                     <ActionBadge action={o.side} />
                   </td>

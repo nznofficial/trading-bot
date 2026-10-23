@@ -4,53 +4,39 @@ import { signedPct } from "@/lib/format";
 import { getMarketStrip } from "@/lib/queries";
 import type { Quote } from "@/lib/quotes";
 
-/** Market session + crypto status for the header. Reads only what the bot stored; never calls Alpaca. */
-export async function HeaderStatus() {
+/** "U.S. markets closed · Opens in 7h 12m" for the global bar. */
+export async function SessionStatus() {
   await connection();
   const { clock } = await getMarketStrip();
-  return (
-    <div className="flex items-center gap-5 text-xs">
-      <SessionClock clock={clock} />
-      <span className="h-3.5 w-px bg-line-2" aria-hidden />
-      <span className="flex items-center gap-1.5 text-ink-2">
-        <span aria-hidden className="live-dot size-1.5 rounded-full bg-good" />
-        Crypto <span className="text-muted">24/7</span>
-      </span>
-    </div>
-  );
+  return <SessionClock clock={clock} />;
 }
 
-/** Scrolling tape of the latest prices the bot recorded. */
-export async function Ticker() {
+/** Static markets strip: the latest prices the bot recorded (it never calls Alpaca at render time). */
+export async function MarketsBar() {
   await connection();
   const { quotes } = await getMarketStrip();
   if (!quotes.length) return null;
-  // Two copies side by side; the track slides by half its width for a seamless loop.
-  const items = [...quotes, ...quotes];
   return (
-    <div
-      className="ticker relative overflow-hidden border-t border-line bg-[#090c10] [mask-image:linear-gradient(90deg,transparent,black_4%,black_96%,transparent)]"
-      aria-label="Latest prices"
-    >
-      <ul className="ticker-track h-8 items-center">
-        {items.map((q, i) => (
-          <TickerItem key={`${q.symbol}-${i}`} q={q} hidden={i >= quotes.length} />
-        ))}
-      </ul>
+    <div className="border-b border-line bg-surface-2">
+      <div className="mx-auto flex max-w-[1200px] items-center gap-6 overflow-x-auto px-4 py-2 sm:px-6">
+        <span className="shrink-0 text-[12px] font-semibold text-ink-2">Markets</span>
+        <ul className="flex gap-6">
+          {quotes.map((q) => (
+            <QuoteItem key={q.symbol} q={q} />
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
 
-function TickerItem({ q, hidden }: { q: Quote; hidden: boolean }) {
-  const tone = q.change > 0 ? "text-gold" : q.change < 0 ? "text-loss" : "text-muted";
+function QuoteItem({ q }: { q: Quote }) {
+  const tone = q.change > 0 ? "text-gain" : q.change < 0 ? "text-loss" : "text-muted";
   return (
-    <li aria-hidden={hidden} className="flex items-center gap-2 px-4 text-xs whitespace-nowrap">
-      <span className="font-medium text-ink-2">{q.symbol}</span>
-      <span className="num text-ink">{formatPrice(q.price)}</span>
-      <span className={`num ${tone}`}>
-        <span aria-hidden className="mr-0.5 text-[9px]">{q.change > 0 ? "▲" : q.change < 0 ? "▼" : ""}</span>
-        {signedPct(q.changePct)}
-      </span>
+    <li className="num flex shrink-0 items-baseline gap-1.5 text-[12px] whitespace-nowrap">
+      <span className="font-semibold text-ink">{q.symbol.replace("/USD", "")}</span>
+      <span className="text-ink-2">{formatPrice(q.price)}</span>
+      <span className={tone}>{signedPct(q.changePct)}</span>
     </li>
   );
 }
@@ -58,6 +44,6 @@ function TickerItem({ q, hidden }: { q: Quote; hidden: boolean }) {
 const formatPrice = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: n < 10 ? 4 : 2 });
 
-export function TickerSkeleton() {
-  return <div className="skeleton h-8 border-t border-line" />;
+export function MarketsBarSkeleton() {
+  return <div className="h-[33px] border-b border-line bg-surface-2" />;
 }

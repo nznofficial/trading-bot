@@ -7,7 +7,7 @@ import { getStrategies, parseClassFilter } from "@/lib/queries";
 export default function StrategiesPage({ searchParams }: PageProps<"/strategies">) {
   return (
     <>
-      <PageHeader title="Strategies" subtitle="How each rule set is performing, and what it's seeing right now." />
+      <PageHeader title="Strategies" subtitle="Rule-based strategies, their results, and the latest signal for each symbol." />
       <Suspense fallback={<Skeleton />}>
         <Strategies searchParams={searchParams} />
       </Suspense>
@@ -70,12 +70,12 @@ async function Strategies({ searchParams }: { searchParams: PageProps<"/strategi
             <tbody>
               {latest.map((s) => (
                 <tr key={s.id}>
-                  <td className="font-medium text-ink">{s.symbol}</td>
+                  <td className="font-semibold text-accent">{s.symbol}</td>
                   <td className="text-ink-2">{strategyLabel(s.strategy)}</td>
                   <td><ActionBadge action={s.action} /></td>
                   <td className="text-ink-2">{s.note ?? s.reason}</td>
-                  <td className="num text-[11px] text-muted">{fmtIndicators(s.indicators)}</td>
-                  <td className="num text-[11px] whitespace-nowrap text-muted">{dateTime(s.ts)}</td>
+                  <td className="num text-[13px] text-muted">{fmtIndicators(s.indicators)}</td>
+                  <td className="num whitespace-nowrap text-ink-2">{dateTime(s.ts)}</td>
                 </tr>
               ))}
             </tbody>
@@ -100,8 +100,8 @@ async function Strategies({ searchParams }: { searchParams: PageProps<"/strategi
             <tbody>
               {recent.map((s) => (
                 <tr key={s.id}>
-                  <td className="num text-xs whitespace-nowrap text-ink-2">{dateTime(s.ts)}</td>
-                  <td className="font-medium text-ink">{s.symbol}</td>
+                  <td className="num whitespace-nowrap text-ink-2">{dateTime(s.ts)}</td>
+                  <td className="font-semibold text-accent">{s.symbol}</td>
                   <td><ActionBadge action={s.action} /></td>
                   <td className="text-ink-2">{s.reason}</td>
                   <td className={s.acted ? "text-ink" : "text-muted"}>{s.note ?? "—"}</td>

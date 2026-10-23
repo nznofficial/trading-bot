@@ -23,7 +23,7 @@ type Tip = TooltipContentProps<ValueType, NameType>;
 
 const axis = {
   stroke: "var(--axis)",
-  tick: { fill: "var(--muted)", fontSize: 11, fontFamily: "var(--font-plex-mono)" },
+  tick: { fill: "var(--muted)", fontSize: 12, fontFamily: "var(--font-source-sans)" },
   tickLine: false,
 } as const;
 
@@ -35,12 +35,12 @@ type Row = { key: string; label: string; value: string; color: string };
 
 function TooltipBox({ title, rows }: { title: string; rows: Row[] }) {
   return (
-    <div className="rounded-md border border-line-2 bg-surface-2/95 px-3 py-2 text-xs shadow-lg shadow-black/40 backdrop-blur">
-      <div className="mb-1 text-[11px] text-muted">{title}</div>
+    <div className="rounded border border-line-2 bg-white px-3 py-2 text-[13px] shadow-[0_4px_16px_rgba(11,35,65,0.12)]">
+      <div className="mb-1 text-[12px] text-muted">{title}</div>
       {rows.map((r) => (
         <div key={r.key} className="flex items-center gap-2 py-0.5">
           <span aria-hidden className="h-0.5 w-3 rounded" style={{ background: r.color }} />
-          <span className="num font-medium text-ink">{r.value}</span>
+          <span className="num font-semibold text-ink">{r.value}</span>
           <span className="text-ink-2">{r.label}</span>
         </div>
       ))}
@@ -52,11 +52,11 @@ function TooltipBox({ title, rows }: { title: string; rows: Row[] }) {
 /** Equity over every snapshot. X is the snapshot index so overnight/weekend gaps don't stretch the line. */
 export function EquityChart({ data, height = 260 }: { data: { ts: number; equity: number }[]; height?: number | `${number}%` }) {
   return (
-    <ResponsiveContainer width="100%" height={height} className="chart-glow">
+    <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 8, right: 20, bottom: 0, left: 0 }}>
         <defs>
           <linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--series-1)" stopOpacity={0.22} />
+            <stop offset="0%" stopColor="var(--series-1)" stopOpacity={0.14} />
             <stop offset="100%" stopColor="var(--series-1)" stopOpacity={0} />
           </linearGradient>
         </defs>
@@ -97,7 +97,7 @@ export function EquityChart({ data, height = 260 }: { data: { ts: number; equity
           strokeWidth={2}
           fill="url(#eqFill)"
           isAnimationActive={false}
-          activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--panel)", fill: "var(--series-1)" }}
+          activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff", fill: "var(--series-1)" }}
         />
       </AreaChart>
     </ResponsiveContainer>
@@ -118,7 +118,7 @@ export function PerformanceChart({
   ] as const;
   return (
     <div>
-      <div className="mb-3 flex flex-wrap gap-4 text-xs text-ink-2">
+      <div className="mb-3 flex flex-wrap gap-5 text-[13px] text-ink-2">
         {series.map((s) => (
           <span key={s.key} className="inline-flex items-center gap-1.5">
             <span aria-hidden className="h-0.5 w-4 rounded" style={{ background: s.color }} />
@@ -154,10 +154,9 @@ export function PerformanceChart({
               stroke={s.color}
               strokeWidth={2}
               dot={data.length < 30 ? { r: 3, strokeWidth: 0, fill: s.color } : false}
-              activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--panel)" }}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff" }}
               connectNulls
               isAnimationActive={false}
-              className={s.key === "portfolio" ? "chart-glow" : undefined}
               // Direct end label: identity never rests on color alone.
               label={(p: { x?: number | string; y?: number | string; index?: number }) =>
                 p.index === lastIndex(data, s.key) ? (
@@ -168,8 +167,8 @@ export function PerformanceChart({
                     dy={4}
                     fill={s.color}
                     fontSize={11}
-                    fontWeight={500}
-                    fontFamily="var(--font-plex-sans)"
+                    fontWeight={600}
+                    fontFamily="var(--font-source-sans)"
                   >
                     {s.short}
                   </text>
@@ -230,14 +229,14 @@ export function SymbolPnlChart({ data }: { data: { symbol: string; pnl: number; 
         <YAxis type="category" dataKey="symbol" {...axis} axisLine={false} width={52} />
         <ReferenceLine x={0} stroke="var(--axis)" />
         <Tooltip
-          cursor={{ fill: "rgba(255, 255, 255, 0.03)" }}
+          cursor={{ fill: "rgba(11, 35, 65, 0.04)" }}
           content={({ active, payload }: Tip) => {
             if (!active || !payload?.length) return null;
             const p = payload[0].payload as { symbol: string; pnl: number; count: number };
             return (
               <TooltipBox
                 title={`${p.symbol} · ${p.count} trade${p.count === 1 ? "" : "s"}`}
-                rows={[{ key: "pnl", label: "realized", value: signedUsd(p.pnl), color: p.pnl >= 0 ? "var(--up)" : "var(--down)" }]}
+                rows={[{ key: "pnl", label: "realized", value: signedUsd(p.pnl), color: p.pnl >= 0 ? "var(--gain)" : "var(--loss)" }]}
               />
             );
           }}
@@ -246,7 +245,7 @@ export function SymbolPnlChart({ data }: { data: { symbol: string; pnl: number; 
           {data.map((d) => (
             <Cell
               key={d.symbol}
-              fill={d.pnl >= 0 ? "var(--up)" : "var(--down)"}
+              fill={d.pnl >= 0 ? "var(--gain)" : "var(--loss)"}
               // Round only the data end, anchoring the bar to the zero baseline.
               radius={(d.pnl >= 0 ? [0, 4, 4, 0] : [4, 0, 0, 4]) as unknown as number}
             />

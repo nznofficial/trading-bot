@@ -4,17 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS = [
-  { href: "/", label: "Overview" },
+  { href: "/", label: "Summary" },
   { href: "/positions", label: "Positions" },
-  { href: "/trades", label: "Trades" },
+  { href: "/trades", label: "History" },
   { href: "/strategies", label: "Strategies" },
-  { href: "/runs", label: "Runs" },
+  { href: "/runs", label: "Activity log" },
 ] as const;
 
 export function Nav() {
   const path = usePathname();
   return (
-    <nav className="-mb-px flex h-full gap-1 overflow-x-auto">
+    <nav className="-mb-px flex gap-6 overflow-x-auto">
       {LINKS.map((l) => {
         const active = l.href === "/" ? path === "/" : path.startsWith(l.href);
         return (
@@ -22,8 +22,8 @@ export function Nav() {
             key={l.href}
             href={l.href}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center border-b-2 px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors ${
-              active ? "border-accent text-ink" : "border-transparent text-muted hover:text-ink-2"
+            className={`border-b-[3px] py-3 text-[15px] whitespace-nowrap transition-colors ${
+              active ? "border-accent font-semibold text-ink" : "border-transparent text-ink-2 hover:text-accent"
             }`}
           >
             {l.label}

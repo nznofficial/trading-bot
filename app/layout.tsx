@@ -1,55 +1,61 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Source_Sans_3, Source_Serif_4 } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
-import { HeaderStatus, Ticker, TickerSkeleton } from "@/components/market-strip";
+import { MarketsBar, MarketsBarSkeleton, SessionStatus } from "@/components/market-strip";
 import { Nav } from "@/components/nav";
 import "./globals.css";
 
-const plexSans = IBM_Plex_Sans({ variable: "--font-plex-sans", subsets: ["latin"], weight: ["400", "500", "600"] });
-const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500"] });
+const sans = Source_Sans_3({ variable: "--font-source-sans", subsets: ["latin"], weight: ["400", "600", "700"] });
+const serif = Source_Serif_4({ variable: "--font-source-serif", subsets: ["latin"], weight: ["400", "600"] });
 
 export const metadata: Metadata = {
   title: "Paper Trader",
-  description: "Rule-based paper trading bot on Alpaca: stocks and crypto, live history, positions, and analytics.",
+  description: "Rule-based paper trading on Alpaca: stocks and crypto, holdings, history and performance.",
 };
 
-export const viewport: Viewport = { themeColor: "#07090c", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#0b2341", colorScheme: "light" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col text-[14px]">
-        <header className="sticky top-0 z-20 border-b border-line bg-[#07090c]/85 backdrop-blur-md">
-          <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6">
-            <Link href="/" className="flex shrink-0 items-center gap-2.5">
-              <Mark />
-              <span className="text-[15px] font-semibold tracking-tight text-ink">Paper Trader</span>
-              <span className="rounded border border-accent/40 px-1.5 py-px text-[10px] font-medium tracking-wider text-accent uppercase">
-                Paper
-              </span>
-            </Link>
-            <Nav />
-            <div className="ml-auto hidden md:block">
-              <Suspense fallback={<div className="skeleton h-4 w-56 rounded" />}>
-                <HeaderStatus />
-              </Suspense>
+    <html lang="en" className={`${sans.variable} ${serif.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
+        <header>
+          {/* Global bar */}
+          <div className="bg-navy text-white">
+            <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between gap-6 px-4 sm:px-6">
+              <Link href="/" className="flex items-center gap-3">
+                <Mark />
+                <span className="text-[17px] font-semibold tracking-[-0.01em]">Paper Trader</span>
+              </Link>
+              <div className="flex items-center gap-5 text-[13px] text-white/75">
+                <span className="hidden sm:inline">
+                  Simulated account <span className="text-white/45">·</span> Alpaca Paper
+                </span>
+                <Suspense fallback={null}>
+                  <SessionStatus />
+                </Suspense>
+              </div>
             </div>
           </div>
-          <div className="border-t border-line px-4 py-2 md:hidden">
-            <Suspense fallback={<div className="skeleton h-4 w-56 rounded" />}>
-              <HeaderStatus />
-            </Suspense>
+          {/* Section navigation */}
+          <div className="border-b border-line bg-white">
+            <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
+              <Nav />
+            </div>
           </div>
-          <Suspense fallback={<TickerSkeleton />}>
-            <Ticker />
+          <Suspense fallback={<MarketsBarSkeleton />}>
+            <MarketsBar />
           </Suspense>
         </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
-        <footer className="border-t border-line">
-          <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 px-4 py-5 text-xs text-muted sm:px-6">
-            <span>Simulated trading on an Alpaca paper account. Not investment advice.</span>
-            <span>Market data: IEX (stocks), Alpaca (crypto)</span>
+        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-7 sm:px-6">{children}</main>
+        <footer className="border-t border-line bg-white">
+          <div className="mx-auto max-w-[1200px] space-y-1 px-4 py-6 text-[12px] leading-relaxed text-muted sm:px-6">
+            <p>
+              Paper Trader places simulated orders in an Alpaca paper account. No real money is invested and nothing on
+              this page is investment advice. Past performance does not guarantee future results.
+            </p>
+            <p>Market data: IEX (U.S. equities), Alpaca (crypto). Quotes update every 15 minutes.</p>
           </div>
         </footer>
       </body>
@@ -57,13 +63,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   );
 }
 
-/** Brand mark: a rising trace inside a hairline frame. */
 function Mark() {
   return (
-    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
-      <rect x="0.5" y="0.5" width="21" height="21" rx="5" fill="var(--panel-2)" stroke="var(--line-2)" />
-      <path d="M5 14.5 9 10.5l3 2.5 5-6" fill="none" stroke="var(--accent)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="17" cy="7" r="1.4" fill="var(--gold)" />
+    <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden>
+      <rect width="26" height="26" rx="3" fill="#ffffff" />
+      <path d="M6 17.5 10.5 13l3.5 3 6-7" fill="none" stroke="#0b2341" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

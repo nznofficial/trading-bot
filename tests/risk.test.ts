@@ -43,6 +43,13 @@ describe("risk gate", () => {
     expect(gate.approveEntry("C", 400)).toMatchObject({ ok: false, reason: "insufficient buying power" });
   });
 
+  it("blocks re-entry during a stop-out cooldown", () => {
+    const until = new Date("2026-10-24T15:00:00Z");
+    const gate = createRiskGate({ ...base, cooldownUntil: new Map([["TSLA", until]]) });
+    expect(gate.approveEntry("TSLA", 300)).toMatchObject({ ok: false, reason: expect.stringMatching(/^cooldown after stop-out until 2026-10-24T15:00Z/) });
+    expect(gate.approveEntry("NVDA", 200).ok).toBe(true);
+  });
+
   it("halts entries after a 3% daily loss", () => {
     const gate = createRiskGate({ ...base, equity: 96_900 });
     expect(gate.approveEntry("A", 100)).toMatchObject({ ok: false });

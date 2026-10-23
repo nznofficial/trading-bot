@@ -63,6 +63,8 @@ export const PORTFOLIO_RISK = {
   dailyLossHaltPct: -0.03,
   /** Keep a small buying-power buffer so orders aren't rejected on price drift. */
   buyingPowerBuffer: 0.95,
+  /** After a stop-loss exit, don't re-enter that symbol for this long (prevents stop whipsaw). */
+  reentryCooldownHours: 24,
 };
 
 export const RISK = {

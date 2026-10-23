@@ -53,7 +53,7 @@ Crypto trades pay Alpaca's trading fee. Fees are synced from the account's `CFEE
    npm run db:migrate
    ```
 3. **Deploy**: connect the repo with `vercel git connect`. Every push to `main` then deploys to production. Use `vercel deploy --prod` for a one-off manual deploy.
-4. **Scheduler**: push the repo to GitHub, then add the Actions secrets `TICK_URL` (`https://<your-app>/api/tick`) and `CRON_SECRET`. The 24/7 schedule uses about 2,900 Actions minutes a month: free on a public repo, over the 2,000-minute free tier on a private one. On public repos GitHub disables schedules after 60 days without commits; re-enable from the Actions tab.
+4. **Scheduler**: push the repo to GitHub, then add the Actions secrets `TICK_URL` (`https://<your-app>/api/tick`) and `CRON_SECRET`. The 24/7 schedule uses about 2,900 Actions minutes a month: free on a public repo, over the 2,000-minute free tier on a private one. A weekly keep-alive job re-enables the workflow so GitHub's 60-day inactivity shutoff never triggers.
 
 ## Local development
 

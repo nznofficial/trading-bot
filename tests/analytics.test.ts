@@ -37,6 +37,9 @@ describe("aggregateFills + matchRoundTrips", () => {
     expect(trades).toHaveLength(2);
     expect(trades[0]).toMatchObject({ qty: 10, entryPrice: 102, exitPrice: 120, pnl: 180, strategy: "rsi_revert" });
     expect(trades[1]).toMatchObject({ qty: 5, entryPrice: 110, pnl: 50 });
+    // Each round trip remembers the orders that opened and closed it (used for win alerts).
+    expect(trades[0]).toMatchObject({ entryOrderId: "b1", exitOrderId: "s1" });
+    expect(trades[1]).toMatchObject({ entryOrderId: "b2", exitOrderId: "s1" });
     expect(openLots).toEqual([expect.objectContaining({ symbol: "AAPL", qty: 5, price: 110 })]);
   });
 });

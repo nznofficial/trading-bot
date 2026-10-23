@@ -23,6 +23,8 @@ export type Execution = {
 export type RoundTrip = {
   symbol: string;
   assetClass: AssetClass;
+  entryOrderId: string;
+  exitOrderId: string;
   strategy: string;
   entryTs: Date;
   exitTs: Date;
@@ -34,7 +36,15 @@ export type RoundTrip = {
   holdMs: number;
 };
 
-export type OpenLot = { symbol: string; assetClass: AssetClass; strategy: string; qty: number; price: number; ts: Date };
+export type OpenLot = {
+  symbol: string;
+  assetClass: AssetClass;
+  orderId: string;
+  strategy: string;
+  qty: number;
+  price: number;
+  ts: Date;
+};
 
 const EPS = 1e-9;
 
@@ -75,7 +85,15 @@ export function matchRoundTrips(execs: Execution[]): { trades: RoundTrip[]; open
     const queue = lots.get(e.symbol) ?? [];
     lots.set(e.symbol, queue);
     if (e.side === "buy") {
-      queue.push({ symbol: e.symbol, assetClass: e.assetClass, strategy: e.strategy, qty: e.qty, price: e.price, ts: e.ts });
+      queue.push({
+        symbol: e.symbol,
+        assetClass: e.assetClass,
+        orderId: e.orderId,
+        strategy: e.strategy,
+        qty: e.qty,
+        price: e.price,
+        ts: e.ts,
+      });
       continue;
     }
     let remaining = e.qty;
@@ -86,6 +104,8 @@ export function matchRoundTrips(execs: Execution[]): { trades: RoundTrip[]; open
       trades.push({
         symbol: e.symbol,
         assetClass: e.assetClass,
+        entryOrderId: lot.orderId,
+        exitOrderId: e.orderId,
         strategy: lot.strategy,
         entryTs: lot.ts,
         exitTs: e.ts,

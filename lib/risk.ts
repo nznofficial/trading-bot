@@ -11,6 +11,8 @@ export type RiskState = {
   cryptoExposure?: number;
   heldSymbols: Set<string>;
   symbolsWithOpenOrders: Set<string>;
+  /** Symbols stopped out recently → when re-entry is allowed again. */
+  cooldownUntil?: Map<string, Date>;
 };
 
 export type EntryDecision =
@@ -53,6 +55,8 @@ export function createRiskGate(initial: RiskState, limits: RiskLimits = DEFAULT_
       }
       if (initial.heldSymbols.has(symbol)) return { ok: false, reason: "already holding" };
       if (initial.symbolsWithOpenOrders.has(symbol)) return { ok: false, reason: "open order pending" };
+      const until = initial.cooldownUntil?.get(symbol);
+      if (until) return { ok: false, reason: `cooldown after stop-out until ${until.toISOString().slice(0, 16)}Z` };
       if (openCount >= portfolio.maxOpenPositions) {
         return { ok: false, reason: `max ${portfolio.maxOpenPositions} positions` };
       }

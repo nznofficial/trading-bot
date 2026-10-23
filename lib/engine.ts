@@ -1,6 +1,6 @@
-import { and, desc, eq, gte, lt, max, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, like, lt, max, or, sql } from "drizzle-orm";
 import * as alpaca from "./alpaca";
-import { tradingDay } from "./analytics";
+import { aggregateFills, matchRoundTrips, tradingDay, type FillRow } from "./analytics";
 import {
   assetClassOf,
   BAR_LOOKBACK_DAYS,
@@ -10,14 +10,17 @@ import {
   CRYPTO_BAR_LOOKBACK_DAYS,
   CRYPTO_SYMBOLS,
   normalizeSymbol,
+  PORTFOLIO_RISK,
   STOCK_SYMBOLS,
   type AssetClass,
 } from "./config";
 import { db, schema } from "./db";
-import { dateTime } from "./format";
+import { dateTime, signedPct, signedUsd, usd } from "./format";
+import { COLORS, notify, type Embed } from "./notify";
 import { computeQuote, type Quote } from "./quotes";
 import { createRiskGate, planCryptoStop } from "./risk";
 import { STRATEGIES, strategyFor, type Signal } from "./strategies";
+import { unitName } from "./units";
 
 export type TickOptions = {
   /** Evaluate strategies even if the market is closed, but never submit or cancel orders. */
@@ -139,7 +142,7 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     ]);
     if (account.trading_blocked || account.account_blocked) throw new Error(`account blocked (${account.status})`);
 
-    const [rawPositions, rawOpenOrders] = await Promise.all([
+    const [rawPositions, rawOpenOrders, newFills] = await Promise.all([
       alpaca.getPositions(),
       alpaca.getOrders({ status: "open", nested: false }),
       syncFills(),
@@ -153,6 +156,9 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     await snapshot(run.id, account, positions, clock.is_open);
     // The dashboard's session bar counts down from these; it never calls Alpaca itself.
     await setSetting("clock", { isOpen: clock.is_open, nextOpen: clock.next_open, nextClose: clock.next_close, asOf: clock.timestamp });
+    // Alerts never fail a tick (notify swallows its own errors; these guards cover the queries).
+    await alertFills(newFills).catch((e) => console.warn("fill alert failed", e));
+    await maybeSendDebrief(account, new Date(clock.timestamp)).catch((e) => console.warn("debrief failed", e));
 
     if (paused) return finish({ status: "paused", marketOpen: clock.is_open, signals: 0, ordersPlaced: 0, message: "bot is paused" });
 
@@ -176,6 +182,7 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
 
     // --- Signals + execution -----------------------------------------------------------------
     const held = new Map(positions.map((p) => [p.symbol, Number(p.qty)]));
+    const cooldownUntil = await stopOutCooldowns(now);
     const gate = createRiskGate({
       equity: Number(account.equity),
       lastEquity: Number(account.last_equity),
@@ -186,6 +193,7 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
         .reduce((a, p) => a + Number(p.market_value), 0),
       heldSymbols: new Set(held.keys()),
       symbolsWithOpenOrders: new Set(openOrders.map((o) => o.symbol)),
+      cooldownUntil,
     });
 
     const signalRows: (typeof schema.signals.$inferInsert)[] = [];
@@ -298,6 +306,14 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     if (signalRows.length) await d.insert(schema.signals).values(signalRows);
     if (submitted.length) await upsertOrders(submitted);
 
+    const orderErrors = [
+      ...signalRows.filter((r) => r.note?.startsWith("order error")).map((r) => `${r.symbol}: ${r.note}`),
+      ...stopNotes.filter((n) => n.includes("stop error")),
+    ];
+    if (orderErrors.length) {
+      await notify([{ title: "⚠ Order rejected", description: orderErrors.join("\n").slice(0, 4000), color: COLORS.error }]);
+    }
+
     const result: Omit<TickResult, "runId"> = {
       status: "ok",
       marketOpen: clock.is_open,
@@ -323,6 +339,9 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     return finish(result);
   } catch (e) {
     console.error("tick failed", e);
+    await notify([
+      { title: "⚠ Sortie aborted", description: `Run #${run.id} failed:\n\`\`\`${errMsg(e).slice(0, 1500)}\`\`\``, color: COLORS.error },
+    ]);
     return finish({ status: "error", marketOpen: null, signals: 0, ordersPlaced: 0, error: errMsg(e) });
   }
 }
@@ -479,13 +498,14 @@ async function snapshot(runId: number, account: alpaca.Account, positions: alpac
 }
 
 /** Pull new FILL activities into the local ledger (idempotent). */
-async function syncFills() {
+async function syncFills(): Promise<FillRow[]> {
   const d = db();
   const [{ latest }] = await d.select({ latest: max(schema.fills.ts) }).from(schema.fills);
   const after = latest ? new Date(latest.getTime() - 60_000).toISOString() : undefined;
   const activities = await alpaca.getFills(after);
-  if (!activities.length) return;
-  await d
+  if (!activities.length) return [];
+  // returning() yields only rows actually inserted, i.e. fills we haven't seen before.
+  return d
     .insert(schema.fills)
     .values(
       activities.map((a) => {
@@ -502,7 +522,8 @@ async function syncFills() {
         };
       }),
     )
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning();
 }
 
 /** USD value of a crypto fee activity. Prefers net_amount; falls back to qty × price. */
@@ -627,4 +648,132 @@ async function syncBenchmarks() {
         set: { close: sql`excluded.close` },
       });
   }
+}
+
+// ---- Cooldowns & alerts ---------------------------------------------------------------------
+
+/** Symbols whose position was closed by a protective stop recently → when re-entry is allowed. */
+async function stopOutCooldowns(now: Date) {
+  const windowMs = PORTFOLIO_RISK.reentryCooldownHours * 3_600_000;
+  const rows = await db()
+    .select({ symbol: schema.orders.symbol, filledAt: schema.orders.filledAt })
+    .from(schema.orders)
+    .where(
+      and(
+        eq(schema.orders.side, "sell"),
+        eq(schema.orders.status, "filled"),
+        gte(schema.orders.filledAt, new Date(now.getTime() - windowMs)),
+        // Stock bracket/OTO stop legs, the bot's crypto stop-limits, and its breach exits.
+        or(
+          inArray(schema.orders.type, ["stop", "stop_limit"]),
+          like(schema.orders.clientOrderId, "%.stopexit.%"),
+        ),
+      ),
+    );
+  const until = new Map<string, Date>();
+  for (const r of rows) {
+    if (!r.filledAt) continue;
+    const t = new Date(r.filledAt.getTime() + windowMs);
+    if (t > now && (!until.has(r.symbol) || t > until.get(r.symbol)!)) until.set(r.symbol, t);
+  }
+  return until;
+}
+
+/** One embed per newly filled order, plus a "target neutralized" embed for exits up ≥ 2%. */
+async function alertFills(newFills: FillRow[]) {
+  if (!newFills.length) return;
+  const d = db();
+  const orderIds = [...new Set(newFills.map((f) => f.orderId))];
+  const orderRows = await d
+    .select({ id: schema.orders.id, strategy: schema.orders.strategy, clientOrderId: schema.orders.clientOrderId })
+    .from(schema.orders)
+    .where(inArray(schema.orders.id, orderIds));
+  const strategyBy = new Map(
+    orderRows.map((o) => [o.id, o.strategy ?? strategyFromClientOrderId(o.clientOrderId) ?? "manual"]),
+  );
+  const execs = aggregateFills(newFills, strategyBy);
+  const embeds: Embed[] = execs.map((e) => ({
+    title: `${e.side === "buy" ? "▶ Engage" : "◀ Disengage"} · ${e.symbol}`,
+    color: e.side === "buy" ? COLORS.buy : COLORS.sell,
+    fields: [
+      { name: "Side", value: e.side.toUpperCase(), inline: true },
+      { name: "Qty", value: alpaca.formatQty(e.qty), inline: true },
+      { name: "Price", value: usd(e.price), inline: true },
+      { name: "Notional", value: usd(e.qty * e.price), inline: true },
+      { name: "Unit", value: unitName(e.strategy === "manual" ? null : e.strategy), inline: true },
+    ],
+    timestamp: e.ts.toISOString(),
+  }));
+
+  // Big wins: round trips closed by these sells that returned ≥ 2%.
+  const sellIds = new Set(execs.filter((e) => e.side === "sell").map((e) => e.orderId));
+  if (sellIds.size) {
+    const [allFills, allOrders] = await Promise.all([
+      d.select().from(schema.fills).orderBy(asc(schema.fills.ts)),
+      d.select({ id: schema.orders.id, strategy: schema.orders.strategy }).from(schema.orders),
+    ]);
+    const strat = new Map(allOrders.filter((o) => o.strategy).map((o) => [o.id, o.strategy!]));
+    const { trades } = matchRoundTrips(aggregateFills(allFills, strat));
+    const byExit = new Map<string, { symbol: string; strategy: string; pnl: number; cost: number }>();
+    for (const t of trades.filter((t) => sellIds.has(t.exitOrderId))) {
+      const agg = byExit.get(t.exitOrderId) ?? { symbol: t.symbol, strategy: t.strategy, pnl: 0, cost: 0 };
+      agg.pnl += t.pnl;
+      agg.cost += t.entryPrice * t.qty;
+      byExit.set(t.exitOrderId, agg);
+    }
+    for (const w of byExit.values()) {
+      const ret = w.cost > 0 ? w.pnl / w.cost : 0;
+      if (ret >= 0.02) {
+        embeds.push({
+          title: `★ Target neutralized · ${w.symbol}`,
+          description: `${unitName(w.strategy === "manual" ? null : w.strategy)} closed **${signedUsd(w.pnl)}** (${signedPct(ret)}).`,
+          color: COLORS.win,
+        });
+      }
+    }
+  }
+  await notify(embeds);
+}
+
+/** Once a day after the US close (16:05 ET, every day so weekend crypto is covered). */
+async function maybeSendDebrief(account: alpaca.Account, now: Date) {
+  const [h, m] = nyTime.format(now).split(":").map(Number);
+  if (h * 60 + m < 16 * 60 + 5) return;
+  const today = tradingDay(now);
+  if ((await getSetting("last_debrief", "")) === today) return;
+  await setSetting("last_debrief", today); // claim first so overlapping ticks can't double-send
+
+  const d = db();
+  const [allFills, allOrders, positions] = await Promise.all([
+    d.select().from(schema.fills).orderBy(asc(schema.fills.ts)),
+    d.select({ id: schema.orders.id, strategy: schema.orders.strategy }).from(schema.orders),
+    alpaca.getPositions(),
+  ]);
+  const strat = new Map(allOrders.filter((o) => o.strategy).map((o) => [o.id, o.strategy!]));
+  const { trades } = matchRoundTrips(aggregateFills(allFills, strat));
+  const closedToday = trades.filter((t) => tradingDay(t.exitTs) === today);
+  const realized = closedToday.reduce((a, t) => a + t.pnl, 0);
+  const best = closedToday.reduce<(typeof closedToday)[number] | null>((b, t) => (!b || t.pnl > b.pnl ? t : b), null);
+  const worst = closedToday.reduce<(typeof closedToday)[number] | null>((w, t) => (!w || t.pnl < w.pnl ? t : w), null);
+  const equity = Number(account.equity);
+  const last = Number(account.last_equity);
+
+  await notify([
+    {
+      title: `Daily debrief · ${today}`,
+      color: COLORS.debrief,
+      fields: [
+        { name: "Equity", value: usd(equity), inline: true },
+        { name: "Day P&L", value: `${signedUsd(equity - last)} (${signedPct(last ? equity / last - 1 : 0)})`, inline: true },
+        { name: "Open positions", value: String(positions.length), inline: true },
+        { name: "Trades closed", value: String(closedToday.length), inline: true },
+        { name: "Realized today", value: signedUsd(realized), inline: true },
+        { name: "\u200b", value: "\u200b", inline: true },
+        ...(best ? [{ name: "Best", value: `${best.symbol} ${signedUsd(best.pnl)} (${signedPct(best.returnPct)})`, inline: true }] : []),
+        ...(worst && worst !== best
+          ? [{ name: "Worst", value: `${worst.symbol} ${signedUsd(worst.pnl)} (${signedPct(worst.returnPct)})`, inline: true }]
+          : []),
+      ],
+    },
+  ]);
 }

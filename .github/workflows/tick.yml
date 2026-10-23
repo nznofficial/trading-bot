@@ -4,9 +4,11 @@ on:
   schedule:
     # Every 15 min, 24/7: crypto trades around the clock. Stocks only trade when Alpaca's market
     # clock says the session is open. GitHub may delay scheduled runs by a few minutes under load.
-    # Public repos: GitHub disables schedules after 60 days without commits (it emails first;
-    # re-enable from the Actions tab).
+    # Public repos: GitHub disables schedules after 60 days without activity; the keepalive job
+    # below re-enables this workflow weekly so that never happens.
     - cron: "*/15 * * * *"
+    # Weekly keep-alive: re-enabling the workflow via the API resets GitHub's 60-day inactivity timer.
+    - cron: "7 12 * * 1"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -15,11 +17,12 @@ on:
         default: false
 
 concurrency:
-  group: bot-tick
+  group: bot-tick-${{ github.event.schedule == '7 12 * * 1' && 'keepalive' || 'tick' }}
   cancel-in-progress: false
 
 jobs:
   tick:
+    if: github.event.schedule != '7 12 * * 1'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -36,3 +39,15 @@ jobs:
           cat response.json; echo
           echo "HTTP $status"
           test "$status" -lt 400
+
+  keepalive:
+    if: github.event.schedule == '7 12 * * 1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Re-enable tick workflow (resets the 60-day timer)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/tick.yml/enable"

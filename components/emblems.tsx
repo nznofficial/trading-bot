@@ -2,28 +2,9 @@
  * Original unit emblems (geometric mech heads), one per strategy.
  * UNIT-01 VANGUARD rides trends (SMA crossover); UNIT-02 RECOIL strikes on rebounds (RSI reversion).
  */
-export const UNITS = {
-  sma_cross: {
-    code: "UNIT-01",
-    callsign: "Vanguard",
-    role: "Trend assault",
-    primary: "#8b5cf6",
-    secondary: "#a3ff3c",
-  },
-  rsi_revert: {
-    code: "UNIT-02",
-    callsign: "Recoil",
-    role: "Counter-strike",
-    primary: "#ff3b4e",
-    secondary: "#ffa41b",
-  },
-} as const;
+import { UNITS, type UnitId } from "@/lib/units";
 
-export type UnitId = keyof typeof UNITS;
-
-export function unitFor(strategy: string | null) {
-  return strategy && strategy in UNITS ? UNITS[strategy as UnitId] : null;
-}
+export { UNITS, unitFor, type UnitId } from "@/lib/units";
 
 export function UnitEmblem({ unit, size = 64 }: { unit: UnitId; size?: number }) {
   return unit === "sma_cross" ? <Vanguard size={size} /> : <Recoil size={size} />;

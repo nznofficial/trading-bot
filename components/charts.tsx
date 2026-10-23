@@ -9,6 +9,7 @@ import {
   Cell,
   Line,
   LineChart,
+  ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -48,9 +49,14 @@ function TooltipBox({ title, rows }: { title: string; rows: Row[] }) {
   );
 }
 
-
 /** Equity over every snapshot. X is the snapshot index so overnight/weekend gaps don't stretch the line. */
-export function EquityChart({ data, height = 260 }: { data: { ts: number; equity: number }[]; height?: number | `${number}%` }) {
+export function EquityChart({
+  data,
+  height = 260,
+}: {
+  data: { ts: number; equity: number }[];
+  height?: number | `${number}%`;
+}) {
   return (
     <ResponsiveContainer width="100%" height={height} className="glow-line">
       <AreaChart data={data} margin={{ top: 8, right: 20, bottom: 0, left: 0 }}>
@@ -61,13 +67,7 @@ export function EquityChart({ data, height = 260 }: { data: { ts: number; equity
           </linearGradient>
         </defs>
         {grid}
-        <XAxis
-          dataKey="ts"
-          {...axis}
-          type="category"
-          tickFormatter={(v: number) => shortDate(v)}
-          minTickGap={48}
-        />
+        <XAxis dataKey="ts" {...axis} type="category" tickFormatter={(v: number) => shortDate(v)} minTickGap={48} />
         <YAxis
           {...axis}
           axisLine={false}
@@ -194,7 +194,13 @@ export function DrawdownChart({ data }: { data: { ts: number; dd: number }[] }) 
       <AreaChart data={data} margin={{ top: 8, right: 20, bottom: 0, left: 0 }}>
         {grid}
         <XAxis dataKey="ts" {...axis} type="category" tickFormatter={(v: number) => shortDate(v)} minTickGap={48} />
-        <YAxis {...axis} axisLine={false} width={56} domain={([lo]: readonly number[]) => [Math.min(lo * 1.1, -0.01), 0]} tickFormatter={(v: number) => signedPct(v, 1)} />
+        <YAxis
+          {...axis}
+          axisLine={false}
+          width={56}
+          domain={([lo]: readonly number[]) => [Math.min(lo * 1.1, -0.01), 0]}
+          tickFormatter={(v: number) => signedPct(v, 1)}
+        />
         <Tooltip
           cursor={cursor}
           content={({ active, payload }: Tip) =>
@@ -245,7 +251,14 @@ export function SymbolPnlChart({ data }: { data: { symbol: string; pnl: number; 
             return (
               <TooltipBox
                 title={`${p.symbol} · ${p.count} trade${p.count === 1 ? "" : "s"}`}
-                rows={[{ key: "pnl", label: "realized", value: signedUsd(p.pnl), color: p.pnl >= 0 ? "var(--gain)" : "var(--loss)" }]}
+                rows={[
+                  {
+                    key: "pnl",
+                    label: "realized",
+                    value: signedUsd(p.pnl),
+                    color: p.pnl >= 0 ? "var(--gain)" : "var(--loss)",
+                  },
+                ]}
               />
             );
           }}
@@ -269,4 +282,110 @@ export function SymbolPnlChart({ data }: { data: { symbol: string; pnl: number; 
 function lastIndex<T extends Record<string, unknown>>(data: T[], key: string) {
   for (let i = data.length - 1; i >= 0; i--) if (data[i][key] !== null && data[i][key] !== undefined) return i;
   return -1;
+}
+
+/** Price path around one trade: entry/exit markers and the protective stop level. */
+export function DebriefChart({
+  bars,
+  entryTs,
+  exitTs,
+  entryPrice,
+  exitPrice,
+  stopPrice,
+  win,
+}: {
+  bars: { ts: number; close: number }[];
+  entryTs: number;
+  exitTs: number;
+  entryPrice: number;
+  exitPrice: number;
+  stopPrice: number | null;
+  win: boolean;
+}) {
+  const data = bars.map((b, i) => ({ i, ts: b.ts, close: b.close }));
+  const nearest = (ts: number) =>
+    data.reduce((best, p) => (Math.abs(p.ts - ts) < Math.abs(best.ts - ts) ? p : best), data[0]);
+  const entry = nearest(entryTs);
+  const exit = nearest(exitTs);
+  const prices = [...data.map((d) => d.close), entryPrice, exitPrice, ...(stopPrice ? [stopPrice] : [])];
+  const lo = Math.min(...prices);
+  const hi = Math.max(...prices);
+  const pad = (hi - lo) * 0.08 || hi * 0.005;
+  const exitColor = win ? "var(--gain)" : "var(--loss)";
+  return (
+    <ResponsiveContainer width="100%" height={320}>
+      <LineChart data={data} margin={{ top: 16, right: 20, bottom: 0, left: 0 }}>
+        {grid}
+        <XAxis
+          dataKey="i"
+          type="number"
+          domain={[0, Math.max(0, data.length - 1)]}
+          {...axis}
+          tickFormatter={(i: number) => (data[i] ? shortDate(data[i].ts) : "")}
+          minTickGap={48}
+        />
+        <YAxis
+          {...axis}
+          axisLine={false}
+          width={80}
+          domain={[lo - pad, hi + pad]}
+          tickFormatter={(v: number) => usd(v)}
+        />
+        <Tooltip
+          cursor={cursor}
+          content={({ active, payload }: Tip) =>
+            active && payload?.length ? (
+              <TooltipBox
+                title={dateTime(payload[0].payload.ts)}
+                rows={[{ key: "c", label: "close", value: usd(payload[0].payload.close), color: "var(--series-1)" }]}
+              />
+            ) : null
+          }
+        />
+        {/* Shade the holding period */}
+        <ReferenceLine x={entry.i} stroke="var(--sync)" strokeOpacity={0.4} />
+        <ReferenceLine x={exit.i} stroke={exitColor} strokeOpacity={0.4} />
+        {stopPrice && (
+          <ReferenceLine
+            y={stopPrice}
+            stroke="var(--alert)"
+            strokeDasharray="6 4"
+            label={{
+              value: `STOP ${usd(stopPrice)}`,
+              fill: "var(--alert)",
+              fontSize: 11,
+              position: "insideBottomLeft",
+            }}
+          />
+        )}
+        <Line
+          type="monotone"
+          dataKey="close"
+          stroke="var(--series-1)"
+          strokeWidth={2}
+          dot={false}
+          isAnimationActive={false}
+          className="glow-line"
+        />
+        <ReferenceDot
+          x={entry.i}
+          y={entryPrice}
+          r={7}
+          fill="var(--sync)"
+          stroke="var(--bg)"
+          strokeWidth={2}
+          label={{ value: "ENTRY", position: "top", fill: "var(--sync)", fontSize: 11 }}
+        />
+        <ReferenceDot
+          x={exit.i}
+          y={exitPrice}
+          r={7}
+          fill={exitColor}
+          stroke="var(--bg)"
+          strokeWidth={2}
+          label={{ value: "EXIT", position: "bottom", fill: exitColor, fontSize: 11 }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
 }

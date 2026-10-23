@@ -5,9 +5,8 @@ import { PerformanceChart, SymbolPnlChart } from "@/components/charts";
 import { unitFor } from "@/components/emblems";
 import { SimulatorConsole } from "@/components/simulator-console";
 import { Card, Delta, Empty, PageHeader, Skeleton, StatStrip, Table } from "@/components/ui";
-import { RISK, STRATEGY_PARAMS } from "@/lib/config";
 import { dateTime, duration, pct, ratio, signedPct, signedUsd, usd } from "@/lib/format";
-import { getSimulations, type SimulationRow } from "@/lib/queries";
+import { getLiveSettings, getSimulations, type SimulationRow } from "@/lib/queries";
 
 export default function SimulatorPage({ searchParams }: PageProps<"/simulator">) {
   return (
@@ -19,21 +18,26 @@ export default function SimulatorPage({ searchParams }: PageProps<"/simulator">)
       />
       <div className="grid grid-cols-1 gap-5">
         <Card title="Mission parameters" subtitle="Defaults are the live settings" code="SIM-01" tone="amber">
-          <SimulatorConsole
-            defaults={{
-              months: 3,
-              theater: "all",
-              ...STRATEGY_PARAMS.sma_cross,
-              ...STRATEGY_PARAMS.rsi_revert,
-              stopLossPct: RISK.stopLossPct * 100,
-            }}
-          />
+          <Suspense fallback={<Skeleton className="h-64" />}>
+            <Console />
+          </Suspense>
         </Card>
         <Suspense fallback={<Skeleton />}>
           <Results searchParams={searchParams} />
         </Suspense>
       </div>
     </>
+  );
+}
+
+/** The console starts from whatever the live units run today (Hangar tuning). */
+async function Console() {
+  await connection();
+  const live = await getLiveSettings();
+  return (
+    <SimulatorConsole
+      defaults={{ months: 3, theater: "all", ...live.sma, ...live.rsi, stopLossPct: live.stopLossPct * 100 }}
+    />
   );
 }
 

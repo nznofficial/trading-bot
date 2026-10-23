@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { UNITS, UnitEmblem, unitFor, type UnitId } from "@/components/emblems";
+import { TuneConsole } from "@/components/tune-console";
 import { ActionBadge, Card, ClassTabs, Delta, Empty, Gauge, Metric, PageHeader, Skeleton, Table, Tag } from "@/components/ui";
 import { dateTime, duration, pct, ratio, signedUsd } from "@/lib/format";
 import { getStrategies, parseClassFilter } from "@/lib/queries";
@@ -25,7 +26,7 @@ const fmtIndicators = (ind: Record<string, number | null>) =>
 async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">["searchParams"] }) {
   await connection(); // DB-backed: render at request time, never at build
   const filter = parseClassFilter((await searchParams).class);
-  const { strategies, latest, recent } = await getStrategies(filter);
+  const { live, strategies, latest, recent } = await getStrategies(filter);
 
   return (
     <div className="grid grid-cols-1 gap-5">
@@ -102,6 +103,15 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
           );
         })}
       </div>
+
+      <Card
+        title="Tune units"
+        subtitle={`Live now · stop ${(live.stopLossPct * 100).toFixed(1)}% · equities ${live.stocksEnabled ? "armed" : "safed"} · crypto ${live.cryptoEnabled ? "armed" : "safed"}`}
+        code="HGR-01"
+        tone="amber"
+      >
+        <TuneConsole current={live} />
+      </Card>
 
       <Card title="Targeting computer" subtitle="Latest evaluation of every target" code="TGT-01">
         {latest.length ? (

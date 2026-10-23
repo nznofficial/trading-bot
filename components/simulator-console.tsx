@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { play } from "@/lib/sfx";
 
 type Form = {
   months: 1 | 3 | 6 | 12;
@@ -55,6 +56,7 @@ export function SimulatorConsole({ defaults }: { defaults: Form }) {
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+        play("complete");
         router.push(`/simulator?run=${body.id}`);
         router.refresh();
       } catch (e) {

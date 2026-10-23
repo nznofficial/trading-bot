@@ -15,7 +15,8 @@ import {
 import { assetClassOf, BENCHMARKS, CRYPTO_FEES, UNIVERSE, type AssetClass } from "./config";
 import { db, schema } from "./db";
 import type { Quote } from "./quotes";
-import { STRATEGIES } from "./strategies";
+import { buildUnits, getLiveParams } from "./live-params";
+import { UNITS as UNITS_BY_ID } from "./units";
 
 export type ClassFilter = "all" | AssetClass;
 
@@ -272,7 +273,7 @@ export async function getStrategies(filter: ClassFilter) {
   const d = db();
   const since = new Date(Date.now() - 14 * 86_400_000);
   const classWhere = filter === "all" ? undefined : eq(schema.signals.assetClass, filter);
-  const [{ trades }, { positions }, recentSignals, latestSignals] = await Promise.all([
+  const [{ trades }, { positions }, recentSignals, latestSignals, live] = await Promise.all([
     loadTrades(),
     loadPositions(),
     d
@@ -287,6 +288,7 @@ export async function getStrategies(filter: ClassFilter) {
       .from(schema.signals)
       .where(and(gte(schema.signals.ts, since), classWhere))
       .orderBy(schema.signals.symbol, desc(schema.signals.id)),
+    getLiveParams(),
   ]);
 
   const serializeSignal = (s: typeof schema.signals.$inferSelect) => ({
@@ -303,7 +305,8 @@ export async function getStrategies(filter: ClassFilter) {
     note: s.note,
   });
 
-  const strategies = Object.values(STRATEGIES).map((st) => {
+  // Names/descriptions reflect the live tuning, not just the code defaults.
+  const strategies = Object.values(buildUnits(live)).map((st) => {
     const mine = trades.filter((t) => t.strategy === st.id && matches(filter, t.assetClass));
     const open = positions.filter((p) => p.strategy === st.id && matches(filter, p.assetClass));
     return {
@@ -320,6 +323,7 @@ export async function getStrategies(filter: ClassFilter) {
   });
 
   return {
+    live,
     strategies,
     latest: latestSignals
       .map(serializeSignal)
@@ -352,13 +356,14 @@ export async function getMarketStrip() {
   "use cache";
   botCache();
   const d = db();
-  const [settingsRows, [lastRun]] = await Promise.all([
+  const [settingsRows, [lastRun], [latestFill]] = await Promise.all([
     d.select().from(schema.settings),
     d
       .select({ startedAt: schema.botRuns.startedAt, status: schema.botRuns.status })
       .from(schema.botRuns)
       .orderBy(desc(schema.botRuns.id))
       .limit(1),
+    d.select({ id: schema.fills.id }).from(schema.fills).orderBy(desc(schema.fills.ts)).limit(1),
   ]);
   const get = <T>(key: string) => settingsRows.find((r) => r.key === key)?.value as T | undefined;
   const quotes = get<Record<string, Quote>>("quotes") ?? {};
@@ -369,6 +374,7 @@ export async function getMarketStrip() {
       .filter((q): q is Quote => !!q),
     clock: get<ClockState>("clock") ?? null,
     paused: get<boolean>("paused") === true,
+    latestFillId: latestFill?.id ?? null,
     lastRun: lastRun ? { startedAt: lastRun.startedAt.getTime(), status: lastRun.status } : null,
   };
 }
@@ -412,5 +418,110 @@ export async function getSimulations(selectedId: number | null) {
           },
         }
       : null,
+  };
+}
+
+/** Current unit tuning (Hangar / Simulator defaults). */
+export async function getLiveSettings() {
+  "use cache";
+  botCache();
+  return getLiveParams();
+}
+
+/** Price bars around a trade, for its debrief chart. Historical bars never change, so cache long. */
+async function getTradeBars(symbol: string, fromMs: number, toMs: number) {
+  "use cache";
+  cacheLife("days");
+  const alpaca = await import("./alpaca");
+  const start = new Date(fromMs);
+  const res =
+    assetClassOf(symbol) === "crypto"
+      ? await alpaca.getCryptoBars([symbol], "15Min", start)
+      : await alpaca.getBars([symbol], "15Min", start, new Date(toMs));
+  return (res[symbol] ?? []).filter((b) => Date.parse(b.t) <= toMs).map((b) => ({ ts: Date.parse(b.t), close: b.c, low: b.l }));
+}
+
+/** Everything about one closed trade: the round trip, the signals that caused it, its stop, and nearby bars. */
+export async function getDebrief(entryOrderId: string, exitOrderId: string) {
+  "use cache";
+  botCache();
+  const d = db();
+  const { trades } = await loadTrades();
+  const legs = trades.filter((t) => t.entryOrderId === entryOrderId && t.exitOrderId === exitOrderId);
+  if (!legs.length) return null;
+  const t = legs[0];
+  const qty = legs.reduce((a, l) => a + l.qty, 0);
+  const pnl = legs.reduce((a, l) => a + l.pnl, 0);
+  const fees = legs.reduce((a, l) => a + l.fees, 0);
+  const cost = legs.reduce((a, l) => a + l.entryPrice * l.qty, 0);
+
+  const [linkedSignals, orderRows] = await Promise.all([
+    d
+      .select()
+      .from(schema.signals)
+      .where(
+        and(
+          eq(schema.signals.symbol, t.symbol),
+          ne(schema.signals.action, "hold"),
+          gte(schema.signals.ts, new Date(t.entryTs.getTime() - 3_600_000)),
+        ),
+      )
+      .orderBy(asc(schema.signals.id))
+      .limit(200),
+    d
+      .select()
+      .from(schema.orders)
+      .where(and(eq(schema.orders.symbol, t.symbol), gte(schema.orders.submittedAt, new Date(t.entryTs.getTime() - 3_600_000))))
+      .orderBy(asc(schema.orders.submittedAt)),
+  ]);
+  const inWindow = (ms: number) => ms <= t.exitTs.getTime() + 3_600_000;
+  const signals = linkedSignals.filter((s) => inWindow(s.ts.getTime()));
+  const entryOrder = orderRows.find((o) => o.id === entryOrderId) ?? null;
+  const exitOrder = orderRows.find((o) => o.id === exitOrderId) ?? null;
+  const stopOrder =
+    orderRows.find((o) => (o.type === "stop" || o.type === "stop_limit") && o.side === "sell" && inWindow(o.submittedAt.getTime())) ?? null;
+
+  // Chart window: a day of context on each side, capped at ~60 days so huge holds stay light.
+  const span = Math.min(t.exitTs.getTime() - t.entryTs.getTime(), 60 * 86_400_000);
+  const from = t.entryTs.getTime() - Math.max(86_400_000, span * 0.25);
+  const to = Math.min(Date.now(), t.exitTs.getTime() + Math.max(86_400_000, span * 0.25));
+  const bars = await getTradeBars(t.symbol, from, to).catch(() => []);
+
+  // Bot orders carry their strategy as the client-id prefix ("sma_cross.sell…"); anything else is manual.
+  const botOrder = (cid: string) => cid.split(".")[0] in UNITS_BY_ID;
+  const exitKind = exitOrder
+    ? exitOrder.type === "stop" || exitOrder.type === "stop_limit" || exitOrder.clientOrderId.includes(".stopexit.")
+      ? "stop"
+      : botOrder(exitOrder.clientOrderId)
+        ? "signal"
+        : "manual"
+    : "unknown";
+
+  return {
+    symbol: t.symbol,
+    assetClass: t.assetClass,
+    strategy: t.strategy,
+    entryTs: t.entryTs.getTime(),
+    exitTs: t.exitTs.getTime(),
+    entryPrice: cost / qty,
+    exitPrice: t.exitPrice,
+    qty,
+    pnl,
+    fees,
+    returnPct: cost > 0 ? pnl / cost : 0,
+    holdMs: t.exitTs.getTime() - t.entryTs.getTime(),
+    exitKind,
+    stopPrice: stopOrder?.stopPrice ?? null,
+    entryClientId: entryOrder?.clientOrderId ?? null,
+    exitClientId: exitOrder?.clientOrderId ?? null,
+    signals: signals.map((s) => ({
+      ts: s.ts.getTime(),
+      action: s.action,
+      reason: s.reason,
+      note: s.note,
+      acted: s.acted,
+      indicators: s.indicators,
+    })),
+    bars,
   };
 }

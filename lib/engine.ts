@@ -9,17 +9,20 @@ import {
   BENCHMARKS,
   CRYPTO_BAR_LOOKBACK_DAYS,
   CRYPTO_FEES,
+  CRYPTO_RISK,
   CRYPTO_SYMBOLS,
   normalizeSymbol,
   PORTFOLIO_RISK,
   STOCK_SYMBOLS,
+  UNIVERSE,
   type AssetClass,
 } from "./config";
 import { db, schema } from "./db";
 import { dateTime, signedPct, signedUsd, usd } from "./format";
 import { COLORS, notify, type Embed } from "./notify";
+import { buildUnits, getLiveParams } from "./live-params";
 import { computeQuote, type Quote } from "./quotes";
-import { createRiskGate, planCryptoStop } from "./risk";
+import { createRiskGate, DEFAULT_LIMITS, planCryptoStop } from "./risk";
 import { STRATEGIES, strategyFor, type Signal } from "./strategies";
 import { unitName } from "./units";
 
@@ -90,7 +93,10 @@ export async function setSetting(key: string, value: unknown) {
 }
 
 /** Positions and orders with crypto symbols normalized to "BTC/USD". */
-const normalizePosition = (p: alpaca.Position): alpaca.Position => ({ ...p, symbol: normalizeSymbol(p.symbol, p.asset_class) });
+const normalizePosition = (p: alpaca.Position): alpaca.Position => ({
+  ...p,
+  symbol: normalizeSymbol(p.symbol, p.asset_class),
+});
 const normalizeOrder = (o: alpaca.Order): alpaca.Order => ({
   ...o,
   symbol: normalizeSymbol(o.symbol, o.asset_class),
@@ -133,13 +139,20 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
       )
       .limit(1);
     if (concurrent) {
-      return finish({ status: "skipped", marketOpen: null, signals: 0, ordersPlaced: 0, message: `run ${concurrent.id} in progress` });
+      return finish({
+        status: "skipped",
+        marketOpen: null,
+        signals: 0,
+        ordersPlaced: 0,
+        message: `run ${concurrent.id} in progress`,
+      });
     }
 
-    const [clock, account, paused] = await Promise.all([
+    const [clock, account, paused, live] = await Promise.all([
       alpaca.getClock(),
       alpaca.getAccount(),
       getSetting("paused", false),
+      getLiveParams(),
     ]);
     if (account.trading_blocked || account.account_blocked) throw new Error(`account blocked (${account.status})`);
 
@@ -156,19 +169,37 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
 
     await snapshot(run.id, account, positions, clock.is_open);
     // The dashboard's session bar counts down from these; it never calls Alpaca itself.
-    await setSetting("clock", { isOpen: clock.is_open, nextOpen: clock.next_open, nextClose: clock.next_close, asOf: clock.timestamp });
+    await setSetting("clock", {
+      isOpen: clock.is_open,
+      nextOpen: clock.next_open,
+      nextClose: clock.next_close,
+      asOf: clock.timestamp,
+    });
     // Alerts never fail a tick (notify swallows its own errors; these guards cover the queries).
     await alertFills(newFills).catch((e) => console.warn("fill alert failed", e));
     await maybeSendDebrief(account, new Date(clock.timestamp)).catch((e) => console.warn("debrief failed", e));
     await maybePrune(new Date(clock.timestamp)).catch((e) => console.warn("prune failed", e));
 
-    if (paused) return finish({ status: "paused", marketOpen: clock.is_open, signals: 0, ordersPlaced: 0, message: "bot is paused" });
+    if (paused)
+      return finish({
+        status: "paused",
+        marketOpen: clock.is_open,
+        signals: 0,
+        ordersPlaced: 0,
+        message: "bot is paused",
+      });
 
     // Stocks only trade in the regular session; crypto trades every tick.
     const stocksActive = clock.is_open || !!opts.dryRun;
     const symbols = [...(stocksActive ? STOCK_SYMBOLS : []), ...CRYPTO_SYMBOLS];
     if (!symbols.length) {
-      return finish({ status: "closed", marketOpen: false, signals: 0, ordersPlaced: 0, message: `next open ${dateTime(Date.parse(clock.next_open))}` });
+      return finish({
+        status: "closed",
+        marketOpen: false,
+        signals: 0,
+        ordersPlaced: 0,
+        message: `next open ${dateTime(Date.parse(clock.next_open))}`,
+      });
     }
 
     // --- Market data -------------------------------------------------------------------------
@@ -176,7 +207,9 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     const daysAgo = (n: number) => new Date(now.getTime() - n * 86_400_000);
     const [stockBars, cryptoBars] = await Promise.all([
       stocksActive ? alpaca.getBars(STOCK_SYMBOLS, BAR_TIMEFRAME, daysAgo(BAR_LOOKBACK_DAYS)) : {},
-      CRYPTO_SYMBOLS.length ? alpaca.getCryptoBars(CRYPTO_SYMBOLS, BAR_TIMEFRAME, daysAgo(CRYPTO_BAR_LOOKBACK_DAYS)) : {},
+      CRYPTO_SYMBOLS.length
+        ? alpaca.getCryptoBars(CRYPTO_SYMBOLS, BAR_TIMEFRAME, daysAgo(CRYPTO_BAR_LOOKBACK_DAYS))
+        : {},
     ]);
     const allBars: Record<string, alpaca.Bar[]> = { ...stockBars, ...cryptoBars };
     const barMs = BAR_MINUTES * 60_000;
@@ -185,18 +218,27 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     // --- Signals + execution -----------------------------------------------------------------
     const held = new Map(positions.map((p) => [p.symbol, Number(p.qty)]));
     const cooldownUntil = await stopOutCooldowns(now);
-    const gate = createRiskGate({
-      equity: Number(account.equity),
-      lastEquity: Number(account.last_equity),
-      buyingPower: Number(account.buying_power),
-      nonMarginableBuyingPower: Number(account.non_marginable_buying_power),
-      cryptoExposure: positions
-        .filter((p) => assetClassOf(p.symbol) === "crypto")
-        .reduce((a, p) => a + Number(p.market_value), 0),
-      heldSymbols: new Set(held.keys()),
-      symbolsWithOpenOrders: new Set(openOrders.map((o) => o.symbol)),
-      cooldownUntil,
-    });
+    const gate = createRiskGate(
+      {
+        equity: Number(account.equity),
+        lastEquity: Number(account.last_equity),
+        buyingPower: Number(account.buying_power),
+        nonMarginableBuyingPower: Number(account.non_marginable_buying_power),
+        cryptoExposure: positions
+          .filter((p) => assetClassOf(p.symbol) === "crypto")
+          .reduce((a, p) => a + Number(p.market_value), 0),
+        heldSymbols: new Set(held.keys()),
+        symbolsWithOpenOrders: new Set(openOrders.map((o) => o.symbol)),
+        cooldownUntil,
+      },
+      {
+        ...DEFAULT_LIMITS,
+        stocks: { ...DEFAULT_LIMITS.stocks, stopLossPct: live.stopLossPct },
+        crypto: { ...DEFAULT_LIMITS.crypto, stopLossPct: live.stopLossPct },
+      },
+    );
+    // Units built from the Hangar's live tuning (falls back to config defaults).
+    const units = buildUnits(live);
 
     const signalRows: (typeof schema.signals.$inferInsert)[] = [];
     const submitted: alpaca.Order[] = [];
@@ -204,7 +246,7 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     const touched = new Set<string>();
 
     for (const symbol of symbols) {
-      const strategy = strategyFor(symbol)!;
+      const strategy = units[UNIVERSE[symbol]];
       const cls = assetClassOf(symbol);
       // Completed bars only; stocks also drop pre/post-market bars.
       const bars = (allBars[symbol] ?? []).filter(
@@ -215,7 +257,11 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
 
       let signal: Signal;
       if (!lastBar || bars.length < strategy.minBars) {
-        signal = { action: "hold", reason: `insufficient data (${bars.length}/${strategy.minBars} bars)`, indicators: {} };
+        signal = {
+          action: "hold",
+          reason: `insufficient data (${bars.length}/${strategy.minBars} bars)`,
+          indicators: {},
+        };
       } else if ((!opts.dryRun || cls === "crypto") && now.getTime() - new Date(lastBar.t).getTime() > 3 * barMs) {
         signal = { action: "hold", reason: "stale data", indicators: {} };
       } else {
@@ -226,7 +272,10 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
       let note: string | null = null;
       const barTs = lastBar?.t ?? now.toISOString();
 
-      if (signal.action === "buy") {
+      const entriesOn = cls === "crypto" ? live.cryptoEnabled : live.stocksEnabled;
+      if (signal.action === "buy" && !entriesOn) {
+        note = `skipped: ${cls === "crypto" ? "crypto" : "stock"} entries disabled in Hangar`;
+      } else if (signal.action === "buy") {
         const decision = gate.approveEntry(symbol, lastBar.c);
         if (!decision.ok) {
           note = `skipped: ${decision.reason}`;
@@ -303,7 +352,9 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
       });
     }
 
-    const stopNotes = opts.dryRun ? [] : await maintainCryptoStops(positions, openOrders, touched, submitted, now);
+    const stopNotes = opts.dryRun
+      ? []
+      : await maintainCryptoStops(positions, openOrders, touched, submitted, now, live.stopLossPct);
 
     if (signalRows.length) await d.insert(schema.signals).values(signalRows);
     if (submitted.length) await upsertOrders(submitted);
@@ -313,7 +364,9 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
       ...stopNotes.filter((n) => n.includes("stop error")),
     ];
     if (orderErrors.length) {
-      await notify([{ title: "⚠ Order rejected", description: orderErrors.join("\n").slice(0, 4000), color: COLORS.error }]);
+      await notify([
+        { title: "⚠ Order rejected", description: orderErrors.join("\n").slice(0, 4000), color: COLORS.error },
+      ]);
     }
 
     const result: Omit<TickResult, "runId"> = {
@@ -342,7 +395,11 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
   } catch (e) {
     console.error("tick failed", e);
     await notify([
-      { title: "⚠ Sortie aborted", description: `Run #${run.id} failed:\n\`\`\`${errMsg(e).slice(0, 1500)}\`\`\``, color: COLORS.error },
+      {
+        title: "⚠ Sortie aborted",
+        description: `Run #${run.id} failed:\n\`\`\`${errMsg(e).slice(0, 1500)}\`\`\``,
+        color: COLORS.error,
+      },
     ]);
     return finish({ status: "error", marketOpen: null, signals: 0, ordersPlaced: 0, error: errMsg(e) });
   }
@@ -407,6 +464,7 @@ async function maintainCryptoStops(
   touched: Set<string>,
   submitted: alpaca.Order[],
   now: Date,
+  stopLossPct: number,
 ): Promise<string[]> {
   const notes: string[] = [];
   const stamp = now.toISOString();
@@ -418,6 +476,7 @@ async function maintainCryptoStops(
       openOrders
         .filter((o) => o.symbol === p.symbol && o.side === "sell")
         .map((o) => ({ id: o.id, type: o.type, qty: Number(o.qty ?? 0) - Number(o.filled_qty) })),
+      { ...CRYPTO_RISK, stopLossPct },
     );
     try {
       if (plan.action === "keep") continue;
@@ -436,7 +495,10 @@ async function maintainCryptoStops(
         continue;
       }
       if (plan.action === "replace") {
-        await cancelOpenOrdersFor(p.symbol, openOrders.filter((o) => plan.cancelIds.includes(o.id)));
+        await cancelOpenOrdersFor(
+          p.symbol,
+          openOrders.filter((o) => plan.cancelIds.includes(o.id)),
+        );
       }
       submitted.push(
         await alpaca.submitOrder({
@@ -666,10 +728,7 @@ async function stopOutCooldowns(now: Date) {
         eq(schema.orders.status, "filled"),
         gte(schema.orders.filledAt, new Date(now.getTime() - windowMs)),
         // Stock bracket/OTO stop legs, the bot's crypto stop-limits, and its breach exits.
-        or(
-          inArray(schema.orders.type, ["stop", "stop_limit"]),
-          like(schema.orders.clientOrderId, "%.stopexit.%"),
-        ),
+        or(inArray(schema.orders.type, ["stop", "stop_limit"]), like(schema.orders.clientOrderId, "%.stopexit.%")),
       ),
     );
   const until = new Map<string, Date>();
@@ -780,14 +839,32 @@ async function maybeSendDebrief(account: alpaca.Account, now: Date) {
       color: COLORS.debrief,
       fields: [
         { name: "Equity", value: usd(equity), inline: true },
-        { name: "Day P&L", value: `${signedUsd(equity - last)} (${signedPct(last ? equity / last - 1 : 0)})`, inline: true },
+        {
+          name: "Day P&L",
+          value: `${signedUsd(equity - last)} (${signedPct(last ? equity / last - 1 : 0)})`,
+          inline: true,
+        },
         { name: "Open positions", value: String(positions.length), inline: true },
         { name: "Trades closed", value: String(closedToday.length), inline: true },
         { name: "Realized today", value: signedUsd(realized), inline: true },
         { name: "\u200b", value: "\u200b", inline: true },
-        ...(best ? [{ name: "Best", value: `${best.symbol} ${signedUsd(best.pnl)} (${signedPct(best.returnPct)})`, inline: true }] : []),
+        ...(best
+          ? [
+              {
+                name: "Best",
+                value: `${best.symbol} ${signedUsd(best.pnl)} (${signedPct(best.returnPct)})`,
+                inline: true,
+              },
+            ]
+          : []),
         ...(worst && worst !== best
-          ? [{ name: "Worst", value: `${worst.symbol} ${signedUsd(worst.pnl)} (${signedPct(worst.returnPct)})`, inline: true }]
+          ? [
+              {
+                name: "Worst",
+                value: `${worst.symbol} ${signedUsd(worst.pnl)} (${signedPct(worst.returnPct)})`,
+                inline: true,
+              },
+            ]
           : []),
       ],
     },

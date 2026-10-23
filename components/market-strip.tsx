@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { SessionClock } from "@/components/session-clock";
+import { CueOnChange, SoundToggle } from "@/components/sound";
 import { signedPct } from "@/lib/format";
 import { getMarketStrip } from "@/lib/queries";
 import type { Quote } from "@/lib/quotes";
@@ -7,7 +8,7 @@ import type { Quote } from "@/lib/quotes";
 /** Theater status for the header: NYSE online/offline with countdown, crypto always online. */
 export async function SessionStatus() {
   await connection();
-  const { clock, paused } = await getMarketStrip();
+  const { clock, paused, latestFillId } = await getMarketStrip();
   return (
     <div className="hud flex flex-wrap items-center gap-x-5 gap-y-1 text-[12px]">
       <SessionClock clock={clock} />
@@ -16,6 +17,9 @@ export async function SessionStatus() {
         Crypto <span className="text-sync">online 24/7</span>
       </span>
       {paused && <span className="border border-amber/60 px-1.5 text-amber">Bot on hold</span>}
+      <SoundToggle />
+      {/* Auto-refresh re-renders this; a new fill id chirps if sound is on. */}
+      <CueOnChange value={latestFillId} cue="engage" />
     </div>
   );
 }

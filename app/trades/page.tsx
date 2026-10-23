@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import Link from "next/link";
 import { Suspense } from "react";
 import { unitFor } from "@/components/emblems";
 import { SymbolPnlChart } from "@/components/charts";
@@ -32,7 +33,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
           {
             label: "Expectancy",
             value: s.expectancy === null ? "—" : <Delta value={s.expectancy}>{signedUsd(s.expectancy)}</Delta>,
-            sub: `avg win ${s.avgWin === null ? "—" : usd(s.avgWin)} · avg loss ${s.avgLoss === null ? "—" : usd(s.avgLoss)}`,
+            sub: `avg win ${s.avgWin === null ? "—" : signedUsd(s.avgWin)} · avg loss ${s.avgLoss === null ? "—" : signedUsd(s.avgLoss)}`,
           },
           {
             label: "Profit factor",
@@ -67,6 +68,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
                 <th className="text-right!">Exit</th>
                 <th className="text-right!">P&amp;L</th>
                 <th className="text-right!">Held</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -85,6 +87,14 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
                     </Delta>
                   </td>
                   <td className="num text-right text-ink-2">{duration(t.holdMs)}</td>
+                  <td className="text-right">
+                    <Link
+                      href={`/trades/debrief?entry=${t.entryOrderId}&exit=${t.exitOrderId}`}
+                      className="hud text-[12px] whitespace-nowrap text-amber hover:underline"
+                    >
+                      Debrief ▸
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

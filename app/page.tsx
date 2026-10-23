@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { DrawdownChart, EquityChart, PerformanceChart } from "@/components/charts";
 import { unitFor } from "@/components/emblems";
+import { CueOnce } from "@/components/sound";
 import { Card, Delta, Empty, Gauge, KeyValueList, PageHeader, Skeleton, StatStrip, StatusBadge, Table } from "@/components/ui";
 import { classLabel, dateTime, duration, longDate, pct, qty, ratio, signedPct, signedUsd, usd } from "@/lib/format";
 import { getOverview } from "@/lib/queries";
@@ -279,6 +280,7 @@ async function Bridge() {
                 <th className="text-right!">Entry → Exit</th>
                 <th className="text-right!">Result</th>
                 <th className="text-right!">Held</th>
+                <th />
               </tr>
             </thead>
             <tbody>
@@ -294,6 +296,14 @@ async function Bridge() {
                     <Delta value={t.pnl}>{signedUsd(t.pnl)}</Delta>
                   </td>
                   <td className="num text-right text-ink-2">{duration(t.holdMs)}</td>
+                  <td className="text-right">
+                    <Link
+                      href={`/trades/debrief?entry=${t.entryOrderId}&exit=${t.exitOrderId}`}
+                      className="hud text-[12px] whitespace-nowrap text-amber hover:underline"
+                    >
+                      Debrief ▸
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -323,6 +333,7 @@ function VsSide({ label, value, color }: { label: string; value: number | null; 
 function KoBanner({ trade }: { trade: { symbol: string; pnl: number; returnPct: number; exitTs: number } }) {
   return (
     <section className="frame frame-amber boot" role="status">
+      <CueOnce id={`${trade.symbol}-${trade.exitTs}`} cue="win" />
       <div className="frame-body relative overflow-hidden px-6 py-4">
         <div className="hazard hazard-live absolute inset-y-0 left-0 w-3" aria-hidden />
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pl-4">

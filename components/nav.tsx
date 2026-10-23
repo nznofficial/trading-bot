@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { play } from "@/lib/sfx";
 
 const LINKS = [
   { href: "/", code: "01", label: "Bridge" },
@@ -23,6 +24,7 @@ export function Nav() {
             key={l.href}
             href={l.href}
             aria-current={active ? "page" : undefined}
+            onClick={() => play("click")}
             className={`hud slant shrink-0 border px-4 py-1.5 text-[14px] whitespace-nowrap transition-colors ${
               active
                 ? "border-amber bg-amber text-[#0b0a10]"

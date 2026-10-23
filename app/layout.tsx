@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed, IBM_Plex_Mono, Shippori_Mincho_B1 } from "next/font/google";
 import Link from "next/link";
 import { Suspense } from "react";
+import { AutoRefresh } from "@/components/auto-refresh";
 import { Crest } from "@/components/emblems";
 import { LAUNCH_SCRIPT, LaunchIntro } from "@/components/launch-intro";
 import { SessionStatus, TargetFeed, TargetFeedSkeleton } from "@/components/market-strip";
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="flex min-h-full flex-col">
         <LaunchIntro />
+        <AutoRefresh />
         <header className="border-b border-line-2 bg-[#08070c]/90 backdrop-blur">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 pt-3 sm:px-6">
             <Link href="/" className="flex items-center gap-3">

@@ -3,6 +3,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import {
   aggregateFills,
   dailyCloses,
+  downsample,
   drawdowns,
   matchRoundTrips,
   pctReturns,
@@ -191,8 +192,15 @@ export async function getOverview() {
       : null,
     classes: { us_equity: byClass("us_equity"), crypto: byClass("crypto") },
     stats,
-    equity: snaps.map((s) => ({ ts: s.ts.getTime(), equity: s.equity })),
-    drawdown: dd.series.map((p) => ({ ts: p.ts.getTime(), dd: p.dd })),
+    // Charts get a thinned series (metrics above use every snapshot).
+    equity: downsample(
+      snaps.map((s) => ({ ts: s.ts.getTime(), equity: s.equity })),
+      latest?.ts.getTime() ?? 0,
+    ),
+    drawdown: downsample(
+      dd.series.map((p) => ({ ts: p.ts.getTime(), dd: p.dd })),
+      latest?.ts.getTime() ?? 0,
+    ),
     performance,
     recentTrades: trades.slice(-5).reverse().map(serializeTrade),
     positions,

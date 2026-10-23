@@ -159,6 +159,7 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     // Alerts never fail a tick (notify swallows its own errors; these guards cover the queries).
     await alertFills(newFills).catch((e) => console.warn("fill alert failed", e));
     await maybeSendDebrief(account, new Date(clock.timestamp)).catch((e) => console.warn("debrief failed", e));
+    await maybePrune(new Date(clock.timestamp)).catch((e) => console.warn("prune failed", e));
 
     if (paused) return finish({ status: "paused", marketOpen: clock.is_open, signals: 0, ordersPlaced: 0, message: "bot is paused" });
 
@@ -733,6 +734,20 @@ async function alertFills(newFills: FillRow[]) {
     }
   }
   await notify(embeds);
+}
+
+/**
+ * Once a day, drop rows only the latest of which matters: position snapshots and "hold" signals
+ * older than two weeks. Buy/sell signals, orders, fills, runs and equity snapshots are kept.
+ */
+async function maybePrune(now: Date) {
+  const today = tradingDay(now);
+  if ((await getSetting("last_prune", "")) === today) return;
+  await setSetting("last_prune", today);
+  const cutoff = new Date(now.getTime() - 14 * 86_400_000);
+  const d = db();
+  await d.delete(schema.positionsSnapshot).where(lt(schema.positionsSnapshot.ts, cutoff));
+  await d.delete(schema.signals).where(and(eq(schema.signals.action, "hold"), lt(schema.signals.ts, cutoff)));
 }
 
 /** Once a day after the US close (16:05 ET, every day so weekend crypto is covered). */

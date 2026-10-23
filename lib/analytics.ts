@@ -221,3 +221,17 @@ export function drawdowns(points: EquityPoint[]): { series: { ts: Date; dd: numb
   });
   return { series, max };
 }
+
+/**
+ * Thin a time series for charting: full detail for the last `fullDays`, then the last point per
+ * hour, then the last point per day beyond `hourlyDays`. Always keeps the first and last points.
+ * Compute metrics on the raw series; this is only for drawing.
+ */
+export function downsample<T extends { ts: number }>(points: T[], now: number, fullDays = 7, hourlyDays = 90): T[] {
+  const fullFrom = now - fullDays * 86_400_000;
+  const hourlyFrom = now - hourlyDays * 86_400_000;
+  const bucket = (ts: number) =>
+    ts >= fullFrom ? `t${ts}` : ts >= hourlyFrom ? `h${Math.floor(ts / 3_600_000)}` : `d${tradingDay(new Date(ts))}`;
+  // Keep a point when it's the last of its bucket (its "close"), plus the very first point.
+  return points.filter((p, i) => i === 0 || i === points.length - 1 || bucket(p.ts) !== bucket(points[i + 1].ts));
+}

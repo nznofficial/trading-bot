@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   aggregateFills,
   dailyCloses,
+  downsample,
   drawdowns,
   matchRoundTrips,
   pctReturns,
@@ -82,5 +83,36 @@ describe("equity analytics", () => {
     const r = pctReturns([100, 101, 100.5, 102, 101.8, 103]);
     expect(sharpe(r)!).toBeGreaterThan(0);
     expect(sortino(r)!).toBeGreaterThan(sharpe(r)!);
+  });
+});
+
+describe("downsample", () => {
+  const H = 3_600_000;
+  const now = Date.parse("2026-10-23T12:00:00Z");
+  // 15-minute points over the last 10 days.
+  const pts = Array.from({ length: 10 * 96 }, (_, i) => ({ ts: now - (10 * 96 - 1 - i) * 15 * 60_000, v: i }));
+
+  it("keeps full detail recently and hourly closes before that", () => {
+    const out = downsample(pts, now, 7, 90);
+    const recent = out.filter((p) => p.ts >= now - 7 * 24 * H);
+    const older = out.filter((p) => p.ts < now - 7 * 24 * H);
+    expect(recent.length).toBe(pts.filter((p) => p.ts >= now - 7 * 24 * H).length);
+    // ~3 days of hourly closes (plus the first point).
+    expect(older.length).toBeGreaterThanOrEqual(3 * 24);
+    expect(older.length).toBeLessThanOrEqual(3 * 24 + 2);
+    expect(out[0]).toBe(pts[0]);
+    expect(out.at(-1)).toBe(pts.at(-1));
+  });
+
+  it("drops to daily closes beyond the hourly window", () => {
+    const out = downsample(pts, now, 1, 3);
+    const daily = out.filter((p) => p.ts < now - 3 * 24 * H);
+    // 7 days of data touch up to 8 New York calendar days, plus the always-kept first point.
+    expect(daily.length).toBeLessThanOrEqual(9);
+    expect(daily.length).toBeGreaterThanOrEqual(7);
+  });
+
+  it("leaves short series alone", () => {
+    expect(downsample(pts.slice(-50), now)).toHaveLength(50);
   });
 });

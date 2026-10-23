@@ -2,7 +2,7 @@
 
 A rule-based trading bot that paper-trades US stocks and crypto on **Alpaca's paper account** using real market data, with a public read-only dashboard for history, positions, and analytics.
 
-- **Bot**: `POST /api/tick` runs one cycle. GitHub Actions calls it every 15 minutes, 24/7: crypto trades every tick, stocks only during market hours.
+- **Bot**: `POST /api/tick` runs one cycle. [cron-job.org](https://cron-job.org) calls it every 15 minutes, 24/7 (GitHub Actions is a backup): crypto trades every tick, stocks only during market hours. The Sorties page shows which scheduler started each run.
 - **Dashboard**: Next.js 16 (Cache Components) on Vercel, backed by Neon Postgres.
 - **Safety**: the Alpaca client refuses any base URL other than `paper-api.alpaca.markets`.
 
@@ -53,7 +53,8 @@ Crypto trades pay Alpaca's trading fee. Fees are synced from the account's `CFEE
    npm run db:migrate
    ```
 3. **Deploy**: connect the repo with `vercel git connect`. Every push to `main` then deploys to production. Use `vercel deploy --prod` for a one-off manual deploy.
-4. **Scheduler**: push the repo to GitHub, then add the Actions secrets `TICK_URL` (`https://<your-app>/api/tick`) and `CRON_SECRET`. The 24/7 schedule uses about 2,900 Actions minutes a month: free on a public repo, over the 2,000-minute free tier on a private one. A weekly keep-alive job re-enables the workflow so GitHub's 60-day inactivity shutoff never triggers.
+4. **Scheduler**: on cron-job.org, create a job that POSTs to `https://<your-app>/api/tick` every 15 minutes with header `Authorization: Bearer <CRON_SECRET>`. Runs it starts show as `cron-job.org` in Sorties.
+5. **Backup scheduler (optional)**: push the repo to GitHub, then add the Actions secrets `TICK_URL` (`https://<your-app>/api/tick`) and `CRON_SECRET`. The 24/7 schedule uses about 2,900 Actions minutes a month: free on a public repo, over the 2,000-minute free tier on a private one. A weekly keep-alive job re-enables the workflow so GitHub's 60-day inactivity shutoff never triggers.
 
 ## Local development
 

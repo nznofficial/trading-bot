@@ -346,6 +346,7 @@ export async function getRuns() {
     durationMs: r.durationMs,
     message: r.message,
     error: r.error,
+    trigger: r.trigger,
   }));
 }
 

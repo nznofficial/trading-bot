@@ -31,6 +31,7 @@ async function Runs() {
               <th>#</th>
               <th>Started</th>
               <th>Status</th>
+              <th>Trigger</th>
               <th className="text-right!">Signals</th>
               <th className="text-right!">Orders</th>
               <th className="text-right!">Duration</th>
@@ -43,6 +44,7 @@ async function Runs() {
                 <td className="text-muted">{r.id}</td>
                 <td className="num whitespace-nowrap text-ink-2">{dateTime(r.startedAt)}</td>
                 <td className="whitespace-nowrap"><StatusBadge status={r.status} /></td>
+                <td className="hud text-[12px] whitespace-nowrap text-ink-2">{r.trigger ?? "—"}</td>
                 <td className="num text-right">{r.signals}</td>
                 <td className="num text-right">{r.ordersPlaced}</td>
                 <td className="num text-right text-ink-2">{r.durationMs === null ? "—" : `${(r.durationMs / 1000).toFixed(1)}s`}</td>

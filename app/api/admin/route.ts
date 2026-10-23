@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const body = parsed.data;
   let result: unknown = null;
   if (body.action === "tick" || body.action === "dryRun") {
-    result = await runTick({ dryRun: body.action === "dryRun" });
+    result = await runTick({ dryRun: body.action === "dryRun", trigger: "admin" });
   } else if (body.action === "pause" || body.action === "resume") {
     await setSetting("paused", body.action === "pause");
   } else if (body.action === "tune") {
@@ -38,6 +38,7 @@ export async function POST(req: Request) {
       .insert(schema.botRuns)
       .values({
         status: "config",
+        trigger: "admin",
         finishedAt: new Date(),
         durationMs: 0,
         message: changes.length ? `Retuned: ${changes.join(" · ")}` : "Retune saved (no changes)",

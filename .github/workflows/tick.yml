@@ -35,7 +35,7 @@ jobs:
           url="$TICK_URL"
           if [ "$DRY_RUN" = "1" ]; then url="$url?dryRun=1"; fi
           status=$(curl -sS -o response.json -w '%{http_code}' --max-time 90 \
-            -X POST -H "Authorization: Bearer $CRON_SECRET" "$url")
+            -X POST -H "Authorization: Bearer $CRON_SECRET" -H "X-Trigger: github" "$url")
           cat response.json; echo
           echo "HTTP $status"
           test "$status" -lt 400

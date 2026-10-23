@@ -29,6 +29,8 @@ import { unitName } from "./units";
 export type TickOptions = {
   /** Evaluate strategies even if the market is closed, but never submit or cancel orders. */
   dryRun?: boolean;
+  /** Who started the run (shown in Sorties). */
+  trigger?: string;
 };
 
 export type Decision = {
@@ -106,7 +108,10 @@ const normalizeOrder = (o: alpaca.Order): alpaca.Order => ({
 export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
   const started = Date.now();
   const d = db();
-  const [run] = await d.insert(schema.botRuns).values({}).returning({ id: schema.botRuns.id });
+  const [run] = await d
+    .insert(schema.botRuns)
+    .values({ trigger: opts.trigger ?? null })
+    .returning({ id: schema.botRuns.id });
 
   const finish = async (r: Omit<TickResult, "runId">): Promise<TickResult> => {
     await d

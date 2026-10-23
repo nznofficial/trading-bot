@@ -27,6 +27,8 @@ export const botRuns = pgTable("bot_runs", {
   durationMs: integer("duration_ms"),
   message: text("message"),
   error: text("error"),
+  /** What started the run: cron-job.org, github, admin, manual, … */
+  trigger: text("trigger"),
 });
 
 export const equitySnapshots = pgTable(

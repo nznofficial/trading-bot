@@ -41,7 +41,7 @@ Universe, parameters, and risk limits live in `lib/config.ts`. To add a strategy
    vercel env pull .env.local
    npm run db:migrate
    ```
-3. **Deploy**: `vercel deploy --prod`
+3. **Deploy**: connect the repo with `vercel git connect`. Every push to `main` then deploys to production. Use `vercel deploy --prod` for a one-off manual deploy.
 4. **Scheduler**: push the repo to GitHub, then add the Actions secrets `TICK_URL` (`https://<your-app>/api/tick`) and `CRON_SECRET`.
 
 ## Local development

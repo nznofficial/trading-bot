@@ -4,17 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS = [
-  { href: "/", label: "Summary" },
-  { href: "/positions", label: "Positions" },
-  { href: "/trades", label: "History" },
-  { href: "/strategies", label: "Strategies" },
-  { href: "/runs", label: "Activity log" },
+  { href: "/", code: "01", label: "Bridge" },
+  { href: "/positions", code: "02", label: "Engagements" },
+  { href: "/trades", code: "03", label: "Combat log" },
+  { href: "/strategies", code: "04", label: "Hangar" },
+  { href: "/runs", code: "05", label: "Sorties" },
 ] as const;
 
 export function Nav() {
   const path = usePathname();
   return (
-    <nav className="-mb-px flex gap-6 overflow-x-auto">
+    <nav className="flex gap-1.5 overflow-x-auto py-2">
       {LINKS.map((l) => {
         const active = l.href === "/" ? path === "/" : path.startsWith(l.href);
         return (
@@ -22,11 +22,16 @@ export function Nav() {
             key={l.href}
             href={l.href}
             aria-current={active ? "page" : undefined}
-            className={`border-b-[3px] py-3 text-[15px] whitespace-nowrap transition-colors ${
-              active ? "border-accent font-semibold text-ink" : "border-transparent text-ink-2 hover:text-accent"
+            className={`hud slant shrink-0 border px-4 py-1.5 text-[14px] whitespace-nowrap transition-colors ${
+              active
+                ? "border-amber bg-amber text-[#0b0a10]"
+                : "border-line-2 bg-surface/60 text-ink-2 hover:border-amber/60 hover:text-ink"
             }`}
           >
-            {l.label}
+            <span className="unslant inline-flex items-baseline gap-2">
+              <span className={`text-[11px] ${active ? "text-[#0b0a10]/70" : "text-muted"}`}>{l.code}</span>
+              {l.label}
+            </span>
           </Link>
         );
       })}

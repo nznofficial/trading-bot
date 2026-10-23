@@ -1,13 +1,14 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { unitFor } from "@/components/emblems";
 import { Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, Table } from "@/components/ui";
-import { dateTime, qty, signedPct, signedUsd, strategyLabel, usd } from "@/lib/format";
+import { dateTime, qty, signedPct, signedUsd, usd } from "@/lib/format";
 import { getPositions, parseClassFilter } from "@/lib/queries";
 
 export default function PositionsPage({ searchParams }: PageProps<"/positions">) {
   return (
     <>
-      <PageHeader title="Positions" subtitle="Open positions as of the most recent account snapshot." />
+      <PageHeader code="SYS-02 // Engagements" title="Engagements" subtitle="Open positions · as of the latest sortie" />
       <Suspense fallback={<Skeleton />}>
         <Positions searchParams={searchParams} />
       </Suspense>
@@ -33,8 +34,8 @@ async function Positions({ searchParams }: { searchParams: PageProps<"/positions
           <Table>
             <thead>
               <tr>
-                <th>Symbol</th>
-                <th>Strategy</th>
+                <th>Target</th>
+                <th>Unit</th>
                 <th className="text-right!">Qty</th>
                 <th className="text-right!">Avg entry</th>
                 <th className="text-right!">Last</th>
@@ -45,8 +46,8 @@ async function Positions({ searchParams }: { searchParams: PageProps<"/positions
             <tbody>
               {positions.map((p) => (
                 <tr key={p.symbol}>
-                  <td className="font-semibold text-accent">{p.symbol}</td>
-                  <td className="text-ink-2">{strategyLabel(p.strategy)}</td>
+                  <td className="num font-medium text-ink">{p.symbol}</td>
+                  <td className="hud text-[12px] whitespace-nowrap text-ink-2">{unitFor(p.strategy)?.code ?? "Manual"}</td>
                   <td className="num text-right">{qty(p.qty)}</td>
                   <td className="num text-right">{usd(p.avgEntry)}</td>
                   <td className="num text-right">{usd(p.currentPrice)}</td>

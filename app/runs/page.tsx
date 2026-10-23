@@ -8,7 +8,7 @@ import { getRuns } from "@/lib/queries";
 export default function RunsPage() {
   return (
     <>
-      <PageHeader title="Activity Log" subtitle="Each scheduled run of the trading bot, every 15 minutes around the clock." />
+      <PageHeader code="SYS-05 // Sorties" title="Sorties" subtitle="Every scheduled launch · 15-minute cycle, around the clock" />
       <div className="grid grid-cols-1 gap-4">
         <Suspense fallback={<Skeleton />}>
           <Runs />
@@ -23,7 +23,7 @@ async function Runs() {
   await connection(); // DB-backed: render at request time, never at build
   const runs = await getRuns();
   return (
-    <Card title="Run log" subtitle="Latest 150">
+    <Card title="Sortie record" subtitle="Latest 150" code="OPS-01">
       {runs.length ? (
         <Table>
           <thead>

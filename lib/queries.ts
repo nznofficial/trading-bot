@@ -145,6 +145,14 @@ export async function getOverview() {
 
   const unrealized = positions.reduce((a, p) => a + p.unrealizedPl, 0);
   const stats = tradeStats(trades);
+
+  // Consecutive winning trades, counted back from the most recent exit.
+  const byExit = trades.slice().sort((a, b) => a.exitTs.getTime() - b.exitTs.getTime());
+  let streak = 0;
+  for (let i = byExit.length - 1; i >= 0 && byExit[i].pnl > 0; i--) streak++;
+  // Headline-worthy win: a trade closed in the last 24h that returned at least 2%.
+  const dayAgo = (latest?.ts.getTime() ?? 0) - 86_400_000;
+  const bigWin = byExit.filter((t) => t.exitTs.getTime() >= dayAgo && t.returnPct >= 0.02).at(-1) ?? null;
   const totalFees = fees.reduce((a, f) => a + f.amount, 0);
 
   return {
@@ -188,6 +196,8 @@ export async function getOverview() {
     performance,
     recentTrades: trades.slice(-5).reverse().map(serializeTrade),
     positions,
+    streak,
+    bigWin: bigWin ? serializeTrade(bigWin) : null,
   };
 }
 

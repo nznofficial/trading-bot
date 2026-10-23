@@ -1,14 +1,15 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { unitFor } from "@/components/emblems";
 import { SymbolPnlChart } from "@/components/charts";
 import { ActionBadge, Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, StatStrip, Table } from "@/components/ui";
-import { dateTime, duration, pct, qty, ratio, signedPct, signedUsd, strategyLabel, usd } from "@/lib/format";
+import { dateTime, duration, pct, qty, ratio, signedPct, signedUsd, usd } from "@/lib/format";
 import { getTrades, parseClassFilter } from "@/lib/queries";
 
 export default function TradesPage({ searchParams }: PageProps<"/trades">) {
   return (
     <>
-      <PageHeader title="Transaction History" subtitle="Closed trades, matched first-in first-out, and every order the bot placed." />
+      <PageHeader code="SYS-03 // Combat log" title="Combat Log" subtitle="Closed engagements (first-in first-out) and every order fired" />
       <Suspense fallback={<Skeleton />}>
         <Trades searchParams={searchParams} />
       </Suspense>
@@ -47,20 +48,20 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
       />
 
       {bySymbol.length > 0 && (
-        <Card title="Realized P&L by symbol">
+        <Card title="Damage dealt by target" subtitle="Realized P&L per symbol" code="LOG-01">
           <SymbolPnlChart data={bySymbol} />
         </Card>
       )}
 
-      <Card title="Closed trades">
+      <Card title="Closed engagements" code="LOG-02">
         {trades.length ? (
           <Table>
             <thead>
               <tr>
                 <th>Opened</th>
                 <th>Closed</th>
-                <th>Symbol</th>
-                <th>Strategy</th>
+                <th>Target</th>
+                <th>Unit</th>
                 <th className="text-right!">Qty</th>
                 <th className="text-right!">Entry</th>
                 <th className="text-right!">Exit</th>
@@ -73,8 +74,8 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
                 <tr key={i}>
                   <td className="num whitespace-nowrap text-ink-2">{dateTime(t.entryTs)}</td>
                   <td className="num whitespace-nowrap text-ink-2">{dateTime(t.exitTs)}</td>
-                  <td className="font-semibold text-accent">{t.symbol}</td>
-                  <td className="text-ink-2">{strategyLabel(t.strategy)}</td>
+                  <td className="num font-medium text-ink">{t.symbol}</td>
+                  <td className="hud text-[12px] whitespace-nowrap text-ink-2">{unitFor(t.strategy)?.code ?? "Manual"}</td>
                   <td className="num text-right">{qty(t.qty)}</td>
                   <td className="num text-right">{usd(t.entryPrice)}</td>
                   <td className="num text-right">{usd(t.exitPrice)}</td>
@@ -93,16 +94,16 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
         )}
       </Card>
 
-      <Card title="Orders" subtitle="Latest 200, including protective stop legs">
+      <Card title="Orders fired" subtitle="Latest 200, including protective stops" code="LOG-03">
         {orders.length ? (
           <Table>
             <thead>
               <tr>
                 <th>Submitted</th>
-                <th>Symbol</th>
+                <th>Target</th>
                 <th>Side</th>
                 <th>Type</th>
-                <th>Strategy</th>
+                <th>Unit</th>
                 <th className="text-right!">Qty</th>
                 <th className="text-right!">Fill</th>
                 <th>Status</th>
@@ -112,7 +113,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
               {orders.map((o) => (
                 <tr key={o.id}>
                   <td className="num whitespace-nowrap text-ink-2">{dateTime(o.submittedAt)}</td>
-                  <td className="font-semibold text-accent">{o.symbol}</td>
+                  <td className="num font-medium text-ink">{o.symbol}</td>
                   <td>
                     <ActionBadge action={o.side} />
                   </td>
@@ -121,7 +122,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
                     {o.type}
                     {o.stopPrice ? ` @ ${usd(o.stopPrice)}` : ""}
                   </td>
-                  <td className="text-ink-2">{strategyLabel(o.strategy)}</td>
+                  <td className="hud text-[12px] whitespace-nowrap text-ink-2">{unitFor(o.strategy)?.code ?? "Manual"}</td>
                   <td className="num text-right">{o.qty === null ? "—" : qty(o.qty)}</td>
                   <td className="num text-right">{o.filledAvgPrice ? usd(o.filledAvgPrice) : "—"}</td>
                   <td className="text-ink-2">{o.status.replaceAll("_", " ")}</td>

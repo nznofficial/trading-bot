@@ -6,11 +6,11 @@ import { useState, useTransition } from "react";
 type Action = "tick" | "dryRun" | "pause" | "resume" | "liquidate";
 
 const BUTTONS: { action: Action; label: string; danger?: boolean }[] = [
-  { action: "dryRun", label: "Dry run" },
-  { action: "tick", label: "Run tick now" },
-  { action: "pause", label: "Pause" },
+  { action: "dryRun", label: "Simulate sortie (dry run)" },
+  { action: "tick", label: "Launch sortie now" },
+  { action: "pause", label: "Hold units (pause)" },
   { action: "resume", label: "Resume" },
-  { action: "liquidate", label: "Liquidate all", danger: true },
+  { action: "liquidate", label: "Eject (liquidate all)", danger: true },
 ];
 
 /** The secret is held in component state only; it is never stored. */
@@ -21,7 +21,7 @@ export function AdminPanel() {
   const router = useRouter();
 
   function run(action: Action) {
-    if (action === "liquidate" && !confirm("Close every position and pause the bot?")) return;
+    if (action === "liquidate" && !confirm("Eject: close every position and pause the bot?")) return;
     startTransition(async () => {
       setOutput("…");
       const res = await fetch("/api/admin", {
@@ -35,41 +35,46 @@ export function AdminPanel() {
   }
 
   return (
-    <details className="panel group">
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-[13px] font-semibold text-ink">
-        <span aria-hidden className="text-muted transition-transform group-open:rotate-90">›</span>
-        Admin
-        <span className="text-xs font-normal text-muted">requires ADMIN_SECRET</span>
-      </summary>
-      <div className="grid grid-cols-1 gap-3 border-t border-line p-5">
-        <input
-          type="password"
-          value={secret}
-          onChange={(e) => setSecret(e.target.value)}
-          placeholder="ADMIN_SECRET"
-          autoComplete="off"
-          className="num w-full max-w-sm rounded-md border border-line-2 bg-page px-3 py-2 text-[13px] text-ink placeholder:text-muted"
-        />
-        <div className="flex flex-wrap gap-2">
-          {BUTTONS.map((b) => (
-            <button
-              key={b.action}
-              onClick={() => run(b.action)}
-              disabled={!secret || pending}
-              className={`rounded-md border px-3 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-40 ${
-                b.danger
-                  ? "border-loss/40 text-loss hover:bg-loss/10"
-                  : "border-line-2 bg-surface-2 text-ink hover:border-accent/50"
-              }`}
-            >
-              {b.label}
-            </button>
-          ))}
+    <div className="frame frame-amber">
+      <details className="frame-body group">
+        <summary className="hud flex cursor-pointer list-none items-center gap-3 px-5 py-3 text-[14px] text-amber">
+          <span aria-hidden className="hazard inline-block h-3 w-6" />
+          Command override
+          <span className="text-[11px] text-muted">requires ADMIN_SECRET</span>
+          <span aria-hidden className="ml-auto text-muted transition-transform group-open:rotate-90">
+            ▸
+          </span>
+        </summary>
+        <div className="grid grid-cols-1 gap-3 border-t border-line p-5">
+          <input
+            type="password"
+            value={secret}
+            onChange={(e) => setSecret(e.target.value)}
+            placeholder="ADMIN_SECRET"
+            autoComplete="off"
+            className="num w-full max-w-sm border border-line-2 bg-page px-3 py-2 text-[13px] text-ink placeholder:text-muted focus:border-amber"
+          />
+          <div className="flex flex-wrap gap-2">
+            {BUTTONS.map((b) => (
+              <button
+                key={b.action}
+                onClick={() => run(b.action)}
+                disabled={!secret || pending}
+                className={`hud border px-3.5 py-1.5 text-[13px] transition-colors disabled:opacity-40 ${
+                  b.danger
+                    ? "border-alert/60 text-alert hover:bg-alert/15"
+                    : "border-line-2 bg-surface-2 text-ink hover:border-amber hover:text-amber"
+                }`}
+              >
+                {b.label}
+              </button>
+            ))}
+          </div>
+          {output && (
+            <pre className="num max-h-80 overflow-auto border border-line bg-page p-3 text-xs text-ink-2">{output}</pre>
+          )}
         </div>
-        {output && (
-          <pre className="num max-h-80 overflow-auto rounded-md border border-line bg-page p-3 text-xs text-ink-2">{output}</pre>
-        )}
-      </div>
-    </details>
+      </details>
+    </div>
   );
 }

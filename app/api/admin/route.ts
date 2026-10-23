@@ -5,11 +5,12 @@ import { hasBearer, unauthorized } from "@/lib/auth";
 import { db, schema } from "@/lib/db";
 import { runTick, setSetting } from "@/lib/engine";
 import { describeChanges, getLiveParams, LiveParams, saveLiveParams } from "@/lib/live-params";
+import { COLORS, notify } from "@/lib/notify";
 
 export const maxDuration = 60;
 
 const Body = z.discriminatedUnion("action", [
-  z.object({ action: z.enum(["tick", "dryRun", "pause", "resume", "liquidate"]) }),
+  z.object({ action: z.enum(["tick", "dryRun", "pause", "resume", "liquidate", "testAlert"]) }),
   z.object({ action: z.literal("tune"), params: LiveParams }),
 ]);
 
@@ -29,6 +30,18 @@ export async function POST(req: Request) {
     result = await runTick({ dryRun: body.action === "dryRun", trigger: "admin" });
   } else if (body.action === "pause" || body.action === "resume") {
     await setSetting("paused", body.action === "pause");
+  } else if (body.action === "testAlert") {
+    if (!process.env.DISCORD_WEBHOOK_URL) {
+      return Response.json({ error: "DISCORD_WEBHOOK_URL is not set" }, { status: 400 });
+    }
+    await notify([
+      {
+        title: "📡 Incoming transmission · comms check",
+        description: "Discord alerts are online. You'll get errors, fills, big wins and a daily debrief at 4:05 PM ET.",
+        color: COLORS.debrief,
+      },
+    ]);
+    result = { sent: true };
   } else if (body.action === "tune") {
     const before = await getLiveParams();
     const changes = describeChanges(before, body.params);

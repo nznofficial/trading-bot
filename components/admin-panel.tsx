@@ -3,13 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-type Action = "tick" | "dryRun" | "pause" | "resume" | "liquidate";
+type Action = "tick" | "dryRun" | "pause" | "resume" | "liquidate" | "testAlert";
 
 const BUTTONS: { action: Action; label: string; danger?: boolean }[] = [
   { action: "dryRun", label: "Simulate sortie (dry run)" },
   { action: "tick", label: "Launch sortie now" },
   { action: "pause", label: "Hold units (pause)" },
   { action: "resume", label: "Resume" },
+  { action: "testAlert", label: "Test Discord alert" },
   { action: "liquidate", label: "Eject (liquidate all)", danger: true },
 ];
 

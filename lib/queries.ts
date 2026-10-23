@@ -12,7 +12,7 @@ import {
   tradeStats,
   type RoundTrip,
 } from "./analytics";
-import { assetClassOf, BENCHMARKS, UNIVERSE, type AssetClass } from "./config";
+import { assetClassOf, BENCHMARKS, CRYPTO_FEES, UNIVERSE, type AssetClass } from "./config";
 import { db, schema } from "./db";
 import type { Quote } from "./quotes";
 import { STRATEGIES } from "./strategies";
@@ -45,8 +45,13 @@ async function loadTrades() {
     d.select().from(schema.fees),
   ]);
   const strategyByOrder = new Map(orderRows.filter((o) => o.strategy).map((o) => [o.id, o.strategy!]));
-  const { trades, openLots } = matchRoundTrips(aggregateFills(fillRows, strategyByOrder));
-  const fees = feeRows.map((f) => ({ symbol: f.symbol, assetClass: f.assetClass as AssetClass, amount: f.amountUsd }));
+  const { trades, openLots } = matchRoundTrips(aggregateFills(fillRows, strategyByOrder), CRYPTO_FEES);
+  // Fees: those attributed to closed trades (crypto fee model) plus any CFEE activities Alpaca reports
+  // (live accounts; paper accounts report none, so nothing is double counted there).
+  const fees = [
+    ...trades.filter((t) => t.fees > 0).map((t) => ({ symbol: t.symbol, assetClass: t.assetClass, amount: t.fees })),
+    ...feeRows.map((f) => ({ symbol: f.symbol, assetClass: f.assetClass as AssetClass, amount: f.amountUsd })),
+  ];
   return { trades, openLots, fees };
 }
 

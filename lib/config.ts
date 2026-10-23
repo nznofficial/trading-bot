@@ -88,6 +88,13 @@ export const CRYPTO_RISK = {
   minNotional: 10,
 };
 
+/**
+ * Crypto fee model for trade accounting. Alpaca takes ~0.25% (taker, lowest volume tier) on each side:
+ * in-kind on buys (detected as a dust remainder) and in USD on sells (not reported by paper accounts,
+ * so applied at this rate). Verified against a live paper round trip on 2026-10-23.
+ */
+export const CRYPTO_FEES = { cryptoSellFeeRate: 0.0025, dustFraction: 0.01 };
+
 export const ALPACA_PAPER_URL = "https://paper-api.alpaca.markets";
 export const ALPACA_DATA_URL = "https://data.alpaca.markets";
 export const DATA_FEED = "iex";

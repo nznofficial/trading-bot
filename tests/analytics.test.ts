@@ -11,6 +11,7 @@ import {
   tradeStats,
   tradingDay,
 } from "@/lib/analytics";
+import { CRYPTO_FEES } from "@/lib/config";
 
 const t = (s: string) => new Date(s);
 
@@ -114,5 +115,35 @@ describe("downsample", () => {
 
   it("leaves short series alone", () => {
     expect(downsample(pts.slice(-50), now)).toHaveLength(50);
+  });
+});
+
+describe("crypto fee model (matches a live paper round trip, 2026-10-23)", () => {
+  const fills = [
+    // Buy for ~$10 filled in two pieces; Alpaca took a 0.25% fee in BTC, so we only received 0.000122156.
+    { orderId: "buy", symbol: "BTC/USD", side: "buy", qty: 0.000122363, price: 81677.6, ts: t("2026-10-23T06:55:00Z") },
+    { orderId: "buy", symbol: "BTC/USD", side: "buy", qty: 1e-7, price: 81666, ts: t("2026-10-23T06:55:01Z") },
+    { orderId: "sell", symbol: "BTC/USD", side: "sell", qty: 0.000122156, price: 81648.12, ts: t("2026-10-23T07:10:00Z") },
+  ];
+
+  it("folds the in-kind buy fee into the trade and charges the USD sell fee", () => {
+    const { trades, openLots } = matchRoundTrips(aggregateFills(fills, new Map()), CRYPTO_FEES);
+    expect(openLots).toHaveLength(0); // no phantom sliver left open
+    expect(trades).toHaveLength(1);
+    const tr = trades[0];
+    expect(tr.fees).toBeCloseTo(0.0499, 3); // ≈ $0.025 in-kind + ≈ $0.025 USD
+    // Cash actually fell $0.06 (Alpaca rounds to cents); the model lands within a cent.
+    expect(tr.pnl).toBeCloseTo(-0.0535, 3);
+    expect(tr.pnl).toBeGreaterThan(-0.065);
+  });
+
+  it("charges nothing on stocks and leaves real remainders open", () => {
+    const stock = [
+      { orderId: "b", symbol: "AAPL", side: "buy", qty: 10, price: 100, ts: t("2026-10-23T14:00:00Z") },
+      { orderId: "s", symbol: "AAPL", side: "sell", qty: 9.95, price: 110, ts: t("2026-10-23T15:00:00Z") },
+    ];
+    const { trades, openLots } = matchRoundTrips(aggregateFills(stock, new Map()), CRYPTO_FEES);
+    expect(trades[0]).toMatchObject({ fees: 0 });
+    expect(openLots[0].qty).toBeCloseTo(0.05);
   });
 });

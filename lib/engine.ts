@@ -8,6 +8,7 @@ import {
   BAR_TIMEFRAME,
   BENCHMARKS,
   CRYPTO_BAR_LOOKBACK_DAYS,
+  CRYPTO_FEES,
   CRYPTO_SYMBOLS,
   normalizeSymbol,
   PORTFOLIO_RISK,
@@ -714,7 +715,7 @@ async function alertFills(newFills: FillRow[]) {
       d.select({ id: schema.orders.id, strategy: schema.orders.strategy }).from(schema.orders),
     ]);
     const strat = new Map(allOrders.filter((o) => o.strategy).map((o) => [o.id, o.strategy!]));
-    const { trades } = matchRoundTrips(aggregateFills(allFills, strat));
+    const { trades } = matchRoundTrips(aggregateFills(allFills, strat), CRYPTO_FEES);
     const byExit = new Map<string, { symbol: string; strategy: string; pnl: number; cost: number }>();
     for (const t of trades.filter((t) => sellIds.has(t.exitOrderId))) {
       const agg = byExit.get(t.exitOrderId) ?? { symbol: t.symbol, strategy: t.strategy, pnl: 0, cost: 0 };
@@ -765,7 +766,7 @@ async function maybeSendDebrief(account: alpaca.Account, now: Date) {
     alpaca.getPositions(),
   ]);
   const strat = new Map(allOrders.filter((o) => o.strategy).map((o) => [o.id, o.strategy!]));
-  const { trades } = matchRoundTrips(aggregateFills(allFills, strat));
+  const { trades } = matchRoundTrips(aggregateFills(allFills, strat), CRYPTO_FEES);
   const closedToday = trades.filter((t) => tradingDay(t.exitTs) === today);
   const realized = closedToday.reduce((a, t) => a + t.pnl, 0);
   const best = closedToday.reduce<(typeof closedToday)[number] | null>((b, t) => (!b || t.pnl > b.pnl ? t : b), null);

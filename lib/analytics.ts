@@ -32,6 +32,8 @@ export type RoundTrip = {
   entryPrice: number;
   exitPrice: number;
   pnl: number;
+  /** Fees attributed to this round trip (crypto only); already subtracted from pnl. */
+  fees: number;
   returnPct: number;
   holdMs: number;
 };
@@ -41,12 +43,16 @@ export type OpenLot = {
   assetClass: AssetClass;
   orderId: string;
   strategy: string;
+  /** Quantity still open. */
   qty: number;
+  /** Quantity originally bought (for fee-dust detection). */
+  initialQty: number;
   price: number;
   ts: Date;
 };
 
-const EPS = 1e-9;
+/** Below Alpaca's 1e-9 crypto increment, so real quantities never vanish as rounding noise. */
+const EPS = 1e-12;
 
 /** Collapse partial fills into one execution per order (VWAP price, last fill time). */
 export function aggregateFills(rows: FillRow[], strategyByOrder: Map<string, string>): Execution[] {
@@ -78,7 +84,24 @@ export function aggregateFills(rows: FillRow[], strategyByOrder: Map<string, str
 }
 
 /** FIFO-match sells against earlier buys. The entry lot's strategy owns the round trip. */
-export function matchRoundTrips(execs: Execution[]): { trades: RoundTrip[]; openLots: OpenLot[] } {
+export type FeeModel = {
+  /** Fee charged in USD on crypto sells, as a fraction of proceeds (not reported by paper accounts). */
+  cryptoSellFeeRate: number;
+  /** A crypto lot remainder this small (fraction of the lot) after a sell is the buy fee taken in-kind. */
+  dustFraction: number;
+};
+
+export const NO_FEES: FeeModel = { cryptoSellFeeRate: 0, dustFraction: 0 };
+
+/**
+ * FIFO-match sells against earlier buys. The entry lot's strategy owns the round trip.
+ *
+ * Crypto fees: Alpaca takes the buy fee in-kind (you receive less coin than the fill says) and the
+ * sell fee in USD. So when a sell leaves a fee-sized sliver of a lot behind, that sliver is folded
+ * into the trade's cost, and the sell fee is charged at `cryptoSellFeeRate`. Both land in `fees`
+ * and reduce `pnl`.
+ */
+export function matchRoundTrips(execs: Execution[], fees: FeeModel = NO_FEES): { trades: RoundTrip[]; openLots: OpenLot[] } {
   const lots = new Map<string, OpenLot[]>();
   const trades: RoundTrip[] = [];
   for (const e of execs) {
@@ -91,16 +114,29 @@ export function matchRoundTrips(execs: Execution[]): { trades: RoundTrip[]; open
         orderId: e.orderId,
         strategy: e.strategy,
         qty: e.qty,
+        initialQty: e.qty,
         price: e.price,
         ts: e.ts,
       });
       continue;
     }
+    const crypto = e.assetClass === "crypto";
     let remaining = e.qty;
     while (remaining > EPS && queue.length) {
       const lot = queue[0];
       const q = Math.min(lot.qty, remaining);
-      const pnl = (e.price - lot.price) * q;
+      lot.qty -= q;
+      remaining -= q;
+      // In-kind buy fee: the sliver this sell couldn't close because it was never received.
+      let dust = 0;
+      if (crypto && lot.qty > EPS && remaining <= EPS && lot.qty <= lot.initialQty * fees.dustFraction) {
+        dust = lot.qty;
+        lot.qty = 0;
+      }
+      const cost = lot.price * (q + dust);
+      const sellFee = crypto ? e.price * q * fees.cryptoSellFeeRate : 0;
+      const tradeFees = lot.price * dust + sellFee;
+      const pnl = e.price * q - cost - sellFee;
       trades.push({
         symbol: e.symbol,
         assetClass: e.assetClass,
@@ -113,11 +149,10 @@ export function matchRoundTrips(execs: Execution[]): { trades: RoundTrip[]; open
         entryPrice: lot.price,
         exitPrice: e.price,
         pnl,
-        returnPct: (e.price - lot.price) / lot.price,
+        fees: tradeFees,
+        returnPct: cost > 0 ? pnl / cost : 0,
         holdMs: e.ts.getTime() - lot.ts.getTime(),
       });
-      lot.qty -= q;
-      remaining -= q;
       if (lot.qty <= EPS) queue.shift();
     }
   }

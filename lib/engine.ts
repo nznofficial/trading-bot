@@ -363,6 +363,11 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
 
     if (signalRows.length) await d.insert(schema.signals).values(signalRows);
     if (submitted.length) await upsertOrders(submitted);
+    // Instant fill alerts: wait for this run's market orders to finish filling, then sync + alert now
+    // instead of on the next run. Fills inserted here are skipped next run, so nothing alerts twice.
+    if (submitted.length && !opts.dryRun) {
+      await settleAndAlert(submitted).catch((e) => console.warn("instant fill alert failed", e));
+    }
 
     const orderErrors = [
       ...signalRows.filter((r) => r.note?.startsWith("order error")).map((r) => `${r.symbol}: ${r.note}`),
@@ -743,6 +748,22 @@ async function stopOutCooldowns(now: Date) {
     if (t > now && (!until.has(r.symbol) || t > until.get(r.symbol)!)) until.set(r.symbol, t);
   }
   return until;
+}
+
+/**
+ * Poll this run's market orders until they're done filling (max ~10s; partial fills complete within
+ * seconds in liquid markets), then sync fills and alert. Stop/limit legs rest and are not waited on.
+ */
+async function settleAndAlert(submitted: alpaca.Order[]) {
+  const pending = submitted.filter((o) => o.type === "market").map((o) => o.id);
+  const done = new Set(["filled", "canceled", "expired", "rejected"]);
+  for (let i = 0; i < 20 && pending.length; i++) {
+    const statuses = await Promise.all(pending.map((id) => alpaca.getOrder(id)));
+    for (const o of statuses) if (done.has(o.status)) pending.splice(pending.indexOf(o.id), 1);
+    if (pending.length) await sleep(500);
+  }
+  await syncOrders(); // record final fill prices/statuses before alerting
+  await alertFills(await syncFills());
 }
 
 /** One embed per newly filled order, plus a "target neutralized" embed for exits up ≥ 2%. */

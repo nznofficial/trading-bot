@@ -7,7 +7,7 @@ import { getPositions, parseClassFilter } from "@/lib/queries";
 export default function PositionsPage({ searchParams }: PageProps<"/positions">) {
   return (
     <>
-      <PageHeader title="Positions" subtitle="Open positions as of the latest bot tick." />
+      <PageHeader kicker="The Book" title="Positions" subtitle="Open positions as of the latest bot tick." />
       <Suspense fallback={<Skeleton />}>
         <Positions searchParams={searchParams} />
       </Suspense>
@@ -23,7 +23,7 @@ async function Positions({ searchParams }: { searchParams: PageProps<"/positions
   const upl = positions.reduce((a, p) => a + p.unrealizedPl, 0);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <ClassTabs path="/positions" active={filter} />
       <Card
         title={`${positions.length} open position${positions.length === 1 ? "" : "s"}`}
@@ -45,13 +45,13 @@ async function Positions({ searchParams }: { searchParams: PageProps<"/positions
             <tbody>
               {positions.map((p) => (
                 <tr key={p.symbol}>
-                  <td className="font-medium">{p.symbol}</td>
+                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{p.symbol}</td>
                   <td className="text-ink-2">{strategyLabel(p.strategy)}</td>
-                  <td className="text-right">{qty(p.qty)}</td>
-                  <td className="text-right">{usd(p.avgEntry)}</td>
-                  <td className="text-right">{usd(p.currentPrice)}</td>
-                  <td className="text-right">{usd(p.marketValue)}</td>
-                  <td className="text-right">
+                  <td className="num text-right">{qty(p.qty)}</td>
+                  <td className="num text-right">{usd(p.avgEntry)}</td>
+                  <td className="num text-right">{usd(p.currentPrice)}</td>
+                  <td className="num text-right">{usd(p.marketValue)}</td>
+                  <td className="num text-right">
                     <Delta value={p.unrealizedPl}>
                       {signedUsd(p.unrealizedPl)} <span className="text-xs">({signedPct(p.unrealizedPlpc)})</span>
                     </Delta>
@@ -60,8 +60,8 @@ async function Positions({ searchParams }: { searchParams: PageProps<"/positions
               ))}
               <tr className="font-medium">
                 <td colSpan={5}>Total</td>
-                <td className="text-right">{usd(total)}</td>
-                <td className="text-right">
+                <td className="num text-right">{usd(total)}</td>
+                <td className="num text-right">
                   <Delta value={upl}>{signedUsd(upl)}</Delta>
                 </td>
               </tr>

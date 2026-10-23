@@ -35,16 +35,20 @@ export function AdminPanel() {
   }
 
   return (
-    <details className="rounded-xl border border-line bg-surface p-4">
-      <summary className="cursor-pointer text-sm font-medium">Admin</summary>
-      <div className="mt-3 grid gap-3">
+    <details className="panel group p-5">
+      <summary className="flex cursor-pointer list-none items-center gap-2 font-label text-[11px] tracking-[0.18em] text-ink uppercase">
+        <span aria-hidden className="text-neon transition-transform group-open:rotate-90">▸</span>
+        Admin console
+        <span className="label ml-2 text-[9px]!">Requires ADMIN_SECRET</span>
+      </summary>
+      <div className="mt-3 grid grid-cols-1 gap-3">
         <input
           type="password"
           value={secret}
           onChange={(e) => setSecret(e.target.value)}
           placeholder="ADMIN_SECRET"
           autoComplete="off"
-          className="w-full max-w-sm rounded-md border border-line bg-page px-3 py-1.5 text-sm"
+          className="num w-full max-w-sm rounded-sm border border-line bg-[#05070a] px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-neon/60"
         />
         <div className="flex flex-wrap gap-2">
           {BUTTONS.map((b) => (
@@ -52,8 +56,10 @@ export function AdminPanel() {
               key={b.action}
               onClick={() => run(b.action)}
               disabled={!secret || pending}
-              className={`rounded-md border px-3 py-1.5 text-sm disabled:opacity-40 ${
-                b.danger ? "border-down/50 text-down" : "border-line text-ink hover:bg-surface-2"
+              className={`rounded-sm border px-3.5 py-2 font-label text-[10px] tracking-[0.16em] uppercase transition-colors disabled:opacity-35 ${
+                b.danger
+                  ? "border-loss/50 text-loss hover:bg-loss/10"
+                  : "border-line text-ink hover:border-neon/50 hover:bg-neon/5 hover:text-neon"
               }`}
             >
               {b.label}
@@ -61,7 +67,7 @@ export function AdminPanel() {
           ))}
         </div>
         {output && (
-          <pre className="max-h-80 overflow-auto rounded-md bg-surface-2 p-3 text-xs text-ink-2">{output}</pre>
+          <pre className="num max-h-80 overflow-auto rounded-sm border border-line bg-[#05070a] p-3 text-xs text-ink-2">{output}</pre>
         )}
       </div>
     </details>

@@ -13,6 +13,7 @@ import {
 } from "./analytics";
 import { assetClassOf, BENCHMARKS, UNIVERSE, type AssetClass } from "./config";
 import { db, schema } from "./db";
+import type { Quote } from "./quotes";
 import { STRATEGIES } from "./strategies";
 
 export type ClassFilter = "all" | AssetClass;
@@ -318,4 +319,32 @@ export async function getRuns() {
     message: r.message,
     error: r.error,
   }));
+}
+
+export type ClockState = { isOpen: boolean; nextOpen: string; nextClose: string; asOf: string };
+
+/** Header strip: ticker quotes, market clock and last run — all written by the tick, never fetched live. */
+export async function getMarketStrip() {
+  "use cache";
+  botCache();
+  const d = db();
+  const [settingsRows, [lastRun]] = await Promise.all([
+    d.select().from(schema.settings),
+    d
+      .select({ startedAt: schema.botRuns.startedAt, status: schema.botRuns.status })
+      .from(schema.botRuns)
+      .orderBy(desc(schema.botRuns.id))
+      .limit(1),
+  ]);
+  const get = <T>(key: string) => settingsRows.find((r) => r.key === key)?.value as T | undefined;
+  const quotes = get<Record<string, Quote>>("quotes") ?? {};
+  return {
+    // Universe order: stocks first, then crypto.
+    quotes: Object.keys(UNIVERSE)
+      .map((s) => quotes[s])
+      .filter((q): q is Quote => !!q),
+    clock: get<ClockState>("clock") ?? null,
+    paused: get<boolean>("paused") === true,
+    lastRun: lastRun ? { startedAt: lastRun.startedAt.getTime(), status: lastRun.status } : null,
+  };
 }

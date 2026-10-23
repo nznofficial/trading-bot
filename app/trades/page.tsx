@@ -8,7 +8,7 @@ import { getTrades, parseClassFilter } from "@/lib/queries";
 export default function TradesPage({ searchParams }: PageProps<"/trades">) {
   return (
     <>
-      <PageHeader title="Trades" subtitle="Closed round trips (FIFO-matched fills) and the raw order log." />
+      <PageHeader kicker="The Ledger" title="Trades" subtitle="Closed round trips (FIFO-matched fills) and the raw order log." />
       <Suspense fallback={<Skeleton />}>
         <Trades searchParams={searchParams} />
       </Suspense>
@@ -22,9 +22,9 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
   const { stats: s, fees, trades, bySymbol, orders } = await getTrades(filter);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <ClassTabs path="/trades" active={filter} />
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="stagger grid grid-cols-2 gap-4 md:grid-cols-4">
         <Stat label="Closed trades" value={<span className="num">{s.count}</span>} sub={`avg hold ${duration(s.avgHoldMs)}`} />
         <Stat label="Win rate" value={<span className="num">{s.winRate === null ? "—" : pct(s.winRate, 0)}</span>} sub={`${s.wins}W / ${s.losses}L`} />
         <Stat
@@ -66,19 +66,19 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
             <tbody>
               {trades.map((t, i) => (
                 <tr key={i}>
-                  <td className="text-ink-2">{dateTime(t.entryTs)}</td>
-                  <td className="text-ink-2">{dateTime(t.exitTs)}</td>
-                  <td className="font-medium">{t.symbol}</td>
+                  <td className="num text-xs text-ink-2">{dateTime(t.entryTs)}</td>
+                  <td className="num text-xs text-ink-2">{dateTime(t.exitTs)}</td>
+                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{t.symbol}</td>
                   <td className="text-ink-2">{strategyLabel(t.strategy)}</td>
-                  <td className="text-right">{qty(t.qty)}</td>
-                  <td className="text-right">{usd(t.entryPrice)}</td>
-                  <td className="text-right">{usd(t.exitPrice)}</td>
+                  <td className="num text-right">{qty(t.qty)}</td>
+                  <td className="num text-right">{usd(t.entryPrice)}</td>
+                  <td className="num text-right">{usd(t.exitPrice)}</td>
                   <td className="text-right whitespace-nowrap">
                     <Delta value={t.pnl}>
                       {signedUsd(t.pnl)} <span className="text-xs">({signedPct(t.returnPct)})</span>
                     </Delta>
                   </td>
-                  <td className="text-right text-ink-2">{duration(t.holdMs)}</td>
+                  <td className="num text-right text-ink-2">{duration(t.holdMs)}</td>
                 </tr>
               ))}
             </tbody>
@@ -106,8 +106,8 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
             <tbody>
               {orders.map((o) => (
                 <tr key={o.id}>
-                  <td className="text-ink-2">{dateTime(o.submittedAt)}</td>
-                  <td className="font-medium">{o.symbol}</td>
+                  <td className="num text-xs text-ink-2">{dateTime(o.submittedAt)}</td>
+                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{o.symbol}</td>
                   <td>
                     <ActionBadge action={o.side} />
                   </td>
@@ -117,8 +117,8 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
                     {o.stopPrice ? ` @ ${usd(o.stopPrice)}` : ""}
                   </td>
                   <td className="text-ink-2">{strategyLabel(o.strategy)}</td>
-                  <td className="text-right">{o.qty === null ? "—" : qty(o.qty)}</td>
-                  <td className="text-right">{o.filledAvgPrice ? usd(o.filledAvgPrice) : "—"}</td>
+                  <td className="num text-right">{o.qty === null ? "—" : qty(o.qty)}</td>
+                  <td className="num text-right">{o.filledAvgPrice ? usd(o.filledAvgPrice) : "—"}</td>
                   <td className="text-ink-2">{o.status.replaceAll("_", " ")}</td>
                 </tr>
               ))}

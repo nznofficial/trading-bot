@@ -15,6 +15,7 @@ import {
 } from "./config";
 import { db, schema } from "./db";
 import { dateTime } from "./format";
+import { computeQuote, type Quote } from "./quotes";
 import { createRiskGate, planCryptoStop } from "./risk";
 import { STRATEGIES, strategyFor, type Signal } from "./strategies";
 
@@ -150,6 +151,8 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     const openOrders = rawOpenOrders.map(normalizeOrder);
 
     await snapshot(run.id, account, positions, clock.is_open);
+    // The dashboard's session bar counts down from these; it never calls Alpaca itself.
+    await setSetting("clock", { isOpen: clock.is_open, nextOpen: clock.next_open, nextClose: clock.next_close, asOf: clock.timestamp });
 
     if (paused) return finish({ status: "paused", marketOpen: clock.is_open, signals: 0, ordersPlaced: 0, message: "bot is paused" });
 
@@ -169,6 +172,7 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     ]);
     const allBars: Record<string, alpaca.Bar[]> = { ...stockBars, ...cryptoBars };
     const barMs = BAR_MINUTES * 60_000;
+    await updateQuotes(symbols, allBars, now).catch((e) => console.warn("quote update failed", e));
 
     // --- Signals + execution -----------------------------------------------------------------
     const held = new Map(positions.map((p) => [p.symbol, Number(p.qty)]));
@@ -321,6 +325,18 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     console.error("tick failed", e);
     return finish({ status: "error", marketOpen: null, signals: 0, ordersPlaced: 0, error: errMsg(e) });
   }
+}
+
+/** Ticker-tape quotes. Stocks keep their last values while the market is closed. */
+async function updateQuotes(symbols: string[], allBars: Record<string, alpaca.Bar[]>, now: Date) {
+  const quotes = await getSetting<Record<string, Quote>>("quotes", {});
+  for (const symbol of symbols) {
+    const cls = assetClassOf(symbol);
+    const bars = (allBars[symbol] ?? []).filter((b) => cls === "crypto" || isRegularSessionBar(b.t));
+    const q = computeQuote(symbol, cls, bars, now);
+    if (q) quotes[symbol] = q;
+  }
+  await setSetting("quotes", quotes);
 }
 
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e));

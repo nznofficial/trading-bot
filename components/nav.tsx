@@ -14,18 +14,25 @@ const LINKS = [
 export function Nav() {
   const path = usePathname();
   return (
-    <nav className="-mx-1 flex gap-1 overflow-x-auto text-sm">
+    <nav className="-mx-1 flex gap-1 overflow-x-auto">
       {LINKS.map((l) => {
         const active = l.href === "/" ? path === "/" : path.startsWith(l.href);
         return (
           <Link
             key={l.href}
             href={l.href}
-            className={`rounded-md px-2.5 py-1.5 whitespace-nowrap transition-colors ${
-              active ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:text-ink"
+            aria-current={active ? "page" : undefined}
+            className={`relative px-3 py-2 font-label text-[10px] tracking-[0.18em] whitespace-nowrap uppercase transition-colors ${
+              active ? "text-neon" : "text-ink-2 hover:text-ink"
             }`}
           >
             {l.label}
+            <span
+              aria-hidden
+              className={`absolute inset-x-3 -bottom-px h-px transition-opacity ${
+                active ? "bg-neon opacity-100 shadow-[0_0_8px_var(--neon)]" : "opacity-0"
+              }`}
+            />
           </Link>
         );
       })}

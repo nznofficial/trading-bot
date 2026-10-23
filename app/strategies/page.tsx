@@ -1,13 +1,13 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ActionBadge, Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, Table } from "@/components/ui";
+import { ActionBadge, Card, ClassTabs, Delta, Empty, Metric, PageHeader, Skeleton, Table } from "@/components/ui";
 import { dateTime, pct, ratio, signedUsd, strategyLabel } from "@/lib/format";
 import { getStrategies, parseClassFilter } from "@/lib/queries";
 
 export default function StrategiesPage({ searchParams }: PageProps<"/strategies">) {
   return (
     <>
-      <PageHeader title="Strategies" subtitle="How each rule set is performing, and what it's seeing right now." />
+      <PageHeader kicker="Signal Desk" title="Strategies" subtitle="How each rule set is performing, and what it's seeing right now." />
       <Suspense fallback={<Skeleton />}>
         <Strategies searchParams={searchParams} />
       </Suspense>
@@ -27,38 +27,30 @@ async function Strategies({ searchParams }: { searchParams: PageProps<"/strategi
   const { strategies, latest, recent } = await getStrategies(filter);
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <ClassTabs path="/strategies" active={filter} />
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="stagger grid grid-cols-1 gap-4 md:grid-cols-2">
         {strategies.map((st) => (
           <Card key={st.id} title={st.name} subtitle={st.description}>
-            <dl className="grid grid-cols-3 gap-3 text-sm">
-              <div>
-                <dt className="text-xs text-muted">Realized</dt>
-                <dd><Delta value={st.stats.totalPnl}>{signedUsd(st.stats.totalPnl)}</Delta></dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Unrealized</dt>
-                <dd><Delta value={st.unrealizedPl}>{signedUsd(st.unrealizedPl)}</Delta></dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Open</dt>
-                <dd className="num">{st.openPositions}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Trades</dt>
-                <dd className="num">{st.stats.count}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Win rate</dt>
-                <dd className="num">{st.stats.winRate === null ? "—" : pct(st.stats.winRate, 0)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Profit factor</dt>
-                <dd className="num">{ratio(st.stats.profitFactor)}</dd>
-              </div>
+            <dl className="grid grid-cols-3 gap-4">
+              <Metric label="Realized">
+                <Delta value={st.stats.totalPnl}>{signedUsd(st.stats.totalPnl)}</Delta>
+              </Metric>
+              <Metric label="Unrealized">
+                <Delta value={st.unrealizedPl}>{signedUsd(st.unrealizedPl)}</Delta>
+              </Metric>
+              <Metric label="Open">{st.openPositions}</Metric>
+              <Metric label="Trades">{st.stats.count}</Metric>
+              <Metric label="Win rate">{st.stats.winRate === null ? "—" : pct(st.stats.winRate, 0)}</Metric>
+              <Metric label="Profit factor">{ratio(st.stats.profitFactor)}</Metric>
             </dl>
-            <p className="mt-3 text-xs text-ink-2">Trades {st.symbols.join(", ")}</p>
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {st.symbols.map((sym) => (
+                <span key={sym} className="rounded-sm border border-line px-1.5 py-0.5 font-label text-[9px] tracking-[0.12em] text-ink-2">
+                  {sym}
+                </span>
+              ))}
+            </div>
           </Card>
         ))}
       </div>
@@ -79,12 +71,12 @@ async function Strategies({ searchParams }: { searchParams: PageProps<"/strategi
             <tbody>
               {latest.map((s) => (
                 <tr key={s.id}>
-                  <td className="font-medium">{s.symbol}</td>
+                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{s.symbol}</td>
                   <td className="text-ink-2">{strategyLabel(s.strategy)}</td>
                   <td><ActionBadge action={s.action} /></td>
                   <td className="text-ink-2">{s.note ?? s.reason}</td>
-                  <td className="text-xs text-muted">{fmtIndicators(s.indicators)}</td>
-                  <td className="text-xs whitespace-nowrap text-muted">{dateTime(s.ts)}</td>
+                  <td className="num text-[11px] text-muted">{fmtIndicators(s.indicators)}</td>
+                  <td className="num text-[11px] whitespace-nowrap text-muted">{dateTime(s.ts)}</td>
                 </tr>
               ))}
             </tbody>
@@ -109,8 +101,8 @@ async function Strategies({ searchParams }: { searchParams: PageProps<"/strategi
             <tbody>
               {recent.map((s) => (
                 <tr key={s.id}>
-                  <td className="text-ink-2 whitespace-nowrap">{dateTime(s.ts)}</td>
-                  <td className="font-medium">{s.symbol}</td>
+                  <td className="num text-xs whitespace-nowrap text-ink-2">{dateTime(s.ts)}</td>
+                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{s.symbol}</td>
                   <td><ActionBadge action={s.action} /></td>
                   <td className="text-ink-2">{s.reason}</td>
                   <td className={s.acted ? "text-ink" : "text-muted"}>{s.note ?? "—"}</td>

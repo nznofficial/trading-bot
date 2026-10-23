@@ -8,8 +8,8 @@ import { getRuns } from "@/lib/queries";
 export default function RunsPage() {
   return (
     <>
-      <PageHeader title="Runs" subtitle="Every bot tick: triggered every 15 minutes on weekdays by GitHub Actions." />
-      <div className="grid gap-4">
+      <PageHeader kicker="Operations" title="Runs" subtitle="Every bot tick: triggered every 15 minutes on weekdays by GitHub Actions." />
+      <div className="grid grid-cols-1 gap-4">
         <Suspense fallback={<Skeleton />}>
           <Runs />
         </Suspense>
@@ -41,11 +41,11 @@ async function Runs() {
             {runs.map((r) => (
               <tr key={r.id}>
                 <td className="text-muted">{r.id}</td>
-                <td className="text-ink-2 whitespace-nowrap">{dateTime(r.startedAt)}</td>
+                <td className="num text-xs whitespace-nowrap text-ink-2">{dateTime(r.startedAt)}</td>
                 <td className="whitespace-nowrap"><StatusBadge status={r.status} /></td>
-                <td className="text-right">{r.signals}</td>
-                <td className="text-right">{r.ordersPlaced}</td>
-                <td className="text-right text-ink-2">{r.durationMs === null ? "—" : `${(r.durationMs / 1000).toFixed(1)}s`}</td>
+                <td className="num text-right">{r.signals}</td>
+                <td className="num text-right">{r.ordersPlaced}</td>
+                <td className="num text-right text-ink-2">{r.durationMs === null ? "—" : `${(r.durationMs / 1000).toFixed(1)}s`}</td>
                 <td className={r.error ? "text-down" : "text-ink-2"}>{r.error ?? r.message ?? ""}</td>
               </tr>
             ))}

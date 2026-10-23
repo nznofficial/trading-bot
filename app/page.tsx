@@ -2,7 +2,17 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { DrawdownChart, EquityChart, PerformanceChart } from "@/components/charts";
-import { Card, Delta, Empty, Metric, PageHeader, Skeleton, Stat, StatusBadge, Table } from "@/components/ui";
+import {
+  Card,
+  Delta,
+  Empty,
+  KeyValueList,
+  PageHeader,
+  Skeleton,
+  StatStrip,
+  StatusBadge,
+  Table,
+} from "@/components/ui";
 import {
   classLabel,
   dateTime,
@@ -14,14 +24,13 @@ import {
   signedUsd,
   strategyLabel,
   usd,
-  usd0,
 } from "@/lib/format";
 import { getOverview } from "@/lib/queries";
 
 export default function OverviewPage() {
   return (
     <>
-      <PageHeader kicker="Portfolio" title="Overview" subtitle="Performance, risk, and bot health — stocks and crypto, one book." />
+      <PageHeader title="Overview" subtitle="Performance, risk and bot health across stocks and crypto." />
       <Suspense fallback={<OverviewSkeleton />}>
         <Overview />
       </Suspense>
@@ -32,13 +41,11 @@ export default function OverviewPage() {
 function OverviewSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-4">
-      <Skeleton className="h-64" />
-      <div className="stagger grid grid-cols-2 gap-4 md:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-24" />
-        ))}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Skeleton className="h-[420px] lg:col-span-2" />
+        <Skeleton className="h-[420px]" />
       </div>
-      <Skeleton className="h-80" />
+      <Skeleton className="h-24" />
     </div>
   );
 }
@@ -55,154 +62,187 @@ async function Overview() {
   }
   const k = o.kpis;
   const s = o.stats;
-
-  const dollars = Math.trunc(k.equity);
-  const cents = Math.round((k.equity - dollars) * 100);
   const allTime = k.equity - k.startEquity;
+  const classes = (["us_equity", "crypto"] as const).map((cls) => ({ cls, ...o.classes[cls] }));
+  const total = classes.reduce(
+    (a, c) => ({
+      exposure: a.exposure + c.exposure,
+      openPositions: a.openPositions + c.openPositions,
+      realized: a.realized + c.realized,
+      unrealized: a.unrealized + c.unrealized,
+      fees: a.fees + c.fees,
+      trades: a.trades + c.trades,
+    }),
+    { exposure: 0, openPositions: 0, realized: 0, unrealized: 0, fees: 0, trades: 0 },
+  );
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      {/* Hero scoreboard */}
-      <section className="panel scan-in relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(600px_220px_at_15%_0%,rgba(0,229,255,0.12),transparent_70%),radial-gradient(500px_200px_at_100%_100%,rgba(232,194,106,0.08),transparent_70%)]"
-        />
-        <div className="relative grid grid-cols-1 gap-6 p-6 md:grid-cols-[1fr_280px] md:p-8">
-          <div>
-            <div className="label">Net liquidation value</div>
-            <div className="mt-3 flex items-baseline gap-1">
-              <span className="num glow-text text-5xl font-semibold tracking-tight text-ink md:text-7xl">
-                {usd0(dollars)}
-              </span>
-              <span className="num text-2xl text-muted md:text-3xl">.{String(cents).padStart(2, "0")}</span>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Hero: account value with its equity curve */}
+        <section className="panel rise flex flex-col overflow-hidden lg:col-span-2">
+          <div className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4 px-6 pt-5">
+            <div>
+              <div className="label">Net liquidation value</div>
+              <div className="figure mt-1 text-[40px] leading-none font-semibold text-ink sm:text-[46px]">
+                {usd(k.equity)}
+              </div>
             </div>
-            <div className="mt-6 flex flex-wrap gap-x-10 gap-y-4">
+            <dl className="flex gap-8 pb-1">
               <div>
-                <div className="label">Today</div>
-                <div className="mt-1.5 text-xl">
-                  <Delta value={k.dayPnl} glow>
-                    {signedUsd(k.dayPnl)}
-                  </Delta>{" "}
-                  <span className="text-sm">
+                <dt className="label">Today</dt>
+                <dd className="mt-1 text-[15px]">
+                  <Delta value={k.dayPnl}>{signedUsd(k.dayPnl)}</Delta>{" "}
+                  <span className="text-xs">
                     <Delta value={k.dayPnlPct}>{signedPct(k.dayPnlPct)}</Delta>
                   </span>
-                </div>
+                </dd>
               </div>
               <div>
-                <div className="label">All-time</div>
-                <div className="mt-1.5 text-xl">
-                  <Delta value={allTime} glow>
-                    {signedUsd(allTime)}
-                  </Delta>{" "}
-                  <span className="text-sm">
+                <dt className="label">All-time</dt>
+                <dd className="mt-1 text-[15px]">
+                  <Delta value={allTime}>{signedUsd(allTime)}</Delta>{" "}
+                  <span className="text-xs">
                     <Delta value={k.totalReturn}>{signedPct(k.totalReturn)}</Delta>
                   </span>
-                </div>
+                </dd>
               </div>
-              <div>
-                <div className="label">Since</div>
-                <div className="num mt-1.5 text-xl text-ink-2">{longDate(k.since)}</div>
-              </div>
+            </dl>
+          </div>
+          {/* Chart fills whatever height the row gives it (matches the Account panel). */}
+          <div className="relative mt-4 min-h-[280px] flex-1">
+            <div className="absolute inset-0 px-2 pb-3">
+              <EquityChart data={o.equity} height="100%" />
             </div>
           </div>
+        </section>
 
-          <aside className="flex flex-col gap-4 border-t border-line pt-5 md:border-t-0 md:border-l md:pt-0 md:pl-6">
-            <div>
-              <div className="label">Bot status</div>
-              <div className="mt-2 flex items-center gap-3">
-                {o.paused ? <StatusBadge status="paused" /> : o.lastRun && <StatusBadge status={o.lastRun.status} />}
-                {o.lastRun && <span className="num text-xs text-muted">{dateTime(o.lastRun.startedAt)}</span>}
+        {/* Account & bot */}
+        <Card
+          title="Account"
+          action={
+            o.paused ? (
+              <StatusBadge status="paused" />
+            ) : o.lastRun ? (
+              <StatusBadge status={o.lastRun.status} label={o.lastRun.status === "ok" ? "Healthy" : undefined} />
+            ) : undefined
+          }
+        >
+          <KeyValueList
+            rows={[
+              { label: "Cash", value: usd(k.cash) },
+              { label: "Exposure", value: pct(k.exposure, 1) },
+              { label: "Open positions", value: k.openPositions },
+              { label: "Realized P&L", value: <Delta value={k.realizedPnl}>{signedUsd(k.realizedPnl)}</Delta> },
+              { label: "Unrealized P&L", value: <Delta value={k.unrealizedPnl}>{signedUsd(k.unrealizedPnl)}</Delta> },
+              { label: "Crypto fees", value: usd(k.fees) },
+              { label: "Tracking since", value: longDate(k.since) },
+            ]}
+          />
+          {o.lastRun && (
+            <div className="mt-5 rounded-lg border border-line bg-surface-2/60 px-3.5 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="label">Last run</span>
+                <span className="num text-xs text-ink-2">{dateTime(o.lastRun.startedAt)}</span>
               </div>
-              {o.lastRun?.error && <p className="mt-2 text-xs text-loss">{o.lastRun.error}</p>}
-              {o.lastRun?.message && !o.lastRun.error && <p className="mt-2 text-xs text-ink-2">{o.lastRun.message}</p>}
+              <p className={`mt-1.5 text-xs ${o.lastRun.error ? "text-loss" : "text-muted"}`}>
+                {o.lastRun.error ?? o.lastRun.message ?? "—"}
+              </p>
+              <Link href="/runs" className="mt-2 inline-block text-xs font-medium text-accent hover:underline">
+                View run log →
+              </Link>
             </div>
-            <dl className="grid grid-cols-2 gap-3">
-              <Metric label="Realized">
-                <Delta value={k.realizedPnl}>{signedUsd(k.realizedPnl)}</Delta>
-              </Metric>
-              <Metric label="Unrealized">
-                <Delta value={k.unrealizedPnl}>{signedUsd(k.unrealizedPnl)}</Delta>
-              </Metric>
-              <Metric label="Cash">{usd0(k.cash)}</Metric>
-              <Metric label="Fees">{usd(k.fees)}</Metric>
-            </dl>
-            <Link
-              href="/runs"
-              className="mt-auto font-label text-[10px] tracking-[0.16em] text-neon uppercase hover:underline"
-            >
-              Run log →
-            </Link>
-          </aside>
-        </div>
-      </section>
-
-      <div className="stagger grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Stat label="Max drawdown" value={pct(k.maxDrawdown)} sub={`currently ${pct(k.currentDrawdown)} from peak`} />
-        <Stat
-          label="Sharpe (ann.)"
-          value={ratio(k.sharpe)}
-          sub={`Sortino ${ratio(k.sortino)} · ${k.days} day${k.days === 1 ? "" : "s"}`}
-        />
-        <Stat
-          label="Win rate"
-          value={s.winRate === null ? "—" : pct(s.winRate, 0)}
-          sub={`${s.wins}W / ${s.losses}L · PF ${ratio(s.profitFactor)}`}
-        />
-        <Stat
-          label="Exposure"
-          value={pct(k.exposure, 0)}
-          sub={`${k.openPositions} position${k.openPositions === 1 ? "" : "s"} open`}
-        />
+          )}
+        </Card>
       </div>
 
-      <Card title="Equity curve" subtitle="Account value at every bot tick">
-        <EquityChart data={o.equity} />
-      </Card>
+      <StatStrip
+        cols={6}
+        items={[
+          { label: "Max drawdown", value: pct(k.maxDrawdown), sub: `${pct(k.currentDrawdown)} from peak now` },
+          { label: "Sharpe", value: ratio(k.sharpe), sub: `annualized · ${k.days} day${k.days === 1 ? "" : "s"}` },
+          { label: "Sortino", value: ratio(k.sortino), sub: "annualized" },
+          { label: "Win rate", value: s.winRate === null ? "—" : pct(s.winRate, 0), sub: `${s.wins} won · ${s.losses} lost` },
+          { label: "Profit factor", value: ratio(s.profitFactor), sub: "gross win ÷ gross loss" },
+          { label: "Expectancy", value: s.expectancy === null ? "—" : signedUsd(s.expectancy), sub: "avg P&L per trade" },
+        ]}
+      />
 
-      <div className="stagger grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card title="Performance vs SPY & BTC" subtitle="Cumulative return by day">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card title="Performance" subtitle="Cumulative return vs SPY and BTC" className="lg:col-span-2">
           {o.performance.length > 1 ? (
             <PerformanceChart data={o.performance} />
           ) : (
-            <Empty>Needs at least two days of history.</Empty>
+            <Empty>The benchmark comparison starts after two days of history.</Empty>
           )}
         </Card>
-        <Card title="Drawdown" subtitle="Distance below the running equity peak">
+        <Card title="Drawdown" subtitle="Below running peak">
           <DrawdownChart data={o.drawdown} />
         </Card>
       </div>
 
-      <div className="stagger grid grid-cols-1 gap-4 md:grid-cols-2">
-        {(["us_equity", "crypto"] as const).map((cls) => {
-          const c = o.classes[cls];
-          return (
-            <Card
-              key={cls}
-              title={classLabel(cls)}
-              subtitle={cls === "crypto" ? "BTC · ETH · SOL — 24/7" : "10 stocks & ETFs — market hours"}
-            >
-              <dl className="grid grid-cols-3 gap-4">
-                <Metric label="Realized">
+      <Card title="Allocation" subtitle="By asset class">
+        <Table>
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th className="text-right!">Exposure</th>
+              <th className="text-right!">Open</th>
+              <th className="text-right!">Realized</th>
+              <th className="text-right!">Unrealized</th>
+              <th className="text-right!">Fees</th>
+              <th className="text-right!">Trades</th>
+              <th className="text-right!">Win rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {classes.map((c) => (
+              <tr key={c.cls}>
+                <td className="whitespace-nowrap">
+                  <span className="font-medium text-ink">{classLabel(c.cls)}</span>
+                  <span className="ml-2 text-xs text-muted">
+                    {c.cls === "crypto" ? "BTC · ETH · SOL, 24/7" : "10 symbols, market hours"}
+                  </span>
+                </td>
+                <td className="num text-right">{pct(k.equity ? c.exposure / k.equity : 0, 1)}</td>
+                <td className="num text-right">{c.openPositions}</td>
+                <td className="num text-right">
                   <Delta value={c.realized}>{signedUsd(c.realized)}</Delta>
-                </Metric>
-                <Metric label="Unrealized">
+                </td>
+                <td className="num text-right">
                   <Delta value={c.unrealized}>{signedUsd(c.unrealized)}</Delta>
-                </Metric>
-                <Metric label="Exposure">{pct(k.equity ? c.exposure / k.equity : 0, 1)}</Metric>
-                <Metric label="Open">{c.openPositions}</Metric>
-                <Metric label="Trades">
-                  {c.trades}
-                  {c.winRate !== null && <span className="text-muted"> · {pct(c.winRate, 0)} won</span>}
-                </Metric>
-                <Metric label="Fees">{cls === "crypto" ? usd(c.fees) : "—"}</Metric>
-              </dl>
-            </Card>
-          );
-        })}
-      </div>
+                </td>
+                <td className="num text-right text-ink-2">{c.cls === "crypto" ? usd(c.fees) : "—"}</td>
+                <td className="num text-right">{c.trades}</td>
+                <td className="num text-right">{c.winRate === null ? "—" : pct(c.winRate, 0)}</td>
+              </tr>
+            ))}
+            <tr className="bg-surface-2/40 font-medium">
+              <td className="text-ink">Total</td>
+              <td className="num text-right">{pct(k.equity ? total.exposure / k.equity : 0, 1)}</td>
+              <td className="num text-right">{total.openPositions}</td>
+              <td className="num text-right">
+                <Delta value={total.realized}>{signedUsd(total.realized)}</Delta>
+              </td>
+              <td className="num text-right">
+                <Delta value={total.unrealized}>{signedUsd(total.unrealized)}</Delta>
+              </td>
+              <td className="num text-right text-ink-2">{usd(total.fees)}</td>
+              <td className="num text-right">{total.trades}</td>
+              <td className="num text-right">{s.winRate === null ? "—" : pct(s.winRate, 0)}</td>
+            </tr>
+          </tbody>
+        </Table>
+      </Card>
 
-      <Card title="Recent closed trades">
+      <Card
+        title="Recent closed trades"
+        action={
+          <Link href="/trades" className="text-xs font-medium text-accent hover:underline">
+            All trades →
+          </Link>
+        }
+      >
         {o.recentTrades.length ? (
           <Table>
             <thead>
@@ -218,10 +258,10 @@ async function Overview() {
             <tbody>
               {o.recentTrades.map((t, i) => (
                 <tr key={i}>
-                  <td className="num text-xs text-ink-2">{dateTime(t.exitTs)}</td>
-                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{t.symbol}</td>
+                  <td className="num whitespace-nowrap text-ink-2">{dateTime(t.exitTs)}</td>
+                  <td className="font-medium text-ink">{t.symbol}</td>
                   <td className="text-ink-2">{strategyLabel(t.strategy)}</td>
-                  <td className="num text-right">
+                  <td className="num text-right whitespace-nowrap">
                     {usd(t.entryPrice)} → {usd(t.exitPrice)}
                   </td>
                   <td className="num text-right">
@@ -233,7 +273,7 @@ async function Overview() {
             </tbody>
           </Table>
         ) : (
-          <Empty>No closed trades yet.</Empty>
+          <Empty>No closed trades yet. They appear here once the bot exits its first position.</Empty>
         )}
       </Card>
     </div>

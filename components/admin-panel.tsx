@@ -35,20 +35,20 @@ export function AdminPanel() {
   }
 
   return (
-    <details className="panel group p-5">
-      <summary className="flex cursor-pointer list-none items-center gap-2 font-label text-[11px] tracking-[0.18em] text-ink uppercase">
-        <span aria-hidden className="text-neon transition-transform group-open:rotate-90">▸</span>
-        Admin console
-        <span className="label ml-2 text-[9px]!">Requires ADMIN_SECRET</span>
+    <details className="panel group">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-[13px] font-semibold text-ink">
+        <span aria-hidden className="text-muted transition-transform group-open:rotate-90">›</span>
+        Admin
+        <span className="text-xs font-normal text-muted">requires ADMIN_SECRET</span>
       </summary>
-      <div className="mt-3 grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-3 border-t border-line p-5">
         <input
           type="password"
           value={secret}
           onChange={(e) => setSecret(e.target.value)}
           placeholder="ADMIN_SECRET"
           autoComplete="off"
-          className="num w-full max-w-sm rounded-sm border border-line bg-[#05070a] px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-neon/60"
+          className="num w-full max-w-sm rounded-md border border-line-2 bg-page px-3 py-2 text-[13px] text-ink placeholder:text-muted"
         />
         <div className="flex flex-wrap gap-2">
           {BUTTONS.map((b) => (
@@ -56,10 +56,10 @@ export function AdminPanel() {
               key={b.action}
               onClick={() => run(b.action)}
               disabled={!secret || pending}
-              className={`rounded-sm border px-3.5 py-2 font-label text-[10px] tracking-[0.16em] uppercase transition-colors disabled:opacity-35 ${
+              className={`rounded-md border px-3 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-40 ${
                 b.danger
-                  ? "border-loss/50 text-loss hover:bg-loss/10"
-                  : "border-line text-ink hover:border-neon/50 hover:bg-neon/5 hover:text-neon"
+                  ? "border-loss/40 text-loss hover:bg-loss/10"
+                  : "border-line-2 bg-surface-2 text-ink hover:border-accent/50"
               }`}
             >
               {b.label}
@@ -67,7 +67,7 @@ export function AdminPanel() {
           ))}
         </div>
         {output && (
-          <pre className="num max-h-80 overflow-auto rounded-sm border border-line bg-[#05070a] p-3 text-xs text-ink-2">{output}</pre>
+          <pre className="num max-h-80 overflow-auto rounded-md border border-line bg-page p-3 text-xs text-ink-2">{output}</pre>
         )}
       </div>
     </details>

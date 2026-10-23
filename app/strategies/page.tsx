@@ -1,13 +1,13 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ActionBadge, Card, ClassTabs, Delta, Empty, Metric, PageHeader, Skeleton, Table } from "@/components/ui";
+import { ActionBadge, Card, ClassTabs, Delta, Empty, Metric, PageHeader, Skeleton, Table, Tag } from "@/components/ui";
 import { dateTime, pct, ratio, signedUsd, strategyLabel } from "@/lib/format";
 import { getStrategies, parseClassFilter } from "@/lib/queries";
 
 export default function StrategiesPage({ searchParams }: PageProps<"/strategies">) {
   return (
     <>
-      <PageHeader kicker="Signal Desk" title="Strategies" subtitle="How each rule set is performing, and what it's seeing right now." />
+      <PageHeader title="Strategies" subtitle="How each rule set is performing, and what it's seeing right now." />
       <Suspense fallback={<Skeleton />}>
         <Strategies searchParams={searchParams} />
       </Suspense>
@@ -29,9 +29,10 @@ async function Strategies({ searchParams }: { searchParams: PageProps<"/strategi
   return (
     <div className="grid grid-cols-1 gap-4">
       <ClassTabs path="/strategies" active={filter} />
-      <div className="stagger grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {strategies.map((st) => (
-          <Card key={st.id} title={st.name} subtitle={st.description}>
+          <Card key={st.id} title={st.name}>
+            <p className="mb-5 text-[13px] leading-relaxed text-ink-2">{st.description}</p>
             <dl className="grid grid-cols-3 gap-4">
               <Metric label="Realized">
                 <Delta value={st.stats.totalPnl}>{signedUsd(st.stats.totalPnl)}</Delta>
@@ -46,9 +47,7 @@ async function Strategies({ searchParams }: { searchParams: PageProps<"/strategi
             </dl>
             <div className="mt-4 flex flex-wrap gap-1.5">
               {st.symbols.map((sym) => (
-                <span key={sym} className="rounded-sm border border-line px-1.5 py-0.5 font-label text-[9px] tracking-[0.12em] text-ink-2">
-                  {sym}
-                </span>
+                <Tag key={sym}>{sym}</Tag>
               ))}
             </div>
           </Card>
@@ -71,7 +70,7 @@ async function Strategies({ searchParams }: { searchParams: PageProps<"/strategi
             <tbody>
               {latest.map((s) => (
                 <tr key={s.id}>
-                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{s.symbol}</td>
+                  <td className="font-medium text-ink">{s.symbol}</td>
                   <td className="text-ink-2">{strategyLabel(s.strategy)}</td>
                   <td><ActionBadge action={s.action} /></td>
                   <td className="text-ink-2">{s.note ?? s.reason}</td>
@@ -102,7 +101,7 @@ async function Strategies({ searchParams }: { searchParams: PageProps<"/strategi
               {recent.map((s) => (
                 <tr key={s.id}>
                   <td className="num text-xs whitespace-nowrap text-ink-2">{dateTime(s.ts)}</td>
-                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{s.symbol}</td>
+                  <td className="font-medium text-ink">{s.symbol}</td>
                   <td><ActionBadge action={s.action} /></td>
                   <td className="text-ink-2">{s.reason}</td>
                   <td className={s.acted ? "text-ink" : "text-muted"}>{s.note ?? "—"}</td>

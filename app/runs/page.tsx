@@ -8,7 +8,7 @@ import { getRuns } from "@/lib/queries";
 export default function RunsPage() {
   return (
     <>
-      <PageHeader kicker="Operations" title="Runs" subtitle="Every bot tick: triggered every 15 minutes on weekdays by GitHub Actions." />
+      <PageHeader title="Runs" subtitle="Every bot tick, triggered every 15 minutes around the clock by GitHub Actions." />
       <div className="grid grid-cols-1 gap-4">
         <Suspense fallback={<Skeleton />}>
           <Runs />

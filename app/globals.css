@@ -1,75 +1,62 @@
 @import "tailwindcss";
 
 /*
- * GRID // GOLD — Tron structure, Wall Street money.
- * Cyan draws the machine (borders, grid, focus, data). Gold is reserved for money made;
- * hot red for money lost. Dark only: the terminal is the product.
+ * Trading-desk dark theme. Restraint over effects:
+ * neutral hairlines carry the structure, cyan marks what is live or selected,
+ * gold is money made, red is money lost. Dark only.
  */
 :root {
   color-scheme: dark;
 
-  --bg: #05070a;
-  --panel: #0a0f14;
-  --panel-2: #0e151c;
-  --ink: #e6f1f5;
-  --ink-2: #9fb3c0;
-  --muted: #6e808e;
+  --bg: #07090c;
+  --panel: #0c1117;
+  --panel-2: #111821;
+  --line: #1b242e;
+  --line-2: #263240;
+  --ink: #e8edf2;
+  --ink-2: #a3b1bf;
+  --muted: #6b7886;
 
-  /* Interface neon (chrome only, never data) */
-  --neon: #00e5ff;
-  --neon-dim: rgba(0, 229, 255, 0.14);
-  --neon-line: rgba(0, 229, 255, 0.22);
-  --neon-strong: rgba(0, 229, 255, 0.45);
-
-  /* Money */
-  --gold: #e8c26a;
-  --gold-dim: rgba(232, 194, 106, 0.14);
-  --loss: #ff3b5c;
-  --loss-dim: rgba(255, 59, 92, 0.14);
+  --accent: #22d3ee;
+  --gold: #e0b860;
+  --loss: #f0445e;
+  --good: #34d399;
+  --warning: #f5b544;
 
   /* Chart series — validated (dark band, CVD, contrast) against --panel */
   --series-1: #00a0ba;
   --series-2: #8b7cff;
   --series-3: #cc7a0c;
-  --grid: rgba(0, 229, 255, 0.07);
-  --axis: rgba(0, 229, 255, 0.2);
+  --grid: rgba(255, 255, 255, 0.045);
+  --axis: #263240;
 
-  /* Semantic aliases used across components */
   --up: var(--gold);
   --down: var(--loss);
-  --good: #2ee6a6;
-  --warning: #ffb020;
   --critical: var(--loss);
-  --border: var(--neon-line);
-  --surface: var(--panel);
-  --surface-2: var(--panel-2);
-  --page: var(--bg);
 }
 
 @theme inline {
   --color-page: var(--bg);
   --color-surface: var(--panel);
   --color-surface-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
-  --color-grid: var(--grid);
-  --color-line: var(--neon-line);
-  --color-neon: var(--neon);
+  --color-accent: var(--accent);
   --color-gold: var(--gold);
   --color-loss: var(--loss);
-  --color-series-1: var(--series-1);
-  --color-series-2: var(--series-2);
-  --color-series-3: var(--series-3);
-  --color-up: var(--up);
-  --color-down: var(--down);
   --color-good: var(--good);
   --color-warning: var(--warning);
   --color-critical: var(--critical);
-  --font-display: var(--font-orbitron), var(--font-label), sans-serif;
-  --font-label: var(--font-michroma), sans-serif;
-  --font-sans: var(--font-plex), system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 html {
@@ -78,14 +65,13 @@ html {
 
 body {
   background:
-    radial-gradient(1200px 500px at 50% -180px, rgba(0, 229, 255, 0.09), transparent 70%),
-    radial-gradient(800px 400px at 100% 0%, rgba(232, 194, 106, 0.04), transparent 70%),
+    radial-gradient(900px 320px at 50% -120px, rgba(34, 211, 238, 0.07), transparent 70%),
     var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
 }
 
-/* Faint machine grid across the whole page, fading out toward the bottom. */
+/* The grid: barely there, fading out down the page. */
 body::before {
   content: "";
   position: fixed;
@@ -93,127 +79,58 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: linear-gradient(to bottom, black, transparent 85%);
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(to bottom, black, transparent 70%);
 }
 
 ::selection {
-  background: rgba(0, 229, 255, 0.3);
-  color: #fff;
+  background: rgba(34, 211, 238, 0.28);
 }
 
 :focus-visible {
-  outline: 1px solid var(--neon);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2);
+  border-radius: 4px;
 }
 
 .num {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
 }
 
-/* Small tracked caps used for every label. */
+/* Display figures: sans with tabular digits reads more refined than mono at large sizes. */
+.figure {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
 .label {
-  font-family: var(--font-label);
-  font-size: 10px;
-  letter-spacing: 0.16em;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
 }
 
-/* Panel: glass-dark plate with a hairline neon edge and lit corners. */
 .panel {
-  position: relative;
-  /* Grid items default to min-width:auto; let wide tables scroll inside the panel instead. */
   min-width: 0;
-  background: linear-gradient(180deg, rgba(14, 21, 28, 0.92), rgba(10, 15, 20, 0.92));
-  border: 1px solid var(--neon-line);
-  border-radius: 6px;
-  box-shadow:
-    inset 0 1px 0 rgba(0, 229, 255, 0.06),
-    0 0 0 1px rgba(0, 0, 0, 0.4),
-    0 12px 40px -20px rgba(0, 229, 255, 0.18);
-}
-.panel::before,
-.panel::after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  pointer-events: none;
-  border-color: var(--neon);
-  opacity: 0.7;
-}
-.panel::before {
-  top: -1px;
-  left: -1px;
-  border-top: 1px solid;
-  border-left: 1px solid;
-  border-top-left-radius: 6px;
-}
-.panel::after {
-  bottom: -1px;
-  right: -1px;
-  border-bottom: 1px solid;
-  border-right: 1px solid;
-  border-bottom-right-radius: 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
 }
 
-/* Data lines glow in their own color (filter defined once by ChartGlowDefs). */
-.chart-glow .recharts-curve,
-.chart-glow.recharts-curve {
-  filter: url(#chart-glow);
-}
+/* ---- Motion: subtle, and fully off for reduced-motion users -------------------------------- */
 
-.glow-text {
-  text-shadow: 0 0 18px rgba(0, 229, 255, 0.35);
-}
-.glow-gold {
-  text-shadow: 0 0 18px rgba(232, 194, 106, 0.35);
-}
-.glow-loss {
-  text-shadow: 0 0 18px rgba(255, 59, 92, 0.3);
-}
-
-/* Header horizon: a perspective grid floor receding behind the brand. */
-.horizon {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.horizon::before {
-  content: "";
-  position: absolute;
-  left: -50%;
-  right: -50%;
-  bottom: -120%;
-  height: 220%;
-  background-image:
-    linear-gradient(rgba(0, 229, 255, 0.16) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, 0.16) 1px, transparent 1px);
-  background-size: 56px 56px;
-  transform: perspective(380px) rotateX(62deg);
-  transform-origin: center top;
-  mask-image: linear-gradient(to top, black 10%, transparent 75%);
-}
-
-/* ---- Motion (all of it opt-out via prefers-reduced-motion) ---------------------------------- */
-
-@keyframes scan-in {
+@keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
-    clip-path: inset(0 0 100% 0);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
     transform: none;
-    clip-path: inset(0 0 0 0);
   }
 }
 @keyframes shimmer {
@@ -235,25 +152,15 @@ body::before {
 @keyframes pulse-dot {
   0%,
   100% {
-    box-shadow: 0 0 0 0 currentColor;
     opacity: 1;
   }
   50% {
-    box-shadow: 0 0 0 4px transparent;
-    opacity: 0.6;
-  }
-}
-@keyframes drift {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 0 56px;
+    opacity: 0.35;
   }
 }
 
 .skeleton {
-  background: linear-gradient(90deg, rgba(0, 229, 255, 0.03) 25%, rgba(0, 229, 255, 0.1) 50%, rgba(0, 229, 255, 0.03) 75%);
+  background: linear-gradient(90deg, var(--panel) 25%, var(--panel-2) 50%, var(--panel) 75%);
   background-size: 200% 100%;
 }
 
@@ -263,38 +170,40 @@ body::before {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .scan-in {
-    animation: scan-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  .rise {
+    animation: rise 0.35s ease-out both;
   }
-  .stagger > :nth-child(1) { animation-delay: 0ms; }
-  .stagger > :nth-child(2) { animation-delay: 60ms; }
-  .stagger > :nth-child(3) { animation-delay: 120ms; }
-  .stagger > :nth-child(4) { animation-delay: 180ms; }
-  .stagger > :nth-child(5) { animation-delay: 240ms; }
-  .stagger > :nth-child(6) { animation-delay: 300ms; }
-  .stagger > :nth-child(7) { animation-delay: 360ms; }
-  .stagger > :nth-child(n + 8) { animation-delay: 420ms; }
+  .rise-children > * {
+    animation: rise 0.35s ease-out both;
+  }
+  .rise-children > :nth-child(2) { animation-delay: 40ms; }
+  .rise-children > :nth-child(3) { animation-delay: 80ms; }
+  .rise-children > :nth-child(4) { animation-delay: 120ms; }
+  .rise-children > :nth-child(5) { animation-delay: 160ms; }
+  .rise-children > :nth-child(n + 6) { animation-delay: 200ms; }
 
   .skeleton {
-    animation: shimmer 1.6s linear infinite;
+    animation: shimmer 1.8s linear infinite;
   }
   .ticker-track {
-    animation: marquee 60s linear infinite;
+    animation: marquee 75s linear infinite;
   }
   .ticker:hover .ticker-track {
     animation-play-state: paused;
   }
   .live-dot {
-    animation: pulse-dot 2s ease-in-out infinite;
-  }
-  .horizon::before {
-    animation: drift 4s linear infinite;
+    animation: pulse-dot 2.4s ease-in-out infinite;
   }
 }
 
-/* Reduced motion: the tape becomes a horizontally scrollable strip. */
 @media (prefers-reduced-motion: reduce) {
   .ticker {
     overflow-x: auto;
   }
+}
+
+/* Charts: a soft glow on the primary data line only — the one Tron flourish. */
+.chart-glow .recharts-curve.recharts-area-curve,
+.chart-glow .recharts-curve.recharts-line-curve {
+  filter: drop-shadow(0 0 4px rgba(0, 160, 186, 0.55));
 }

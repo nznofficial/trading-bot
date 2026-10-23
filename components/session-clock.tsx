@@ -29,7 +29,7 @@ function countdown(ms: number) {
 export function SessionClock({ clock }: { clock: ClockState | null }) {
   const now = useSyncExternalStore(subscribe, getNow, getServerNow);
 
-  if (!clock) return <span className="label">NYSE · awaiting first tick</span>;
+  if (!clock) return <span className="text-xs text-muted">NYSE · awaiting first tick</span>;
 
   const nextOpen = Date.parse(clock.nextOpen);
   const nextClose = Date.parse(clock.nextClose);
@@ -40,16 +40,14 @@ export function SessionClock({ clock }: { clock: ClockState | null }) {
   const stale = !open && t >= nextOpen; // stored next-open already passed; wait for the next tick
 
   return (
-    <span className="flex items-center gap-2">
-      <span aria-hidden className={`size-1.5 rounded-full ${open ? "live-dot bg-good text-good" : "bg-muted"}`} />
-      <span className="label">NYSE</span>
-      <span className={`font-label text-[10px] tracking-[0.16em] ${open ? "text-good" : "text-ink-2"}`}>
-        {open ? "OPEN" : "CLOSED"}
-      </span>
+    <span className="flex items-center gap-1.5 text-xs text-ink-2">
+      <span aria-hidden className={`size-1.5 rounded-full ${open ? "live-dot bg-good" : "bg-muted"}`} />
+      NYSE <span className={open ? "text-good" : "text-muted"}>{open ? "Open" : "Closed"}</span>
       {!stale && (
-        <span className="num text-[11px] text-muted">
-          {open ? "closes in" : "opens in"} <span className="text-ink">{now === null ? "--:--:--" : countdown(target - now)}</span>
-        </span>
+        <>
+          <span className="text-muted">· {open ? "closes in" : "opens in"}</span>
+          <span className="num text-ink">{now === null ? "--:--:--" : countdown(target - now)}</span>
+        </>
       )}
     </span>
   );

@@ -7,7 +7,7 @@ import { getPositions, parseClassFilter } from "@/lib/queries";
 export default function PositionsPage({ searchParams }: PageProps<"/positions">) {
   return (
     <>
-      <PageHeader kicker="The Book" title="Positions" subtitle="Open positions as of the latest bot tick." />
+      <PageHeader title="Positions" subtitle="Open positions as of the latest bot tick." />
       <Suspense fallback={<Skeleton />}>
         <Positions searchParams={searchParams} />
       </Suspense>
@@ -45,7 +45,7 @@ async function Positions({ searchParams }: { searchParams: PageProps<"/positions
             <tbody>
               {positions.map((p) => (
                 <tr key={p.symbol}>
-                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{p.symbol}</td>
+                  <td className="font-medium text-ink">{p.symbol}</td>
                   <td className="text-ink-2">{strategyLabel(p.strategy)}</td>
                   <td className="num text-right">{qty(p.qty)}</td>
                   <td className="num text-right">{usd(p.avgEntry)}</td>

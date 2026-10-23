@@ -1,14 +1,14 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { SymbolPnlChart } from "@/components/charts";
-import { ActionBadge, Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, Stat, Table } from "@/components/ui";
+import { ActionBadge, Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, StatStrip, Table } from "@/components/ui";
 import { dateTime, duration, pct, qty, ratio, signedPct, signedUsd, strategyLabel, usd } from "@/lib/format";
 import { getTrades, parseClassFilter } from "@/lib/queries";
 
 export default function TradesPage({ searchParams }: PageProps<"/trades">) {
   return (
     <>
-      <PageHeader kicker="The Ledger" title="Trades" subtitle="Closed round trips (FIFO-matched fills) and the raw order log." />
+      <PageHeader title="Trades" subtitle="Closed round trips (FIFO-matched fills) and the raw order log." />
       <Suspense fallback={<Skeleton />}>
         <Trades searchParams={searchParams} />
       </Suspense>
@@ -24,22 +24,27 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
   return (
     <div className="grid grid-cols-1 gap-4">
       <ClassTabs path="/trades" active={filter} />
-      <div className="stagger grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Stat label="Closed trades" value={<span className="num">{s.count}</span>} sub={`avg hold ${duration(s.avgHoldMs)}`} />
-        <Stat label="Win rate" value={<span className="num">{s.winRate === null ? "—" : pct(s.winRate, 0)}</span>} sub={`${s.wins}W / ${s.losses}L`} />
-        <Stat
-          label="Expectancy"
-          value={s.expectancy === null ? "—" : <Delta value={s.expectancy}>{signedUsd(s.expectancy)}</Delta>}
-          sub={`avg win ${s.avgWin === null ? "—" : usd(s.avgWin)} · avg loss ${s.avgLoss === null ? "—" : usd(s.avgLoss)}`}
-        />
-        <Stat label="Profit factor" value={<span className="num">{ratio(s.profitFactor)}</span>} sub={
-            <>
-              total <Delta value={s.totalPnl}>{signedUsd(s.totalPnl)}</Delta>
-              {fees > 0 && <> · fees {usd(fees)}</>}
-            </>
-          }
-        />
-      </div>
+      <StatStrip
+        items={[
+          { label: "Closed trades", value: s.count, sub: `avg hold ${duration(s.avgHoldMs)}` },
+          { label: "Win rate", value: s.winRate === null ? "—" : pct(s.winRate, 0), sub: `${s.wins} won · ${s.losses} lost` },
+          {
+            label: "Expectancy",
+            value: s.expectancy === null ? "—" : <Delta value={s.expectancy}>{signedUsd(s.expectancy)}</Delta>,
+            sub: `avg win ${s.avgWin === null ? "—" : usd(s.avgWin)} · avg loss ${s.avgLoss === null ? "—" : usd(s.avgLoss)}`,
+          },
+          {
+            label: "Profit factor",
+            value: ratio(s.profitFactor),
+            sub: (
+              <>
+                total <Delta value={s.totalPnl}>{signedUsd(s.totalPnl)}</Delta>
+                {fees > 0 && <> · fees {usd(fees)}</>}
+              </>
+            ),
+          },
+        ]}
+      />
 
       {bySymbol.length > 0 && (
         <Card title="Realized P&L by symbol">
@@ -68,7 +73,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
                 <tr key={i}>
                   <td className="num text-xs text-ink-2">{dateTime(t.entryTs)}</td>
                   <td className="num text-xs text-ink-2">{dateTime(t.exitTs)}</td>
-                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{t.symbol}</td>
+                  <td className="font-medium text-ink">{t.symbol}</td>
                   <td className="text-ink-2">{strategyLabel(t.strategy)}</td>
                   <td className="num text-right">{qty(t.qty)}</td>
                   <td className="num text-right">{usd(t.entryPrice)}</td>
@@ -107,7 +112,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
               {orders.map((o) => (
                 <tr key={o.id}>
                   <td className="num text-xs text-ink-2">{dateTime(o.submittedAt)}</td>
-                  <td className="font-label text-[11px] tracking-[0.08em] text-ink">{o.symbol}</td>
+                  <td className="font-medium text-ink">{o.symbol}</td>
                   <td>
                     <ActionBadge action={o.side} />
                   </td>

@@ -1,80 +1,63 @@
 import { connection } from "next/server";
 import { SessionClock } from "@/components/session-clock";
-import { dateTime, signedPct } from "@/lib/format";
+import { signedPct } from "@/lib/format";
 import { getMarketStrip } from "@/lib/queries";
 import type { Quote } from "@/lib/quotes";
 
-/** Session status + ticker tape under the header. Reads only what the bot stored; never calls Alpaca. */
-export async function MarketStrip() {
+/** Market session + crypto status for the header. Reads only what the bot stored; never calls Alpaca. */
+export async function HeaderStatus() {
   await connection();
-  const { quotes, clock, paused, lastRun } = await getMarketStrip();
-
+  const { clock } = await getMarketStrip();
   return (
-    <div className="border-b border-line bg-[#070b0f]/90">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-1.5 px-4 py-2">
-        <SessionClock clock={clock} />
-        <span className="flex items-center gap-2">
-          <span aria-hidden className="live-dot size-1.5 rounded-full bg-good text-good" />
-          <span className="label">Crypto</span>
-          <span className="font-label text-[10px] tracking-[0.16em] text-ink">24/7</span>
-        </span>
-        <span className="ml-auto flex items-center gap-2">
-          <span className="label">Bot</span>
-          {paused ? (
-            <span className="font-label text-[10px] tracking-[0.16em] text-warning">PAUSED</span>
-          ) : lastRun ? (
-            <span className={`num text-[11px] ${lastRun.status === "error" ? "text-loss" : "text-ink-2"}`}>
-              {lastRun.status === "error" ? "ERROR · " : ""}last run {dateTime(lastRun.startedAt)}
-            </span>
-          ) : (
-            <span className="num text-[11px] text-muted">no runs yet</span>
-          )}
-        </span>
-      </div>
-      {quotes.length > 0 && <TickerTape quotes={quotes} />}
+    <div className="flex items-center gap-5 text-xs">
+      <SessionClock clock={clock} />
+      <span className="h-3.5 w-px bg-line-2" aria-hidden />
+      <span className="flex items-center gap-1.5 text-ink-2">
+        <span aria-hidden className="live-dot size-1.5 rounded-full bg-good" />
+        Crypto <span className="text-muted">24/7</span>
+      </span>
     </div>
   );
 }
 
-function TickerTape({ quotes }: { quotes: Quote[] }) {
+/** Scrolling tape of the latest prices the bot recorded. */
+export async function Ticker() {
+  await connection();
+  const { quotes } = await getMarketStrip();
+  if (!quotes.length) return null;
   // Two copies side by side; the track slides by half its width for a seamless loop.
   const items = [...quotes, ...quotes];
   return (
     <div
-      className="ticker relative overflow-hidden border-t border-line/60 [mask-image:linear-gradient(90deg,transparent,black_6%,black_94%,transparent)]"
+      className="ticker relative overflow-hidden border-t border-line bg-[#090c10] [mask-image:linear-gradient(90deg,transparent,black_4%,black_96%,transparent)]"
       aria-label="Latest prices"
     >
-      <ul className="ticker-track py-2">
+      <ul className="ticker-track h-8 items-center">
         {items.map((q, i) => (
-          <li
-            key={`${q.symbol}-${i}`}
-            aria-hidden={i >= quotes.length}
-            className="flex items-center gap-2 border-r border-line/50 px-5 whitespace-nowrap"
-          >
-            <span className="font-label text-[10px] tracking-[0.12em] text-ink">{q.symbol}</span>
-            <span className="num text-[12px] text-ink-2">{formatPrice(q.price)}</span>
-            <span className={`num text-[11px] ${q.change > 0 ? "text-gold" : q.change < 0 ? "text-loss" : "text-muted"}`}>
-              {q.change > 0 ? "▲" : q.change < 0 ? "▼" : "■"} {signedPct(q.changePct)}
-            </span>
-          </li>
+          <TickerItem key={`${q.symbol}-${i}`} q={q} hidden={i >= quotes.length} />
         ))}
       </ul>
     </div>
   );
 }
 
+function TickerItem({ q, hidden }: { q: Quote; hidden: boolean }) {
+  const tone = q.change > 0 ? "text-gold" : q.change < 0 ? "text-loss" : "text-muted";
+  return (
+    <li aria-hidden={hidden} className="flex items-center gap-2 px-4 text-xs whitespace-nowrap">
+      <span className="font-medium text-ink-2">{q.symbol}</span>
+      <span className="num text-ink">{formatPrice(q.price)}</span>
+      <span className={`num ${tone}`}>
+        <span aria-hidden className="mr-0.5 text-[9px]">{q.change > 0 ? "▲" : q.change < 0 ? "▼" : ""}</span>
+        {signedPct(q.changePct)}
+      </span>
+    </li>
+  );
+}
+
 const formatPrice = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: n < 10 ? 4 : 2 });
 
-export function MarketStripSkeleton() {
-  return (
-    <div className="border-b border-line bg-[#070b0f]/90">
-      <div className="mx-auto max-w-6xl px-4 py-2">
-        <div className="skeleton h-4 w-64 rounded" />
-      </div>
-      <div className="border-t border-line/60 px-4 py-2">
-        <div className="skeleton h-4 w-full rounded" />
-      </div>
-    </div>
-  );
+export function TickerSkeleton() {
+  return <div className="skeleton h-8 border-t border-line" />;
 }

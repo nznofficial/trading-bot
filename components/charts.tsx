@@ -103,17 +103,17 @@ export function EquityChart({ data }: { data: { ts: number; equity: number }[] }
   );
 }
 
-/** Portfolio vs benchmark cumulative return, indexed to a common start so they share one axis. */
+/** Portfolio vs benchmarks' cumulative return, indexed to a common start so they share one axis. */
 export function PerformanceChart({
   data,
-  benchmark,
 }: {
-  data: { date: string; portfolio: number; benchmark: number | null }[];
-  benchmark: string;
+  data: { date: string; portfolio: number; spy: number | null; btc: number | null }[];
 }) {
+  // Categorical slots 1–3, in palette order; each series keeps its color regardless of what's shown.
   const series = [
     { key: "portfolio", label: "Portfolio", color: "var(--series-1)" },
-    { key: "benchmark", label: `${benchmark} buy & hold`, color: "var(--series-2)" },
+    { key: "spy", label: "SPY buy & hold", color: "var(--series-2)" },
+    { key: "btc", label: "BTC buy & hold", color: "var(--series-3)" },
   ] as const;
   return (
     <div>

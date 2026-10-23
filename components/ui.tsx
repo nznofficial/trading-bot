@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 export function PageHeader({ title, subtitle, children }: { title: string; subtitle?: ReactNode; children?: ReactNode }) {
@@ -89,4 +90,28 @@ export function Empty({ children }: { children: ReactNode }) {
 
 export function Skeleton({ className = "h-64" }: { className?: string }) {
   return <div className={`animate-pulse rounded-xl border border-line bg-surface ${className}`} />;
+}
+
+const CLASS_TABS = [
+  { value: "all", label: "All" },
+  { value: "us_equity", label: "Stocks" },
+  { value: "crypto", label: "Crypto" },
+] as const;
+
+/** Asset-class filter as plain links (?class=…), so it works without client JS. */
+export function ClassTabs({ path, active }: { path: string; active: string }) {
+  return (
+    <nav aria-label="Asset class" className="inline-flex w-fit rounded-lg border border-line bg-surface p-0.5 text-sm">
+      {CLASS_TABS.map((t) => (
+        <Link
+          key={t.value}
+          href={t.value === "all" ? path : `${path}?class=${t.value}`}
+          aria-current={active === t.value ? "page" : undefined}
+          className={`rounded-md px-3 py-1 ${active === t.value ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:text-ink"}`}
+        >
+          {t.label}
+        </Link>
+      ))}
+    </nav>
+  );
 }

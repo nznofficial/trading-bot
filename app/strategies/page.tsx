@@ -1,15 +1,15 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ActionBadge, Card, Delta, Empty, PageHeader, Skeleton, Table } from "@/components/ui";
+import { ActionBadge, Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, Table } from "@/components/ui";
 import { dateTime, pct, ratio, signedUsd, strategyLabel } from "@/lib/format";
-import { getStrategies } from "@/lib/queries";
+import { getStrategies, parseClassFilter } from "@/lib/queries";
 
-export default function StrategiesPage() {
+export default function StrategiesPage({ searchParams }: PageProps<"/strategies">) {
   return (
     <>
       <PageHeader title="Strategies" subtitle="How each rule set is performing, and what it's seeing right now." />
       <Suspense fallback={<Skeleton />}>
-        <Strategies />
+        <Strategies searchParams={searchParams} />
       </Suspense>
     </>
   );
@@ -21,12 +21,14 @@ const fmtIndicators = (ind: Record<string, number | null>) =>
     .map(([k, v]) => `${k} ${v}`)
     .join(" · ");
 
-async function Strategies() {
+async function Strategies({ searchParams }: { searchParams: PageProps<"/strategies">["searchParams"] }) {
   await connection(); // DB-backed: render at request time, never at build
-  const { strategies, latest, recent } = await getStrategies();
+  const filter = parseClassFilter((await searchParams).class);
+  const { strategies, latest, recent } = await getStrategies(filter);
 
   return (
     <div className="grid gap-4">
+      <ClassTabs path="/strategies" active={filter} />
       <div className="grid gap-4 md:grid-cols-2">
         {strategies.map((st) => (
           <Card key={st.id} title={st.name} subtitle={st.description}>
@@ -61,7 +63,7 @@ async function Strategies() {
         ))}
       </div>
 
-      <Card title="Latest signals" subtitle={latest[0] ? `From the tick at ${dateTime(latest[0].ts)}` : undefined}>
+      <Card title="Latest signals" subtitle="Most recent evaluation of each symbol">
         {latest.length ? (
           <Table>
             <thead>
@@ -71,6 +73,7 @@ async function Strategies() {
                 <th>Signal</th>
                 <th>Reason</th>
                 <th>Indicators</th>
+                <th>As of</th>
               </tr>
             </thead>
             <tbody>
@@ -81,6 +84,7 @@ async function Strategies() {
                   <td><ActionBadge action={s.action} /></td>
                   <td className="text-ink-2">{s.note ?? s.reason}</td>
                   <td className="text-xs text-muted">{fmtIndicators(s.indicators)}</td>
+                  <td className="text-xs whitespace-nowrap text-muted">{dateTime(s.ts)}</td>
                 </tr>
               ))}
             </tbody>

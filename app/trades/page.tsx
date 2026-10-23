@@ -1,27 +1,29 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { SymbolPnlChart } from "@/components/charts";
-import { ActionBadge, Card, Delta, Empty, PageHeader, Skeleton, Stat, Table } from "@/components/ui";
+import { ActionBadge, Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, Stat, Table } from "@/components/ui";
 import { dateTime, duration, pct, qty, ratio, signedPct, signedUsd, strategyLabel, usd } from "@/lib/format";
-import { getTrades } from "@/lib/queries";
+import { getTrades, parseClassFilter } from "@/lib/queries";
 
-export default function TradesPage() {
+export default function TradesPage({ searchParams }: PageProps<"/trades">) {
   return (
     <>
       <PageHeader title="Trades" subtitle="Closed round trips (FIFO-matched fills) and the raw order log." />
       <Suspense fallback={<Skeleton />}>
-        <Trades />
+        <Trades searchParams={searchParams} />
       </Suspense>
     </>
   );
 }
 
-async function Trades() {
+async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["searchParams"] }) {
   await connection(); // DB-backed: render at request time, never at build
-  const { stats: s, trades, bySymbol, orders } = await getTrades();
+  const filter = parseClassFilter((await searchParams).class);
+  const { stats: s, fees, trades, bySymbol, orders } = await getTrades(filter);
 
   return (
     <div className="grid gap-4">
+      <ClassTabs path="/trades" active={filter} />
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Stat label="Closed trades" value={<span className="num">{s.count}</span>} sub={`avg hold ${duration(s.avgHoldMs)}`} />
         <Stat label="Win rate" value={<span className="num">{s.winRate === null ? "—" : pct(s.winRate, 0)}</span>} sub={`${s.wins}W / ${s.losses}L`} />
@@ -30,7 +32,13 @@ async function Trades() {
           value={s.expectancy === null ? "—" : <Delta value={s.expectancy}>{signedUsd(s.expectancy)}</Delta>}
           sub={`avg win ${s.avgWin === null ? "—" : usd(s.avgWin)} · avg loss ${s.avgLoss === null ? "—" : usd(s.avgLoss)}`}
         />
-        <Stat label="Profit factor" value={<span className="num">{ratio(s.profitFactor)}</span>} sub={<>total <Delta value={s.totalPnl}>{signedUsd(s.totalPnl)}</Delta></>} />
+        <Stat label="Profit factor" value={<span className="num">{ratio(s.profitFactor)}</span>} sub={
+            <>
+              total <Delta value={s.totalPnl}>{signedUsd(s.totalPnl)}</Delta>
+              {fees > 0 && <> · fees {usd(fees)}</>}
+            </>
+          }
+        />
       </div>
 
       {bySymbol.length > 0 && (

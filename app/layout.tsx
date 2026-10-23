@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
         <footer className="mx-auto w-full max-w-6xl px-4 py-6 text-xs text-muted">
-          Simulated trading on Alpaca&apos;s paper account with real market data (IEX feed). Not investment advice.
+          Simulated trading on Alpaca&apos;s paper account with real market data (IEX stock feed, Alpaca crypto feed). Not investment advice.
         </footer>
       </body>
     </html>

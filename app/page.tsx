@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { DrawdownChart, EquityChart, PerformanceChart } from "@/components/charts";
 import { Card, Delta, Empty, PageHeader, Skeleton, Stat, StatusBadge, Table } from "@/components/ui";
 import {
+  classLabel,
   dateTime,
   duration,
   longDate,
@@ -93,11 +94,11 @@ async function Overview() {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title={`Performance vs ${o.benchmark}`} subtitle="Cumulative return by trading day">
+        <Card title="Performance vs SPY & BTC" subtitle="Cumulative return by day">
           {o.performance.length > 1 ? (
-            <PerformanceChart data={o.performance} benchmark={o.benchmark} />
+            <PerformanceChart data={o.performance} />
           ) : (
-            <Empty>Needs at least two trading days.</Empty>
+            <Empty>Needs at least two days of history.</Empty>
           )}
         </Card>
         <Card title="Drawdown" subtitle="Distance below the running equity peak">
@@ -106,7 +107,7 @@ async function Overview() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Stat label="Sharpe (ann.)" value={<span className="num">{ratio(k.sharpe)}</span>} sub={`Sortino ${ratio(k.sortino)} · ${k.tradingDays} day${k.tradingDays === 1 ? "" : "s"}`} />
+        <Stat label="Sharpe (ann.)" value={<span className="num">{ratio(k.sharpe)}</span>} sub={`Sortino ${ratio(k.sortino)} · ${k.days} day${k.days === 1 ? "" : "s"}`} />
         <Stat
           label="Win rate"
           value={<span className="num">{s.winRate === null ? "—" : pct(s.winRate, 0)}</span>}
@@ -115,13 +116,54 @@ async function Overview() {
         <Stat
           label="Realized P&L"
           value={<Delta value={k.realizedPnl}>{signedUsd(k.realizedPnl)}</Delta>}
-          sub={<>unrealized <Delta value={k.unrealizedPnl}>{signedUsd(k.unrealizedPnl)}</Delta></>}
+          sub={
+            <>
+              unrealized <Delta value={k.unrealizedPnl}>{signedUsd(k.unrealizedPnl)}</Delta>
+              {k.fees > 0 && <> · fees {usd(k.fees)}</>}
+            </>
+          }
         />
         <Stat
           label="Exposure"
           value={<span className="num">{pct(k.exposure, 0)}</span>}
           sub={`${k.openPositions} positions · ${usd0(k.cash)} cash`}
         />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {(["us_equity", "crypto"] as const).map((cls) => {
+          const c = o.classes[cls];
+          return (
+            <Card key={cls} title={classLabel(cls)} subtitle={cls === "crypto" ? "BTC, ETH, SOL · 24/7" : "10 stocks & ETFs · market hours"}>
+              <dl className="grid grid-cols-3 gap-3 text-sm">
+                <div>
+                  <dt className="text-xs text-muted">Realized</dt>
+                  <dd><Delta value={c.realized}>{signedUsd(c.realized)}</Delta></dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted">Unrealized</dt>
+                  <dd><Delta value={c.unrealized}>{signedUsd(c.unrealized)}</Delta></dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted">Exposure</dt>
+                  <dd className="num">{pct(k.equity ? c.exposure / k.equity : 0, 1)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted">Open</dt>
+                  <dd className="num">{c.openPositions}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted">Trades</dt>
+                  <dd className="num">{c.trades}{c.winRate !== null && <span className="text-muted"> · {pct(c.winRate, 0)} won</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted">Fees</dt>
+                  <dd className="num">{cls === "crypto" ? usd(c.fees) : "—"}</dd>
+                </div>
+              </dl>
+            </Card>
+          );
+        })}
       </div>
 
       <Card title="Recent closed trades">

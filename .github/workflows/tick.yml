@@ -2,10 +2,11 @@ name: Bot tick
 
 on:
   schedule:
-    # Every 15 min, 13:00–21:45 UTC on weekdays. This covers US market hours in both EDT and EST;
-    # the bot checks Alpaca's market clock and no-ops (snapshot only) when the market is closed.
-    # GitHub may delay scheduled runs by a few minutes under load.
-    - cron: "*/15 13-21 * * 1-5"
+    # Every 15 min, 24/7: crypto trades around the clock. Stocks only trade when Alpaca's market
+    # clock says the session is open. GitHub may delay scheduled runs by a few minutes under load.
+    # Public repos: GitHub disables schedules after 60 days without commits (it emails first;
+    # re-enable from the Actions tab).
+    - cron: "*/15 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:

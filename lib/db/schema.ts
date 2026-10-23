@@ -5,12 +5,15 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
+/** "us_equity" | "crypto" — rows from before crypto support are stocks. */
+const assetClass = () => text("asset_class").notNull().default("us_equity");
 
 export const botRuns = pgTable("bot_runs", {
   id: serial("id").primaryKey(),
@@ -49,6 +52,7 @@ export const orders = pgTable(
     clientOrderId: text("client_order_id").notNull(),
     parentId: text("parent_id"),
     symbol: text("symbol").notNull(),
+    assetClass: assetClass(),
     side: text("side").notNull(),
     qty: doublePrecision("qty"),
     filledQty: doublePrecision("filled_qty").notNull().default(0),
@@ -71,6 +75,7 @@ export const fills = pgTable(
     id: text("id").primaryKey(),
     orderId: text("order_id").notNull(),
     symbol: text("symbol").notNull(),
+    assetClass: assetClass(),
     side: text("side").notNull(),
     qty: doublePrecision("qty").notNull(),
     price: doublePrecision("price").notNull(),
@@ -86,6 +91,7 @@ export const positionsSnapshot = pgTable(
     runId: integer("run_id").notNull(),
     ts: ts("ts").notNull().defaultNow(),
     symbol: text("symbol").notNull(),
+    assetClass: assetClass(),
     qty: doublePrecision("qty").notNull(),
     avgEntry: doublePrecision("avg_entry").notNull(),
     currentPrice: doublePrecision("current_price").notNull(),
@@ -104,6 +110,7 @@ export const signals = pgTable(
     ts: ts("ts").notNull().defaultNow(),
     barTs: ts("bar_ts").notNull(),
     symbol: text("symbol").notNull(),
+    assetClass: assetClass(),
     strategy: text("strategy").notNull(),
     action: text("action").notNull(),
     reason: text("reason").notNull(),
@@ -120,7 +127,28 @@ export const settings = pgTable("settings", {
   value: jsonb("value").notNull(),
 });
 
-export const benchmarkBars = pgTable("benchmark_bars", {
-  date: text("date").primaryKey(),
-  close: doublePrecision("close").notNull(),
-});
+/** Daily closes for each benchmark (SPY for stocks, BTC/USD for crypto). */
+export const benchmarkCloses = pgTable(
+  "benchmark_closes",
+  {
+    symbol: text("symbol").notNull(),
+    date: text("date").notNull(),
+    close: doublePrecision("close").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.symbol, t.date] })],
+);
+
+/** Crypto trading fees (CFEE activities), valued in USD. */
+export const fees = pgTable(
+  "fees",
+  {
+    id: text("id").primaryKey(),
+    symbol: text("symbol").notNull(),
+    assetClass: assetClass(),
+    orderId: text("order_id"),
+    amountUsd: doublePrecision("amount_usd").notNull(),
+    ts: ts("ts").notNull(),
+    raw: jsonb("raw").notNull(),
+  },
+  (t) => [index("fees_ts_idx").on(t.ts)],
+);

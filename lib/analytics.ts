@@ -1,3 +1,5 @@
+import { assetClassOf, type AssetClass } from "./config";
+
 export type FillRow = {
   orderId: string;
   symbol: string;
@@ -10,6 +12,7 @@ export type FillRow = {
 export type Execution = {
   orderId: string;
   symbol: string;
+  assetClass: AssetClass;
   side: "buy" | "sell";
   qty: number;
   price: number;
@@ -19,6 +22,7 @@ export type Execution = {
 
 export type RoundTrip = {
   symbol: string;
+  assetClass: AssetClass;
   strategy: string;
   entryTs: Date;
   exitTs: Date;
@@ -30,7 +34,7 @@ export type RoundTrip = {
   holdMs: number;
 };
 
-export type OpenLot = { symbol: string; strategy: string; qty: number; price: number; ts: Date };
+export type OpenLot = { symbol: string; assetClass: AssetClass; strategy: string; qty: number; price: number; ts: Date };
 
 const EPS = 1e-9;
 
@@ -51,6 +55,7 @@ export function aggregateFills(rows: FillRow[], strategyByOrder: Map<string, str
       byOrder.set(f.orderId, {
         orderId: f.orderId,
         symbol: f.symbol,
+        assetClass: assetClassOf(f.symbol),
         side: f.side,
         qty: f.qty,
         price: f.price,
@@ -70,7 +75,7 @@ export function matchRoundTrips(execs: Execution[]): { trades: RoundTrip[]; open
     const queue = lots.get(e.symbol) ?? [];
     lots.set(e.symbol, queue);
     if (e.side === "buy") {
-      queue.push({ symbol: e.symbol, strategy: e.strategy, qty: e.qty, price: e.price, ts: e.ts });
+      queue.push({ symbol: e.symbol, assetClass: e.assetClass, strategy: e.strategy, qty: e.qty, price: e.price, ts: e.ts });
       continue;
     }
     let remaining = e.qty;
@@ -80,6 +85,7 @@ export function matchRoundTrips(execs: Execution[]): { trades: RoundTrip[]; open
       const pnl = (e.price - lot.price) * q;
       trades.push({
         symbol: e.symbol,
+        assetClass: e.assetClass,
         strategy: lot.strategy,
         entryTs: lot.ts,
         exitTs: e.ts,
@@ -161,12 +167,18 @@ export function pctReturns(values: number[]): number[] {
 
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
+/**
+ * Periods per year for annualizing daily returns. The bot snapshots equity every day of the week
+ * (crypto trades on weekends), so returns are calendar-daily, not trading-daily.
+ */
+export const PERIODS_PER_YEAR = 365;
+
 /** Annualized Sharpe of daily returns (risk-free rate ≈ 0). Needs ≥ 2 returns. */
 export function sharpe(daily: number[]): number | null {
   if (daily.length < 2) return null;
   const m = mean(daily);
   const sd = Math.sqrt(daily.reduce((a, r) => a + (r - m) ** 2, 0) / (daily.length - 1));
-  return sd > 0 ? (m / sd) * Math.sqrt(252) : null;
+  return sd > 0 ? (m / sd) * Math.sqrt(PERIODS_PER_YEAR) : null;
 }
 
 /** Annualized Sortino: penalizes only downside deviation. */
@@ -174,7 +186,7 @@ export function sortino(daily: number[]): number | null {
   if (daily.length < 2) return null;
   const m = mean(daily);
   const dd = Math.sqrt(daily.reduce((a, r) => a + Math.min(r, 0) ** 2, 0) / daily.length);
-  return dd > 0 ? (m / dd) * Math.sqrt(252) : null;
+  return dd > 0 ? (m / dd) * Math.sqrt(PERIODS_PER_YEAR) : null;
 }
 
 /** Drawdown from running peak at each point (≤ 0), plus the maximum drawdown. */

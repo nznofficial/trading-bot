@@ -1,4 +1,4 @@
-import { asc, desc, eq, gte, ne } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ne, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import {
   aggregateFills,
@@ -11,9 +11,15 @@ import {
   tradeStats,
   type RoundTrip,
 } from "./analytics";
-import { BENCHMARK, UNIVERSE } from "./config";
+import { assetClassOf, BENCHMARKS, UNIVERSE, type AssetClass } from "./config";
 import { db, schema } from "./db";
 import { STRATEGIES } from "./strategies";
+
+export type ClassFilter = "all" | AssetClass;
+
+export function parseClassFilter(v: string | string[] | undefined): ClassFilter {
+  return v === "us_equity" || v === "crypto" ? v : "all";
+}
 
 /**
  * All dashboard reads are cached briefly and tagged "bot"; each tick revalidates the tag.
@@ -25,17 +31,21 @@ function botCache() {
 }
 
 const ms = (d: Date | null) => (d ? d.getTime() : null);
+const matches = (filter: ClassFilter, cls: string) => filter === "all" || filter === cls;
 
 export type SerializedTrade = Omit<RoundTrip, "entryTs" | "exitTs"> & { entryTs: number; exitTs: number };
 
 async function loadTrades() {
   const d = db();
-  const [fillRows, orderRows] = await Promise.all([
+  const [fillRows, orderRows, feeRows] = await Promise.all([
     d.select().from(schema.fills).orderBy(asc(schema.fills.ts)),
     d.select({ id: schema.orders.id, strategy: schema.orders.strategy }).from(schema.orders),
+    d.select().from(schema.fees),
   ]);
   const strategyByOrder = new Map(orderRows.filter((o) => o.strategy).map((o) => [o.id, o.strategy!]));
-  return matchRoundTrips(aggregateFills(fillRows, strategyByOrder));
+  const { trades, openLots } = matchRoundTrips(aggregateFills(fillRows, strategyByOrder));
+  const fees = feeRows.map((f) => ({ symbol: f.symbol, assetClass: f.assetClass as AssetClass, amount: f.amountUsd }));
+  return { trades, openLots, fees };
 }
 
 const serializeTrade = (t: RoundTrip): SerializedTrade => ({
@@ -61,6 +71,7 @@ async function loadPositions() {
     asOf: latest.ts.getTime(),
     positions: rows.map((p) => ({
       symbol: p.symbol,
+      assetClass: p.assetClass as AssetClass,
       qty: p.qty,
       avgEntry: p.avgEntry,
       currentPrice: p.currentPrice,
@@ -76,9 +87,9 @@ export async function getOverview() {
   "use cache";
   botCache();
   const d = db();
-  const [snaps, bench, [lastRun], [paused], { trades }, { positions }] = await Promise.all([
+  const [snaps, bench, [lastRun], [paused], { trades, fees }, { positions }] = await Promise.all([
     d.select().from(schema.equitySnapshots).orderBy(asc(schema.equitySnapshots.ts)),
-    d.select().from(schema.benchmarkBars).orderBy(asc(schema.benchmarkBars.date)),
+    d.select().from(schema.benchmarkCloses).orderBy(asc(schema.benchmarkCloses.date)),
     d.select().from(schema.botRuns).orderBy(desc(schema.botRuns.id)).limit(1),
     d.select().from(schema.settings).where(eq(schema.settings.key, "paused")),
     loadTrades(),
@@ -92,29 +103,52 @@ export async function getOverview() {
   const first = snaps[0];
   const latest = snaps[snaps.length - 1];
 
-  // Portfolio vs SPY, both as % return since the first trading day we have equity for.
-  const benchByDate = new Map(bench.map((b) => [b.date, b.close]));
+  // Portfolio vs each benchmark, as % return since the first day we have equity for.
   const startDate = daily[0]?.date;
-  const benchBase = startDate
-    ? (bench.find((b) => b.date === startDate) ?? bench.findLast((b) => b.date < startDate))?.close
-    : undefined;
-  let lastBench = benchBase;
-  const performance = daily.map((p) => {
-    lastBench = benchByDate.get(p.date) ?? lastBench;
-    return {
-      date: p.date,
-      portfolio: first ? p.equity / first.equity - 1 : 0,
-      benchmark: benchBase && lastBench ? lastBench / benchBase - 1 : null,
+  const benchSeries = (symbol: string) => {
+    const rows = bench.filter((b) => b.symbol === symbol);
+    const byDate = new Map(rows.map((b) => [b.date, b.close]));
+    const base = startDate
+      ? (rows.find((b) => b.date === startDate) ?? rows.findLast((b) => b.date < startDate))?.close
+      : undefined;
+    let last = base;
+    return (date: string) => {
+      last = byDate.get(date) ?? last;
+      return base && last ? last / base - 1 : null;
     };
-  });
+  };
+  const spy = benchSeries(BENCHMARKS.us_equity);
+  const btc = benchSeries(BENCHMARKS.crypto);
+  const performance = daily.map((p) => ({
+    date: p.date,
+    portfolio: first ? p.equity / first.equity - 1 : 0,
+    spy: spy(p.date),
+    btc: btc(p.date),
+  }));
+
+  const byClass = (cls: AssetClass) => {
+    const t = trades.filter((x) => x.assetClass === cls);
+    const pos = positions.filter((p) => p.assetClass === cls);
+    const stats = tradeStats(t);
+    const feeTotal = fees.filter((f) => f.assetClass === cls).reduce((a, f) => a + f.amount, 0);
+    return {
+      realized: stats.totalPnl,
+      fees: feeTotal,
+      unrealized: pos.reduce((a, p) => a + p.unrealizedPl, 0),
+      exposure: pos.reduce((a, p) => a + p.marketValue, 0),
+      openPositions: pos.length,
+      trades: stats.count,
+      winRate: stats.winRate,
+    };
+  };
 
   const unrealized = positions.reduce((a, p) => a + p.unrealizedPl, 0);
   const stats = tradeStats(trades);
+  const totalFees = fees.reduce((a, f) => a + f.amount, 0);
 
   return {
     hasData: snaps.length > 0,
     paused: paused?.value === true,
-    benchmark: BENCHMARK,
     lastRun: lastRun
       ? {
           id: lastRun.id,
@@ -138,13 +172,15 @@ export async function getOverview() {
           currentDrawdown: dd.series[dd.series.length - 1]?.dd ?? 0,
           sharpe: sharpe(returns),
           sortino: sortino(returns),
-          tradingDays: daily.length,
+          days: daily.length,
           realizedPnl: stats.totalPnl,
+          fees: totalFees,
           unrealizedPnl: unrealized,
           openPositions: positions.length,
           since: first.ts.getTime(),
         }
       : null,
+    classes: { us_equity: byClass("us_equity"), crypto: byClass("crypto") },
     stats,
     equity: snaps.map((s) => ({ ts: s.ts.getTime(), equity: s.equity })),
     drawdown: dd.series.map((p) => ({ ts: p.ts.getTime(), dd: p.dd })),
@@ -153,20 +189,25 @@ export async function getOverview() {
   };
 }
 
-export async function getPositions() {
+export async function getPositions(filter: ClassFilter) {
   "use cache";
   botCache();
-  return loadPositions();
+  const { asOf, positions } = await loadPositions();
+  return { asOf, positions: positions.filter((p) => matches(filter, p.assetClass)) };
 }
 
-export async function getTrades() {
+export async function getTrades(filter: ClassFilter) {
   "use cache";
   botCache();
   const d = db();
-  const [{ trades, openLots }, orderRows] = await Promise.all([
+  const where: SQL | undefined = filter === "all" ? undefined : eq(schema.orders.assetClass, filter);
+  const [loaded, orderRows] = await Promise.all([
     loadTrades(),
-    d.select().from(schema.orders).orderBy(desc(schema.orders.submittedAt)).limit(200),
+    d.select().from(schema.orders).where(where).orderBy(desc(schema.orders.submittedAt)).limit(200),
   ]);
+  const trades = loaded.trades.filter((t) => matches(filter, t.assetClass));
+  const fees = loaded.fees.filter((f) => matches(filter, f.assetClass));
+
   const bySymbol = new Map<string, { symbol: string; pnl: number; count: number }>();
   for (const t of trades) {
     const s = bySymbol.get(t.symbol) ?? { symbol: t.symbol, pnl: 0, count: 0 };
@@ -176,14 +217,15 @@ export async function getTrades() {
   }
   return {
     stats: tradeStats(trades),
+    fees: fees.reduce((a, f) => a + f.amount, 0),
     trades: trades.slice().reverse().map(serializeTrade),
-    openLots: openLots.map((l) => ({ ...l, ts: l.ts.getTime() })),
     bySymbol: [...bySymbol.values()].sort((a, b) => b.pnl - a.pnl),
     orders: orderRows.map((o) => ({
       id: o.id,
       clientOrderId: o.clientOrderId,
       isLeg: o.parentId !== null,
       symbol: o.symbol,
+      assetClass: o.assetClass as AssetClass,
       side: o.side,
       qty: o.qty,
       filledQty: o.filledQty,
@@ -199,36 +241,35 @@ export async function getTrades() {
   };
 }
 
-export async function getStrategies() {
+export async function getStrategies(filter: ClassFilter) {
   "use cache";
   botCache();
   const d = db();
   const since = new Date(Date.now() - 14 * 86_400_000);
-  const [{ trades }, { positions }, recentSignals, [latestRun]] = await Promise.all([
+  const classWhere = filter === "all" ? undefined : eq(schema.signals.assetClass, filter);
+  const [{ trades }, { positions }, recentSignals, latestSignals] = await Promise.all([
     loadTrades(),
     loadPositions(),
     d
       .select()
       .from(schema.signals)
-      .where(ne(schema.signals.action, "hold"))
+      .where(and(ne(schema.signals.action, "hold"), classWhere))
       .orderBy(desc(schema.signals.id))
       .limit(100),
+    // Latest evaluation per symbol: stock signals stop when the market closes, crypto keeps going.
     d
-      .select({ runId: schema.signals.runId })
+      .selectDistinctOn([schema.signals.symbol])
       .from(schema.signals)
-      .where(gte(schema.signals.ts, since))
-      .orderBy(desc(schema.signals.id))
-      .limit(1),
+      .where(and(gte(schema.signals.ts, since), classWhere))
+      .orderBy(schema.signals.symbol, desc(schema.signals.id)),
   ]);
-  const latestSignals = latestRun
-    ? await d.select().from(schema.signals).where(eq(schema.signals.runId, latestRun.runId))
-    : [];
 
   const serializeSignal = (s: typeof schema.signals.$inferSelect) => ({
     id: s.id,
     ts: s.ts.getTime(),
     barTs: s.barTs.getTime(),
     symbol: s.symbol,
+    assetClass: s.assetClass as AssetClass,
     strategy: s.strategy,
     action: s.action,
     reason: s.reason,
@@ -238,14 +279,14 @@ export async function getStrategies() {
   });
 
   const strategies = Object.values(STRATEGIES).map((st) => {
-    const mine = trades.filter((t) => t.strategy === st.id);
-    const open = positions.filter((p) => p.strategy === st.id);
+    const mine = trades.filter((t) => t.strategy === st.id && matches(filter, t.assetClass));
+    const open = positions.filter((p) => p.strategy === st.id && matches(filter, p.assetClass));
     return {
       id: st.id,
       name: st.name,
       description: st.description,
       symbols: Object.entries(UNIVERSE)
-        .filter(([, id]) => id === st.id)
+        .filter(([sym, id]) => id === st.id && matches(filter, assetClassOf(sym)))
         .map(([s]) => s),
       stats: tradeStats(mine),
       unrealizedPl: open.reduce((a, p) => a + p.unrealizedPl, 0),
@@ -255,7 +296,9 @@ export async function getStrategies() {
 
   return {
     strategies,
-    latest: latestSignals.map(serializeSignal).sort((a, b) => a.symbol.localeCompare(b.symbol)),
+    latest: latestSignals
+      .map(serializeSignal)
+      .sort((a, b) => a.assetClass.localeCompare(b.assetClass) || a.symbol.localeCompare(b.symbol)),
     recent: recentSignals.map(serializeSignal),
   };
 }

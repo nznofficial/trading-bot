@@ -15,12 +15,15 @@ export type Account = {
   cash: string;
   buying_power: string;
   long_market_value: string;
+  /** Cash available for non-marginable assets such as crypto. */
+  non_marginable_buying_power: string;
   trading_blocked: boolean;
   account_blocked: boolean;
 };
 
 export type Position = {
   symbol: string;
+  asset_class: string;
   qty: string;
   side: "long" | "short";
   avg_entry_price: string;
@@ -34,6 +37,7 @@ export type Order = {
   id: string;
   client_order_id: string;
   symbol: string;
+  asset_class?: string;
   side: "buy" | "sell";
   qty: string | null;
   filled_qty: string;
@@ -46,6 +50,19 @@ export type Order = {
   stop_price: string | null;
   limit_price: string | null;
   legs: Order[] | null;
+};
+
+/** Crypto trading fee. Alpaca charges it in the asset received, so qty × price is its USD value. */
+export type FeeActivity = {
+  id: string;
+  activity_type: "CFEE";
+  date?: string;
+  transaction_time?: string;
+  symbol: string;
+  qty: string;
+  price: string;
+  net_amount?: string;
+  order_id?: string;
 };
 
 export type FillActivity = {
@@ -74,9 +91,19 @@ export type NewOrder = {
   qty: number;
   side: "buy" | "sell";
   client_order_id: string;
+  /** Defaults to "market". */
+  type?: "market" | "stop_limit";
+  /** Defaults to "day" (stocks); crypto orders must be "gtc" or "ioc". */
+  time_in_force?: "day" | "gtc" | "ioc";
+  stop_price?: number;
+  limit_price?: number;
+  /** Stocks only: attach a protective stop leg (OTO, or bracket with take_profit). */
   stop_loss?: number;
   take_profit?: number;
 };
+
+/** Format a quantity without float noise: whole numbers as-is, fractions to 9 dp (Alpaca's crypto increment). */
+export const formatQty = (q: number) => (Number.isInteger(q) ? String(q) : q.toFixed(9).replace(/\.?0+$/, ""));
 
 export class AlpacaError extends Error {
   constructor(
@@ -137,12 +164,14 @@ export const closeAllPositions = () =>
 export function submitOrder(o: NewOrder) {
   const body: Record<string, unknown> = {
     symbol: o.symbol,
-    qty: String(o.qty),
+    qty: formatQty(o.qty),
     side: o.side,
-    type: "market",
+    type: o.type ?? "market",
     client_order_id: o.client_order_id,
-    time_in_force: "day",
+    time_in_force: o.time_in_force ?? "day",
   };
+  if (o.stop_price !== undefined) body.stop_price = o.stop_price.toFixed(2);
+  if (o.limit_price !== undefined) body.limit_price = o.limit_price.toFixed(2);
   if (o.stop_loss !== undefined) {
     // GTC so the protective stop leg survives past today's close.
     body.time_in_force = "gtc";
@@ -153,21 +182,24 @@ export function submitOrder(o: NewOrder) {
   return trading<Order>("/v2/orders", { method: "POST", body: JSON.stringify(body) });
 }
 
-/** All FILL activities after `after` (ISO), oldest first, following pagination. */
-export async function getFills(after?: string): Promise<FillActivity[]> {
-  const out: FillActivity[] = [];
+/** All activities of one type after `after` (ISO), oldest first, following pagination. */
+async function getActivities<T extends { id: string }>(type: string, after?: string): Promise<T[]> {
+  const out: T[] = [];
   let pageToken: string | undefined;
   for (let page = 0; page < 50; page++) {
     const q = new URLSearchParams({ direction: "asc", page_size: "100" });
     if (after) q.set("after", after);
     if (pageToken) q.set("page_token", pageToken);
-    const batch = await trading<FillActivity[]>(`/v2/account/activities/FILL?${q}`);
+    const batch = await trading<T[]>(`/v2/account/activities/${type}?${q}`);
     out.push(...batch);
     if (batch.length < 100) break;
     pageToken = batch[batch.length - 1].id;
   }
   return out;
 }
+
+export const getFills = (after?: string) => getActivities<FillActivity>("FILL", after);
+export const getFees = (after?: string) => getActivities<FeeActivity>("CFEE", after);
 
 /** Historical bars for many symbols, following pagination. */
 export async function getBars(
@@ -192,6 +224,33 @@ export async function getBars(
     if (pageToken) q.set("page_token", pageToken);
     const res = await data<{ bars: Record<string, Bar[]> | null; next_page_token: string | null }>(
       `/v2/stocks/bars?${q}`,
+    );
+    for (const [sym, bars] of Object.entries(res.bars ?? {})) (out[sym] ??= []).push(...bars);
+    if (!res.next_page_token) break;
+    pageToken = res.next_page_token;
+  }
+  return out;
+}
+
+/** Historical crypto bars (all hours) for "BTC/USD"-style pairs, following pagination. */
+export async function getCryptoBars(
+  symbols: string[],
+  timeframe: string,
+  start: Date,
+): Promise<Record<string, Bar[]>> {
+  const out: Record<string, Bar[]> = Object.fromEntries(symbols.map((s) => [s, []]));
+  let pageToken: string | undefined;
+  for (let page = 0; page < 50; page++) {
+    const q = new URLSearchParams({
+      symbols: symbols.join(","),
+      timeframe,
+      start: start.toISOString(),
+      limit: "10000",
+      sort: "asc",
+    });
+    if (pageToken) q.set("page_token", pageToken);
+    const res = await data<{ bars: Record<string, Bar[]> | null; next_page_token: string | null }>(
+      `/v1beta3/crypto/us/bars?${q}`,
     );
     for (const [sym, bars] of Object.entries(res.bars ?? {})) (out[sym] ??= []).push(...bars);
     if (!res.next_page_token) break;

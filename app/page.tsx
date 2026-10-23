@@ -1,69 +1,163 @@
-import Image from "next/image";
+import Link from "next/link";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { DrawdownChart, EquityChart, PerformanceChart } from "@/components/charts";
+import { Card, Delta, Empty, PageHeader, Skeleton, Stat, StatusBadge, Table } from "@/components/ui";
+import {
+  dateTime,
+  duration,
+  longDate,
+  pct,
+  ratio,
+  signedPct,
+  signedUsd,
+  strategyLabel,
+  usd,
+  usd0,
+} from "@/lib/format";
+import { getOverview } from "@/lib/queries";
 
-export default function Home() {
+export default function OverviewPage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      <PageHeader title="Overview" subtitle="Portfolio performance, risk, and bot health." />
+      <Suspense fallback={<OverviewSkeleton />}>
+        <Overview />
+      </Suspense>
+    </>
+  );
+}
+
+function OverviewSkeleton() {
+  return (
+    <div className="grid gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-24" />
+        ))}
+      </div>
+      <Skeleton className="h-80" />
+    </div>
+  );
+}
+
+async function Overview() {
+  await connection(); // DB-backed: render at request time, never at build
+  const o = await getOverview();
+  if (!o.hasData || !o.kpis) {
+    return (
+      <Card>
+        <Empty>No data yet. The first bot tick will record an equity snapshot.</Empty>
+      </Card>
+    );
+  }
+  const k = o.kpis;
+  const s = o.stats;
+
+  return (
+    <div className="grid gap-4">
+      {o.lastRun && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm">
+          <StatusBadge status={o.lastRun.status} />
+          <span className="text-ink-2">Last run {dateTime(o.lastRun.startedAt)}</span>
+          {o.lastRun.message && <span className="text-muted">{o.lastRun.message}</span>}
+          {o.lastRun.error && <span className="text-down">{o.lastRun.error}</span>}
+          {o.paused && <span className="font-medium text-ink">Bot paused</span>}
+          <Link href="/runs" className="ml-auto text-xs text-ink-2 underline-offset-2 hover:underline">
+            Run log →
+          </Link>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Stat label="Equity" value={usd0(k.equity)} sub={`from ${usd0(k.startEquity)} on ${longDate(k.since)}`} />
+        <Stat
+          label="Total return"
+          value={<Delta value={k.totalReturn}>{signedPct(k.totalReturn)}</Delta>}
+          sub={<Delta value={k.equity - k.startEquity}>{signedUsd(k.equity - k.startEquity)}</Delta>}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <Stat
+          label="Today"
+          value={<Delta value={k.dayPnl}>{signedUsd(k.dayPnl)}</Delta>}
+          sub={<Delta value={k.dayPnlPct}>{signedPct(k.dayPnlPct)}</Delta>}
+        />
+        <Stat
+          label="Max drawdown"
+          value={<span className="num">{pct(k.maxDrawdown)}</span>}
+          sub={`currently ${pct(k.currentDrawdown)} from peak`}
+        />
+      </div>
+
+      <Card title="Equity" subtitle="Account value at every bot tick">
+        <EquityChart data={o.equity} />
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card title={`Performance vs ${o.benchmark}`} subtitle="Cumulative return by trading day">
+          {o.performance.length > 1 ? (
+            <PerformanceChart data={o.performance} benchmark={o.benchmark} />
+          ) : (
+            <Empty>Needs at least two trading days.</Empty>
+          )}
+        </Card>
+        <Card title="Drawdown" subtitle="Distance below the running equity peak">
+          <DrawdownChart data={o.drawdown} />
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Stat label="Sharpe (ann.)" value={<span className="num">{ratio(k.sharpe)}</span>} sub={`Sortino ${ratio(k.sortino)} · ${k.tradingDays} day${k.tradingDays === 1 ? "" : "s"}`} />
+        <Stat
+          label="Win rate"
+          value={<span className="num">{s.winRate === null ? "—" : pct(s.winRate, 0)}</span>}
+          sub={`${s.wins}W / ${s.losses}L · PF ${ratio(s.profitFactor)}`}
+        />
+        <Stat
+          label="Realized P&L"
+          value={<Delta value={k.realizedPnl}>{signedUsd(k.realizedPnl)}</Delta>}
+          sub={<>unrealized <Delta value={k.unrealizedPnl}>{signedUsd(k.unrealizedPnl)}</Delta></>}
+        />
+        <Stat
+          label="Exposure"
+          value={<span className="num">{pct(k.exposure, 0)}</span>}
+          sub={`${k.openPositions} positions · ${usd0(k.cash)} cash`}
+        />
+      </div>
+
+      <Card title="Recent closed trades">
+        {o.recentTrades.length ? (
+          <Table>
+            <thead>
+              <tr>
+                <th>Closed</th>
+                <th>Symbol</th>
+                <th>Strategy</th>
+                <th className="text-right!">Entry → Exit</th>
+                <th className="text-right!">P&amp;L</th>
+                <th className="text-right!">Held</th>
+              </tr>
+            </thead>
+            <tbody>
+              {o.recentTrades.map((t, i) => (
+                <tr key={i}>
+                  <td className="text-ink-2">{dateTime(t.exitTs)}</td>
+                  <td className="font-medium">{t.symbol}</td>
+                  <td className="text-ink-2">{strategyLabel(t.strategy)}</td>
+                  <td className="text-right">
+                    {usd(t.entryPrice)} → {usd(t.exitPrice)}
+                  </td>
+                  <td className="text-right">
+                    <Delta value={t.pnl}>{signedUsd(t.pnl)}</Delta>
+                  </td>
+                  <td className="text-right text-ink-2">{duration(t.holdMs)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        ) : (
+          <Empty>No closed trades yet.</Empty>
+        )}
+      </Card>
     </div>
   );
 }

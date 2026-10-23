@@ -1,0 +1,126 @@
+import {
+  boolean,
+  doublePrecision,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
+
+const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
+
+export const botRuns = pgTable("bot_runs", {
+  id: serial("id").primaryKey(),
+  startedAt: ts("started_at").notNull().defaultNow(),
+  finishedAt: ts("finished_at"),
+  /** running | ok | closed | paused | skipped | error */
+  status: text("status").notNull().default("running"),
+  marketOpen: boolean("market_open"),
+  signals: integer("signals").notNull().default(0),
+  ordersPlaced: integer("orders_placed").notNull().default(0),
+  durationMs: integer("duration_ms"),
+  message: text("message"),
+  error: text("error"),
+});
+
+export const equitySnapshots = pgTable(
+  "equity_snapshots",
+  {
+    id: serial("id").primaryKey(),
+    runId: integer("run_id").notNull(),
+    ts: ts("ts").notNull().defaultNow(),
+    equity: doublePrecision("equity").notNull(),
+    lastEquity: doublePrecision("last_equity").notNull(),
+    cash: doublePrecision("cash").notNull(),
+    buyingPower: doublePrecision("buying_power").notNull(),
+    longMarketValue: doublePrecision("long_market_value").notNull(),
+    marketOpen: boolean("market_open").notNull(),
+  },
+  (t) => [index("equity_snapshots_ts_idx").on(t.ts)],
+);
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: text("id").primaryKey(),
+    clientOrderId: text("client_order_id").notNull(),
+    parentId: text("parent_id"),
+    symbol: text("symbol").notNull(),
+    side: text("side").notNull(),
+    qty: doublePrecision("qty"),
+    filledQty: doublePrecision("filled_qty").notNull().default(0),
+    type: text("type").notNull(),
+    orderClass: text("order_class"),
+    status: text("status").notNull(),
+    strategy: text("strategy"),
+    submittedAt: ts("submitted_at").notNull(),
+    filledAt: ts("filled_at"),
+    filledAvgPrice: doublePrecision("filled_avg_price"),
+    stopPrice: doublePrecision("stop_price"),
+    limitPrice: doublePrecision("limit_price"),
+  },
+  (t) => [index("orders_submitted_idx").on(t.submittedAt)],
+);
+
+export const fills = pgTable(
+  "fills",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id").notNull(),
+    symbol: text("symbol").notNull(),
+    side: text("side").notNull(),
+    qty: doublePrecision("qty").notNull(),
+    price: doublePrecision("price").notNull(),
+    ts: ts("ts").notNull(),
+  },
+  (t) => [index("fills_ts_idx").on(t.ts)],
+);
+
+export const positionsSnapshot = pgTable(
+  "positions_snapshot",
+  {
+    id: serial("id").primaryKey(),
+    runId: integer("run_id").notNull(),
+    ts: ts("ts").notNull().defaultNow(),
+    symbol: text("symbol").notNull(),
+    qty: doublePrecision("qty").notNull(),
+    avgEntry: doublePrecision("avg_entry").notNull(),
+    currentPrice: doublePrecision("current_price").notNull(),
+    marketValue: doublePrecision("market_value").notNull(),
+    unrealizedPl: doublePrecision("unrealized_pl").notNull(),
+    unrealizedPlpc: doublePrecision("unrealized_plpc").notNull(),
+  },
+  (t) => [index("positions_snapshot_run_idx").on(t.runId)],
+);
+
+export const signals = pgTable(
+  "signals",
+  {
+    id: serial("id").primaryKey(),
+    runId: integer("run_id").notNull(),
+    ts: ts("ts").notNull().defaultNow(),
+    barTs: ts("bar_ts").notNull(),
+    symbol: text("symbol").notNull(),
+    strategy: text("strategy").notNull(),
+    action: text("action").notNull(),
+    reason: text("reason").notNull(),
+    indicators: jsonb("indicators").$type<Record<string, number | null>>().notNull(),
+    acted: boolean("acted").notNull().default(false),
+    /** Why an actionable signal was or wasn't executed (risk skip, order id, error). */
+    note: text("note"),
+  },
+  (t) => [index("signals_ts_idx").on(t.ts)],
+);
+
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+});
+
+export const benchmarkBars = pgTable("benchmark_bars", {
+  date: text("date").primaryKey(),
+  close: doublePrecision("close").notNull(),
+});

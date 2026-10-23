@@ -1,0 +1,37 @@
+name: Bot tick
+
+on:
+  schedule:
+    # Every 15 min, 13:00–21:45 UTC on weekdays. This covers US market hours in both EDT and EST;
+    # the bot checks Alpaca's market clock and no-ops (snapshot only) when the market is closed.
+    # GitHub may delay scheduled runs by a few minutes under load.
+    - cron: "*/15 13-21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Evaluate strategies without placing orders"
+        type: boolean
+        default: false
+
+concurrency:
+  group: bot-tick
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Trigger /api/tick
+        env:
+          TICK_URL: ${{ secrets.TICK_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: |
+          url="$TICK_URL"
+          if [ "$DRY_RUN" = "1" ]; then url="$url?dryRun=1"; fi
+          status=$(curl -sS -o response.json -w '%{http_code}' --max-time 90 \
+            -X POST -H "Authorization: Bearer $CRON_SECRET" "$url")
+          cat response.json; echo
+          echo "HTTP $status"
+          test "$status" -lt 400

@@ -127,15 +127,26 @@ async function request<T>(base: string, path: string, init: RequestInit = {}): P
   if (base !== ALPACA_PAPER_URL && base !== ALPACA_DATA_URL) {
     throw new Error(`Refusing to call non-paper Alpaca endpoint: ${base}`);
   }
-  const res = await fetch(base + path, {
-    ...init,
-    headers: { ...credentials(), "Content-Type": "application/json", ...init.headers },
-    cache: "no-store",
-  });
-  const text = await res.text();
-  if (!res.ok) throw new AlpacaError(res.status, text, path);
-  return (text ? JSON.parse(text) : null) as T;
+  // Retry rate limits (429) with backoff; long simulations make ~150 data requests per run.
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(base + path, {
+      ...init,
+      headers: { ...credentials(), "Content-Type": "application/json", ...init.headers },
+      cache: "no-store",
+    });
+    const text = await res.text();
+    if (res.status === 429 && attempt < 4) {
+      const retryAfter = Number(res.headers.get("retry-after"));
+      await new Promise((r) => setTimeout(r, Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 1500 * (attempt + 1)));
+      continue;
+    }
+    if (!res.ok) throw new AlpacaError(res.status, text, path);
+    return (text ? JSON.parse(text) : null) as T;
+  }
 }
+
+/** Safety cap on pagination loops. Crypto pages hold ~1 week of 15-min bars, so a year ≈ 52 pages. */
+const MAX_PAGES = 2000;
 
 const trading = <T>(path: string, init?: RequestInit) => request<T>(ALPACA_PAPER_URL, path, init);
 const data = <T>(path: string) => request<T>(ALPACA_DATA_URL, path);
@@ -186,7 +197,7 @@ export function submitOrder(o: NewOrder) {
 async function getActivities<T extends { id: string }>(type: string, after?: string): Promise<T[]> {
   const out: T[] = [];
   let pageToken: string | undefined;
-  for (let page = 0; page < 50; page++) {
+  for (let page = 0; page < MAX_PAGES; page++) {
     const q = new URLSearchParams({ direction: "asc", page_size: "100" });
     if (after) q.set("after", after);
     if (pageToken) q.set("page_token", pageToken);
@@ -210,7 +221,7 @@ export async function getBars(
 ): Promise<Record<string, Bar[]>> {
   const out: Record<string, Bar[]> = Object.fromEntries(symbols.map((s) => [s, []]));
   let pageToken: string | undefined;
-  for (let page = 0; page < 50; page++) {
+  for (let page = 0; page < MAX_PAGES; page++) {
     const q = new URLSearchParams({
       symbols: symbols.join(","),
       timeframe,
@@ -232,29 +243,29 @@ export async function getBars(
   return out;
 }
 
-/** Historical crypto bars (all hours) for "BTC/USD"-style pairs, following pagination. */
+/**
+ * Historical crypto bars (all hours) for "BTC/USD"-style pairs. The crypto endpoint returns only
+ * ~1 week of 15-min bars per page regardless of `limit`, so each symbol pages on its own, in parallel.
+ */
 export async function getCryptoBars(
   symbols: string[],
   timeframe: string,
   start: Date,
 ): Promise<Record<string, Bar[]>> {
-  const out: Record<string, Bar[]> = Object.fromEntries(symbols.map((s) => [s, []]));
-  let pageToken: string | undefined;
-  for (let page = 0; page < 50; page++) {
-    const q = new URLSearchParams({
-      symbols: symbols.join(","),
-      timeframe,
-      start: start.toISOString(),
-      limit: "10000",
-      sort: "asc",
-    });
-    if (pageToken) q.set("page_token", pageToken);
-    const res = await data<{ bars: Record<string, Bar[]> | null; next_page_token: string | null }>(
-      `/v1beta3/crypto/us/bars?${q}`,
-    );
-    for (const [sym, bars] of Object.entries(res.bars ?? {})) (out[sym] ??= []).push(...bars);
-    if (!res.next_page_token) break;
-    pageToken = res.next_page_token;
-  }
-  return out;
+  const one = async (symbol: string) => {
+    const out: Bar[] = [];
+    let pageToken: string | undefined;
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const q = new URLSearchParams({ symbols: symbol, timeframe, start: start.toISOString(), limit: "10000", sort: "asc" });
+      if (pageToken) q.set("page_token", pageToken);
+      const res = await data<{ bars: Record<string, Bar[]> | null; next_page_token: string | null }>(
+        `/v1beta3/crypto/us/bars?${q}`,
+      );
+      out.push(...(res.bars?.[symbol] ?? []));
+      if (!res.next_page_token) break;
+      pageToken = res.next_page_token;
+    }
+    return [symbol, out] as const;
+  };
+  return Object.fromEntries(await Promise.all(symbols.map(one)));
 }

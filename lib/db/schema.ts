@@ -152,3 +152,18 @@ export const fees = pgTable(
   },
   (t) => [index("fees_ts_idx").on(t.ts)],
 );
+
+/** Saved simulator (backtest) runs. `result` holds the daily equity, per-unit/per-symbol stats and trades. */
+export const simulations = pgTable(
+  "simulations",
+  {
+    id: serial("id").primaryKey(),
+    createdAt: ts("created_at").notNull().defaultNow(),
+    params: jsonb("params").notNull(),
+    summary: jsonb("summary").notNull(),
+    result: jsonb("result").notNull(),
+    bars: integer("bars").notNull(),
+    durationMs: integer("duration_ms").notNull(),
+  },
+  (t) => [index("simulations_created_idx").on(t.createdAt)],
+);

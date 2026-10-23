@@ -372,3 +372,45 @@ export async function getMarketStrip() {
     lastRun: lastRun ? { startedAt: lastRun.startedAt.getTime(), status: lastRun.status } : null,
   };
 }
+
+export type SimulationRow = {
+  id: number;
+  createdAt: number;
+  params: import("./simulator").SimParams;
+  summary: import("./backtest").BacktestResult["summary"];
+  bars: number;
+  durationMs: number;
+};
+
+/** Saved simulator runs (newest first) and the full result of the selected one. */
+export async function getSimulations(selectedId: number | null) {
+  "use cache";
+  botCache();
+  const d = db();
+  const rows = await d
+    .select({
+      id: schema.simulations.id,
+      createdAt: schema.simulations.createdAt,
+      params: schema.simulations.params,
+      summary: schema.simulations.summary,
+      bars: schema.simulations.bars,
+      durationMs: schema.simulations.durationMs,
+    })
+    .from(schema.simulations)
+    .orderBy(desc(schema.simulations.id))
+    .limit(50);
+  const id = selectedId ?? rows[0]?.id ?? null;
+  const [selected] = id ? await d.select().from(schema.simulations).where(eq(schema.simulations.id, id)) : [];
+  return {
+    runs: rows.map((r) => ({ ...r, createdAt: r.createdAt.getTime() }) as SimulationRow),
+    selected: selected
+      ? {
+          ...(selected as unknown as SimulationRow),
+          createdAt: selected.createdAt.getTime(),
+          result: selected.result as Omit<import("./backtest").BacktestResult, "trades"> & {
+            trades: (Omit<import("./backtest").SimTrade, "entryTs" | "exitTs"> & { entryTs: string; exitTs: string })[];
+          },
+        }
+      : null,
+  };
+}

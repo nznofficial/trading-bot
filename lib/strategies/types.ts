@@ -16,10 +16,16 @@ export type StrategyContext = {
   positionQty: number;
 };
 
+/** Signal at bar index `i` given the current position. Indicators are precomputed once. */
+export type Evaluator = (i: number, positionQty: number) => Signal;
+
 export interface Strategy {
   id: StrategyId;
   name: string;
   description: string;
   minBars: number;
+  /** Precompute indicator series over `bars`; returns a cheap per-bar evaluator (used by the simulator). */
+  prepare(bars: Bar[]): Evaluator;
+  /** Signal on the latest bar (used live). Same logic as `prepare(bars)(bars.length - 1, qty)`. */
   evaluate(ctx: StrategyContext): Signal;
 }

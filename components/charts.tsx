@@ -228,7 +228,14 @@ export function SymbolPnlChart({ data }: { data: { symbol: string; pnl: number; 
       <BarChart data={data} layout="vertical" margin={{ top: 0, right: 16, bottom: 0, left: 0 }} barCategoryGap={6}>
         <CartesianGrid stroke="var(--grid)" horizontal={false} />
         <XAxis type="number" {...axis} tickFormatter={(v: number) => usd0(v)} />
-        <YAxis type="category" dataKey="symbol" {...axis} axisLine={false} width={52} />
+        {/* Label column sized to the longest symbol (crypto pairs like "BTC/USD" are wider). */}
+        <YAxis
+          type="category"
+          dataKey="symbol"
+          {...axis}
+          axisLine={false}
+          width={Math.max(44, ...data.map((d) => d.symbol.length * 8 + 12))}
+        />
         <ReferenceLine x={0} stroke="var(--axis)" />
         <Tooltip
           cursor={{ fill: "rgba(139, 92, 246, 0.08)" }}

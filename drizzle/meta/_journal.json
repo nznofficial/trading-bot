@@ -22,6 +22,13 @@
       "when": 1792734282344,
       "tag": "0002_drop_benchmark_bars",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792739336613,
+      "tag": "0003_simulations",
+      "breakpoints": true
     }
   ]
 }

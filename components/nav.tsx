@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/trades", code: "03", label: "Combat log" },
   { href: "/strategies", code: "04", label: "Hangar" },
   { href: "/runs", code: "05", label: "Sorties" },
+  { href: "/simulator", code: "06", label: "Simulator" },
 ] as const;
 
 export function Nav() {

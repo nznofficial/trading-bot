@@ -1,0 +1,792 @@
+[
+  {
+    "id": "jc316-sheet",
+    "file": "art/raw/jc316-sheet-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nCharacter model turnaround sheet of JC-316: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-23T17:44:53.612Z",
+    "usage": {
+      "input_tokens": 1473,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1473
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5589
+    }
+  },
+  {
+    "id": "jc316-sheet",
+    "file": "art/raw/jc316-sheet-2.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nCharacter model turnaround sheet of JC-316: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-23T17:44:53.615Z",
+    "usage": {
+      "input_tokens": 1473,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1473
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5589
+    }
+  },
+  {
+    "id": "jc316-sheet",
+    "file": "art/raw/jc316-sheet-3.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nCharacter model turnaround sheet of JC-316: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-23T17:44:53.615Z",
+    "usage": {
+      "input_tokens": 1473,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1473
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5589
+    }
+  },
+  {
+    "id": "vanguard-sheet",
+    "file": "art/raw/vanguard-sheet-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-01 \"Vanguard\", a trend-assault mech: tall, fast and sleek, with a single swept-forward horn crest and long forearm blades. Deep violet #8B5CF6 and dark plum armor over a gunmetal frame, sync-green optics in a narrow visor. Large leg-mounted boosters. Weapon: a long beam lance. Stencil \"U-01\" on the shoulder.\n\nCharacter model turnaround sheet of UNIT-01 Vanguard: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-23T17:45:32.786Z",
+    "usage": {
+      "input_tokens": 1212,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1212
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5328
+    }
+  },
+  {
+    "id": "vanguard-sheet",
+    "file": "art/raw/vanguard-sheet-2.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-01 \"Vanguard\", a trend-assault mech: tall, fast and sleek, with a single swept-forward horn crest and long forearm blades. Deep violet #8B5CF6 and dark plum armor over a gunmetal frame, sync-green optics in a narrow visor. Large leg-mounted boosters. Weapon: a long beam lance. Stencil \"U-01\" on the shoulder.\n\nCharacter model turnaround sheet of UNIT-01 Vanguard: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-23T17:45:32.787Z",
+    "usage": {
+      "input_tokens": 1212,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1212
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5328
+    }
+  },
+  {
+    "id": "vanguard-sheet",
+    "file": "art/raw/vanguard-sheet-3.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-01 \"Vanguard\", a trend-assault mech: tall, fast and sleek, with a single swept-forward horn crest and long forearm blades. Deep violet #8B5CF6 and dark plum armor over a gunmetal frame, sync-green optics in a narrow visor. Large leg-mounted boosters. Weapon: a long beam lance. Stencil \"U-01\" on the shoulder.\n\nCharacter model turnaround sheet of UNIT-01 Vanguard: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-23T17:45:32.788Z",
+    "usage": {
+      "input_tokens": 1212,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1212
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5328
+    }
+  },
+  {
+    "id": "recoil-sheet",
+    "file": "art/raw/recoil-sheet-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-02 \"Recoil\", a counter-strike heavy-artillery mech: stocky and armored, with quad round optics in a recessed visor, twin swept head fins, thick recoil-damper pistons on the arms, and shoulder-mounted twin counter-cannons. Crimson #FF3B4E armor with amber #FFA41B accents over a gunmetal frame. Stencil \"U-02\" on the shoulder.\n\nCharacter model turnaround sheet of UNIT-02 Recoil: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-23T17:46:13.608Z",
+    "usage": {
+      "input_tokens": 1233,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1233
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5349
+    }
+  },
+  {
+    "id": "recoil-sheet",
+    "file": "art/raw/recoil-sheet-2.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-02 \"Recoil\", a counter-strike heavy-artillery mech: stocky and armored, with quad round optics in a recessed visor, twin swept head fins, thick recoil-damper pistons on the arms, and shoulder-mounted twin counter-cannons. Crimson #FF3B4E armor with amber #FFA41B accents over a gunmetal frame. Stencil \"U-02\" on the shoulder.\n\nCharacter model turnaround sheet of UNIT-02 Recoil: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-23T17:46:13.608Z",
+    "usage": {
+      "input_tokens": 1233,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1233
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5349
+    }
+  },
+  {
+    "id": "recoil-sheet",
+    "file": "art/raw/recoil-sheet-3.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-02 \"Recoil\", a counter-strike heavy-artillery mech: stocky and armored, with quad round optics in a recessed visor, twin swept head fins, thick recoil-damper pistons on the arms, and shoulder-mounted twin counter-cannons. Crimson #FF3B4E armor with amber #FFA41B accents over a gunmetal frame. Stencil \"U-02\" on the shoulder.\n\nCharacter model turnaround sheet of UNIT-02 Recoil: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-23T17:46:13.609Z",
+    "usage": {
+      "input_tokens": 1233,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1233
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5349
+    }
+  },
+  {
+    "id": "jc316-keyart",
+    "file": "art/raw/jc316-keyart-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1536",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "public/art/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nHeroic full-body key art of JC-316 from a low angle, railgun rifle lowered, shield on the left arm, standing in a hazy hangar lit by warm amber work lights with cool blue rim light, faint steam at its feet.",
+    "at": "2026-10-23T17:47:30.646Z",
+    "usage": {
+      "input_tokens": 2020,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 484
+      },
+      "output_tokens": 1372,
+      "output_tokens_details": {
+        "image_tokens": 1372,
+        "text_tokens": 0
+      },
+      "total_tokens": 3392
+    }
+  },
+  {
+    "id": "jc316-bust-standby",
+    "file": "art/raw/jc316-bust-standby-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "public/art/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nHead-and-shoulders portrait of JC-316 in three-quarter view facing left, consistent framing: chin at lower third, shoulder armor visible, generous space above the antenna. Isolated character, no background scenery. Optics dimmed to a soft amber, head lowered slightly, light frost on the armor edges, systems idling.",
+    "at": "2026-10-23T17:48:18.670Z",
+    "usage": {
+      "input_tokens": 2036,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 500
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3792
+    }
+  },
+  {
+    "id": "jc316-bust-active",
+    "file": "art/raw/jc316-bust-active-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "public/art/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nHead-and-shoulders portrait of JC-316 in three-quarter view facing left, consistent framing: chin at lower third, shoulder armor visible, generous space above the antenna. Isolated character, no background scenery. Optics bright sync green and sharp, head level, a faint scan line across the visor, alert and ready.",
+    "at": "2026-10-23T17:49:02.192Z",
+    "usage": {
+      "input_tokens": 2035,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 499
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3791
+    }
+  },
+  {
+    "id": "jc316-bust-alert",
+    "file": "art/raw/jc316-bust-alert-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "public/art/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nHead-and-shoulders portrait of JC-316 in three-quarter view facing left, consistent framing: chin at lower third, shoulder armor visible, generous space above the antenna. Isolated character, no background scenery. Optics narrowed and glowing amber, head snapped toward the viewer, small warning lamps lit on the collar.",
+    "at": "2026-10-23T17:49:46.780Z",
+    "usage": {
+      "input_tokens": 2033,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 497
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3789
+    }
+  },
+  {
+    "id": "jc316-bust-victory",
+    "file": "art/raw/jc316-bust-victory-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "public/art/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nHead-and-shoulders portrait of JC-316 in three-quarter view facing left, consistent framing: chin at lower third, shoulder armor visible, generous space above the antenna. Isolated character, no background scenery. Optics flaring bright green, head raised proudly, shoulder vents venting white steam.",
+    "at": "2026-10-23T17:50:31.895Z",
+    "usage": {
+      "input_tokens": 2030,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 494
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3786
+    }
+  },
+  {
+    "id": "jc316-bust-damaged",
+    "file": "art/raw/jc316-bust-damaged-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "public/art/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nHead-and-shoulders portrait of JC-316 in three-quarter view facing left, consistent framing: chin at lower third, shoulder armor visible, generous space above the antenna. Isolated character, no background scenery. Cracked visor, one optic flickering red, sparks from the neck joint, scorch marks and dented shoulder armor.",
+    "at": "2026-10-23T17:51:18.551Z",
+    "usage": {
+      "input_tokens": 2036,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 500
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3792
+    }
+  },
+  {
+    "id": "jc316-bust-thinking",
+    "file": "art/raw/jc316-bust-thinking-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "public/art/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nHead-and-shoulders portrait of JC-316 in three-quarter view facing left, consistent framing: chin at lower third, shoulder armor visible, generous space above the antenna. Isolated character, no background scenery. Optics cycling soft cyan, head tilted slightly, faint thin HUD rings orbiting near the head.",
+    "at": "2026-10-23T17:52:07.206Z",
+    "usage": {
+      "input_tokens": 2032,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 496
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3788
+    }
+  },
+  {
+    "id": "jc316-bust-launch",
+    "file": "art/raw/jc316-bust-launch-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "public/art/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nHead-and-shoulders portrait of JC-316 in three-quarter view facing left, consistent framing: chin at lower third, shoulder armor visible, generous space above the antenna. Isolated character, no background scenery. Optics blazing green, thrusters glowing behind the shoulders, launch harness clamps releasing beside it.",
+    "at": "2026-10-23T17:52:54.679Z",
+    "usage": {
+      "input_tokens": 2031,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 495
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3787
+    }
+  },
+  {
+    "id": "jc316-bust-greeting",
+    "file": "art/raw/jc316-bust-greeting-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "public/art/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nHead-and-shoulders portrait of JC-316 in three-quarter view facing left, consistent framing: chin at lower third, shoulder armor visible, generous space above the antenna. Isolated character, no background scenery. Right hand raised to the side of the head in a crisp salute, optics warm green, relaxed confident posture.",
+    "at": "2026-10-23T17:53:40.666Z",
+    "usage": {
+      "input_tokens": 2034,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 498
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3790
+    }
+  },
+  {
+    "id": "vanguard-keyart",
+    "file": "art/raw/vanguard-keyart-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1536",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "public/art/vanguard-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-01 \"Vanguard\", a trend-assault mech: tall, fast and sleek, with a single swept-forward horn crest and long forearm blades. Deep violet #8B5CF6 and dark plum armor over a gunmetal frame, sync-green optics in a narrow visor. Large leg-mounted boosters. Weapon: a long beam lance. Stencil \"U-01\" on the shoulder.\n\nDynamic full-body key art of Vanguard dashing forward, beam lance thrust ahead, leg boosters firing violet-white exhaust, speed lines, hangar haze behind.",
+    "at": "2026-10-23T17:54:19.785Z",
+    "usage": {
+      "input_tokens": 1912,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 376
+      },
+      "output_tokens": 1372,
+      "output_tokens_details": {
+        "image_tokens": 1372,
+        "text_tokens": 0
+      },
+      "total_tokens": 3284
+    }
+  },
+  {
+    "id": "vanguard-bust",
+    "file": "art/raw/vanguard-bust-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "public/art/vanguard-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-01 \"Vanguard\", a trend-assault mech: tall, fast and sleek, with a single swept-forward horn crest and long forearm blades. Deep violet #8B5CF6 and dark plum armor over a gunmetal frame, sync-green optics in a narrow visor. Large leg-mounted boosters. Weapon: a long beam lance. Stencil \"U-01\" on the shoulder.\n\nHead-and-shoulders portrait of Vanguard in three-quarter view facing right, horn crest prominent, green optics sharp. Isolated character, no background scenery.",
+    "at": "2026-10-23T17:55:03.669Z",
+    "usage": {
+      "input_tokens": 1912,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 376
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3668
+    }
+  },
+  {
+    "id": "recoil-keyart",
+    "file": "art/raw/recoil-keyart-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1536",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "public/art/recoil-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-02 \"Recoil\", a counter-strike heavy-artillery mech: stocky and armored, with quad round optics in a recessed visor, twin swept head fins, thick recoil-damper pistons on the arms, and shoulder-mounted twin counter-cannons. Crimson #FF3B4E armor with amber #FFA41B accents over a gunmetal frame. Stencil \"U-02\" on the shoulder.\n\nFull-body key art of Recoil braced low in a firing stance, twin shoulder counter-cannons recoiling with muzzle flash, arm dampers compressed, dust kicked up, hangar haze behind.",
+    "at": "2026-10-23T17:55:43.166Z",
+    "usage": {
+      "input_tokens": 1928,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 392
+      },
+      "output_tokens": 1372,
+      "output_tokens_details": {
+        "image_tokens": 1372,
+        "text_tokens": 0
+      },
+      "total_tokens": 3300
+    }
+  },
+  {
+    "id": "recoil-bust",
+    "file": "art/raw/recoil-bust-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "public/art/recoil-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-02 \"Recoil\", a counter-strike heavy-artillery mech: stocky and armored, with quad round optics in a recessed visor, twin swept head fins, thick recoil-damper pistons on the arms, and shoulder-mounted twin counter-cannons. Crimson #FF3B4E armor with amber #FFA41B accents over a gunmetal frame. Stencil \"U-02\" on the shoulder.\n\nHead-and-shoulders portrait of Recoil in three-quarter view facing right, quad optics glowing amber-green, head fins swept back. Isolated character, no background scenery.",
+    "at": "2026-10-23T17:56:28.232Z",
+    "usage": {
+      "input_tokens": 1922,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 386
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3678
+    }
+  },
+  {
+    "id": "scene-hangar",
+    "file": "art/raw/scene-hangar-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1920x1088",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/jc316-sheet.webp",
+      "art/anchors/vanguard-sheet.webp",
+      "art/anchors/recoil-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nUNIT-01 \"Vanguard\", a trend-assault mech: tall, fast and sleek, with a single swept-forward horn crest and long forearm blades. Deep violet #8B5CF6 and dark plum armor over a gunmetal frame, sync-green optics in a narrow visor. Large leg-mounted boosters. Weapon: a long beam lance. Stencil \"U-01\" on the shoulder.\n\nUNIT-02 \"Recoil\", a counter-strike heavy-artillery mech: stocky and armored, with quad round optics in a recessed visor, twin swept head fins, thick recoil-damper pistons on the arms, and shoulder-mounted twin counter-cannons. Crimson #FF3B4E armor with amber #FFA41B accents over a gunmetal frame. Stencil \"U-02\" on the shoulder.\n\nWide painted background of a mech hangar bay: JC-316 standing in the center maintenance gantry, Vanguard in the left gantry and Recoil in the right, overhead crane rails, welding sparks, amber hazard stripes on the floor, warm sodium lights and cool haze. Leave the lower third darker and calmer so UI can sit on top.",
+    "at": "2026-10-23T17:57:19.905Z",
+    "usage": {
+      "input_tokens": 5298,
+      "input_tokens_details": {
+        "image_tokens": 4608,
+        "text_tokens": 690
+      },
+      "output_tokens": 1325,
+      "output_tokens_details": {
+        "image_tokens": 1325,
+        "text_tokens": 0
+      },
+      "total_tokens": 6623
+    }
+  },
+  {
+    "id": "scene-bridge",
+    "file": "art/raw/scene-bridge-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1920x1088",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nWide painted background of a command deck: a curved tactical window, consoles with glowing abstract charts and graphs (no readable text or numbers), a holo-table in the foreground, and JC-316 visible standing outside beyond the glass. Moody blue and amber lighting. Leave the center darker so UI can sit on top.",
+    "at": "2026-10-23T17:58:00.829Z",
+    "usage": {
+      "input_tokens": 2031,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 495
+      },
+      "output_tokens": 1325,
+      "output_tokens_details": {
+        "image_tokens": 1325,
+        "text_tokens": 0
+      },
+      "total_tokens": 3356
+    }
+  },
+  {
+    "id": "scene-simdeck",
+    "file": "art/raw/scene-simdeck-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1920x1088",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nWide painted background of a simulation chamber: glowing green wireframe grid floor and walls, JC-316 standing in a training harness in the middle distance, translucent wireframe target silhouettes. Leave the edges dark.",
+    "at": "2026-10-23T17:58:39.273Z",
+    "usage": {
+      "input_tokens": 2010,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 474
+      },
+      "output_tokens": 1325,
+      "output_tokens_details": {
+        "image_tokens": 1325,
+        "text_tokens": 0
+      },
+      "total_tokens": 3335
+    }
+  },
+  {
+    "id": "scene-launch",
+    "file": "art/raw/scene-launch-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1920x1088",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nDramatic linear catapult launch tunnel in one-point perspective: JC-316 crouched on the catapult sled in launch pose, guide rails glowing amber, deck crew silhouettes with signal wands, steam venting, light at the end of the tunnel.",
+    "at": "2026-10-23T17:59:13.809Z",
+    "usage": {
+      "input_tokens": 2021,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 485
+      },
+      "output_tokens": 1325,
+      "output_tokens_details": {
+        "image_tokens": 1325,
+        "text_tokens": 0
+      },
+      "total_tokens": 3346
+    }
+  },
+  {
+    "id": "event-victory",
+    "file": "art/raw/event-victory-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/jc316-sheet.webp",
+      "art/anchors/vanguard-sheet.webp",
+      "art/anchors/recoil-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nUNIT-01 \"Vanguard\", a trend-assault mech: tall, fast and sleek, with a single swept-forward horn crest and long forearm blades. Deep violet #8B5CF6 and dark plum armor over a gunmetal frame, sync-green optics in a narrow visor. Large leg-mounted boosters. Weapon: a long beam lance. Stencil \"U-01\" on the shoulder.\n\nUNIT-02 \"Recoil\", a counter-strike heavy-artillery mech: stocky and armored, with quad round optics in a recessed visor, twin swept head fins, thick recoil-damper pistons on the arms, and shoulder-mounted twin counter-cannons. Crimson #FF3B4E armor with amber #FFA41B accents over a gunmetal frame. Stencil \"U-02\" on the shoulder.\n\nJC-316 in the center flanked by Vanguard and Recoil, silhouetted against a dawn horizon with smoke trails and drifting embers, triumphant and calm.",
+    "at": "2026-10-23T17:59:54.009Z",
+    "usage": {
+      "input_tokens": 5262,
+      "input_tokens_details": {
+        "image_tokens": 4608,
+        "text_tokens": 654
+      },
+      "output_tokens": 1372,
+      "output_tokens_details": {
+        "image_tokens": 1372,
+        "text_tokens": 0
+      },
+      "total_tokens": 6634
+    }
+  },
+  {
+    "id": "event-damage",
+    "file": "art/raw/event-damage-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nJC-316 kneeling on one knee in the rain, shield dented, red emergency lights, sparks from damaged armor, still resolute.",
+    "at": "2026-10-23T18:00:42.095Z",
+    "usage": {
+      "input_tokens": 1998,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 462
+      },
+      "output_tokens": 1372,
+      "output_tokens_details": {
+        "image_tokens": 1372,
+        "text_tokens": 0
+      },
+      "total_tokens": 3370
+    }
+  },
+  {
+    "id": "empty-nocontact",
+    "file": "art/raw/empty-nocontact-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nPainted illustration of a quiet, empty mech hangar bay at night with a rotating radar dish sweeping a faint green arc, amber floor stripes, no mechs present.",
+    "at": "2026-10-23T18:01:24.634Z",
+    "usage": {
+      "input_tokens": 288,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 288
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 2044
+    }
+  },
+  {
+    "id": "empty-cold",
+    "file": "art/raw/empty-cold-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nJC-316 powered down in its gantry, partly covered by a maintenance tarp, optics dark, light frost, quiet blue night lighting.",
+    "at": "2026-10-23T18:02:11.866Z",
+    "usage": {
+      "input_tokens": 1997,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 461
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3753
+    }
+  },
+  {
+    "id": "empty-awaiting",
+    "file": "art/raw/empty-awaiting-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/jc316-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nSilhouette of JC-316 seen from behind, facing a large terminal wall streaming abstract green data (no readable text), waiting.",
+    "at": "2026-10-23T18:02:59.838Z",
+    "usage": {
+      "input_tokens": 1995,
+      "input_tokens_details": {
+        "image_tokens": 1536,
+        "text_tokens": 459
+      },
+      "output_tokens": 1756,
+      "output_tokens_details": {
+        "image_tokens": 1756,
+        "text_tokens": 0
+      },
+      "total_tokens": 3751
+    }
+  }
+]

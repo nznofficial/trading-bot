@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { EmptyArt, SceneBanner } from "@/components/art";
 
 /** Title card: system code, oversized serif title, HUD subtitle. */
 export function PageHeader({
@@ -7,14 +8,23 @@ export function PageHeader({
   title,
   subtitle,
   children,
+  scene,
+  figure,
+  scenePosition,
 }: {
   code: string;
   title: string;
   subtitle?: ReactNode;
   children?: ReactNode;
+  /** Painted backdrop (public/art) behind the title. */
+  scene?: string;
+  /** Character standing on the right of the backdrop. */
+  figure?: { src: string; alt: string };
+  /** CSS object-position for the backdrop crop (e.g. "center 20%" to keep heads in frame). */
+  scenePosition?: string;
 }) {
-  return (
-    <div className="boot mb-7 flex flex-wrap items-end justify-between gap-4">
+  const content = (
+    <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <div className="hud flex items-center gap-3 text-[12px] text-amber">
           <span className="hazard inline-block h-3 w-8" aria-hidden />
@@ -28,6 +38,14 @@ export function PageHeader({
       {children}
     </div>
   );
+  if (scene) {
+    return (
+      <SceneBanner src={scene} figure={figure} position={scenePosition}>
+        {content}
+      </SceneBanner>
+    );
+  }
+  return <div className="boot mb-7">{content}</div>;
 }
 
 /** Chamfered cockpit panel with a HUD header. `tone` lights the frame. */
@@ -196,9 +214,10 @@ export function Table({ children }: { children: ReactNode }) {
   );
 }
 
-export function Empty({ children }: { children: ReactNode }) {
+export function Empty({ children, art }: { children: ReactNode; art?: string }) {
   return (
     <div className="flex h-full min-h-24 flex-col items-center justify-center gap-2 py-6 text-center">
+      {art && <EmptyArt src={art} />}
       <span className="hud text-[12px] text-amber/80">— No contact —</span>
       <p className="text-[14px] text-muted">{children}</p>
     </div>

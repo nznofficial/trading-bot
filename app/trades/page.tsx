@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import Link from "next/link";
 import { Suspense } from "react";
+import { ART } from "@/components/art";
 import { unitFor } from "@/components/emblems";
 import { SymbolPnlChart } from "@/components/charts";
 import { ActionBadge, Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, StatStrip, Table } from "@/components/ui";
@@ -100,7 +101,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
             </tbody>
           </Table>
         ) : (
-          <Empty>No closed trades yet.</Empty>
+          <Empty art={ART.awaiting}>No closed trades yet.</Empty>
         )}
       </Card>
 

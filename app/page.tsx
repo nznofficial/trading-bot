@@ -1,17 +1,26 @@
+import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { DrawdownChart, EquityChart, PerformanceChart } from "@/components/charts";
+import { ART } from "@/components/art";
 import { unitFor } from "@/components/emblems";
 import { CueOnce } from "@/components/sound";
 import { Card, Delta, Empty, Gauge, KeyValueList, PageHeader, Skeleton, StatStrip, StatusBadge, Table } from "@/components/ui";
 import { classLabel, dateTime, duration, longDate, pct, qty, ratio, signedPct, signedUsd, usd } from "@/lib/format";
+import { DAMAGE } from "@/lib/copilot";
 import { getOverview } from "@/lib/queries";
 
 export default function BridgePage() {
   return (
     <>
-      <PageHeader code="SYS-01 // Bridge" title="Bridge" subtitle="Command overview · equities and crypto theaters" />
+      <PageHeader
+        code="SYS-01 // Bridge"
+        title="Bridge"
+        subtitle="Command overview · equities and crypto theaters"
+        scene={ART.bridge}
+        scenePosition="center 12%"
+      />
       <Suspense fallback={<BridgeSkeleton />}>
         <Bridge />
       </Suspense>
@@ -37,7 +46,7 @@ async function Bridge() {
   if (!o.hasData || !o.kpis) {
     return (
       <Card>
-        <Empty>Systems cold. The first sortie records a snapshot.</Empty>
+        <Empty art={ART.cold}>Systems cold. The first sortie records a snapshot.</Empty>
       </Card>
     );
   }
@@ -52,6 +61,7 @@ async function Bridge() {
   return (
     <div className="grid grid-cols-1 gap-5">
       {o.bigWin && <KoBanner trade={o.bigWin} />}
+      {!o.bigWin && k.dayPnlPct <= DAMAGE.dayPct && <DamageBanner dayPnl={k.dayPnl} dayPnlPct={k.dayPnlPct} />}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Hero: frame value + equity curve */}
@@ -256,7 +266,7 @@ async function Bridge() {
             </tbody>
           </Table>
         ) : (
-          <Empty>All units holding position. Entries fire when a strategy locks on.</Empty>
+          <Empty art={ART.noContact}>All units holding position. Entries fire when a strategy locks on.</Empty>
         )}
       </Card>
 
@@ -309,7 +319,7 @@ async function Bridge() {
             </tbody>
           </Table>
         ) : (
-          <Empty>No engagements closed yet. Since launch {longDate(k.since)}.</Empty>
+          <Empty art={ART.awaiting}>No engagements closed yet. Since launch {longDate(k.since)}.</Empty>
         )}
       </Card>
     </div>
@@ -335,8 +345,10 @@ function KoBanner({ trade }: { trade: { symbol: string; pnl: number; returnPct: 
     <section className="frame frame-amber boot" role="status">
       <CueOnce id={`${trade.symbol}-${trade.exitTs}`} cue="win" />
       <div className="frame-body relative overflow-hidden px-6 py-4">
+        <Image src={ART.victory} alt="" fill sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover object-[center_35%] opacity-60" />
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-[#08070c] via-[#08070c]/75 to-transparent" />
         <div className="hazard hazard-live absolute inset-y-0 left-0 w-3" aria-hidden />
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pl-4">
+        <div className="relative flex flex-wrap items-center gap-x-6 gap-y-2 py-4 pl-4">
           <span className="slam font-title text-[30px] leading-none font-extrabold text-amber sm:text-[38px]">
             Target neutralized
           </span>
@@ -345,6 +357,25 @@ function KoBanner({ trade }: { trade: { symbol: string; pnl: number; returnPct: 
             <Delta value={trade.returnPct}>({signedPct(trade.returnPct)})</Delta>
           </span>
           <span className="num text-[12px] text-muted">{dateTime(trade.exitTs)}</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Red-day banner (day P&L ≤ −1%), the same threshold that puts JC-316 in its damaged state. */
+function DamageBanner({ dayPnl, dayPnlPct }: { dayPnl: number; dayPnlPct: number }) {
+  return (
+    <section className="frame boot" role="status">
+      <div className="frame-body relative overflow-hidden px-6 py-4">
+        <Image src={ART.damage} alt="" fill sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover object-[center_40%] opacity-55" />
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-[#08070c] via-[#08070c]/75 to-transparent" />
+        <div className="relative flex flex-wrap items-center gap-x-6 gap-y-2 py-4">
+          <span className="font-title text-[30px] leading-none font-extrabold text-alert sm:text-[38px]">Taking damage</span>
+          <span className="hud text-[15px] text-ink">
+            Day <Delta value={dayPnl}>{signedUsd(dayPnl)}</Delta> <Delta value={dayPnlPct}>({signedPct(dayPnlPct)})</Delta>
+          </span>
+          <span className="text-[13px] text-ink-2">Stops are armed; the −3% halt blocks new entries if it gets worse.</span>
         </div>
       </div>
     </section>

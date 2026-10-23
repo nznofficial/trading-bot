@@ -1,6 +1,8 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { UNITS, UnitEmblem, unitFor, type UnitId } from "@/components/emblems";
+import Image from "next/image";
+import { ART, unitBust } from "@/components/art";
+import { UNITS, unitFor, type UnitId } from "@/components/emblems";
 import { TuneConsole } from "@/components/tune-console";
 import { ActionBadge, Card, ClassTabs, Delta, Empty, Gauge, Metric, PageHeader, Skeleton, Table, Tag } from "@/components/ui";
 import { dateTime, duration, pct, ratio, signedUsd } from "@/lib/format";
@@ -9,7 +11,13 @@ import { getStrategies, parseClassFilter } from "@/lib/queries";
 export default function HangarPage({ searchParams }: PageProps<"/strategies">) {
   return (
     <>
-      <PageHeader code="SYS-04 // Hangar" title="Hangar" subtitle="Strategy units · loadout, combat record, targeting" />
+      <PageHeader
+        code="SYS-04 // Hangar"
+        title="Hangar"
+        subtitle="Strategy units · loadout, combat record, targeting"
+        scene={ART.hangar}
+        scenePosition="center 18%"
+      />
       <Suspense fallback={<Skeleton />}>
         <Hangar searchParams={searchParams} />
       </Suspense>
@@ -38,15 +46,26 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
           return (
             <section key={st.id} className="frame frame-hot boot">
               <div className="frame-body relative overflow-hidden">
+                {/* Unit key art, faded behind the stats */}
+                <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-1/2">
+                  <Image
+                    src={st.id === "sma_cross" ? ART.vanguardKeyart : ART.recoilKeyart}
+                    alt=""
+                    fill
+                    sizes="(max-width: 1024px) 50vw, 25vw"
+                    className="object-cover object-top opacity-25"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#0e0d14] to-transparent" />
+                </div>
                 {/* Unit color band */}
                 <div
                   aria-hidden
                   className="absolute inset-x-0 top-0 h-1"
                   style={{ background: `linear-gradient(90deg, ${unit.primary}, ${unit.secondary})` }}
                 />
-                <div className="flex items-start gap-5 px-5 pt-6 pb-4">
-                  <div className="shrink-0" style={{ filter: `drop-shadow(0 0 14px ${unit.primary}88)` }}>
-                    <UnitEmblem unit={st.id as UnitId} size={88} />
+                <div className="relative flex items-center gap-5 px-5 pt-5 pb-4">
+                  <div className="relative size-32 shrink-0" style={{ filter: `drop-shadow(0 0 16px ${unit.primary}88)` }}>
+                    <Image src={unitBust(st.id)} alt={`${unit.code} ${unit.callsign}`} fill sizes="128px" className="object-contain" />
                   </div>
                   <div className="min-w-0">
                     <div className="hud text-[12px]" style={{ color: unit.secondary }}>
@@ -56,9 +75,9 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
                     <div className="hud mt-1.5 text-[13px] text-ink-2">{st.name}</div>
                   </div>
                 </div>
-                <p className="px-5 text-[14px] leading-relaxed text-ink-2">{st.description}</p>
+                <p className="relative px-5 text-[14px] leading-relaxed text-ink-2">{st.description}</p>
 
-                <div className="grid grid-cols-1 gap-3.5 px-5 pt-5">
+                <div className="relative grid grid-cols-1 gap-3.5 px-5 pt-5">
                   <Gauge
                     label="Sync rate"
                     value={st.stats.winRate ?? 0}
@@ -75,7 +94,7 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
                   />
                 </div>
 
-                <dl className="mt-5 grid grid-cols-3 gap-px border-t border-line bg-line">
+                <dl className="relative mt-5 grid grid-cols-3 gap-px border-t border-line bg-line">
                   {[
                     ["Realized", <Delta key="r" value={st.stats.totalPnl}>{signedUsd(st.stats.totalPnl)}</Delta>],
                     ["Unrealized", <Delta key="u" value={st.unrealizedPl}>{signedUsd(st.unrealizedPl)}</Delta>],
@@ -90,7 +109,7 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
                   ))}
                 </dl>
 
-                <div className="border-t border-line px-5 py-4">
+                <div className="relative border-t border-line px-5 py-4">
                   <div className="hud mb-2 text-[11px] text-muted">Assigned targets</div>
                   <div className="flex flex-wrap gap-1.5">
                     {st.symbols.map((sym) => (
@@ -144,7 +163,7 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
             </tbody>
           </Table>
         ) : (
-          <Empty>Targeting comes online after the first sortie.</Empty>
+          <Empty art={ART.awaiting}>Targeting comes online after the first sortie.</Empty>
         )}
       </Card>
 

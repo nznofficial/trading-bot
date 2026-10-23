@@ -46,3 +46,7 @@ next-env.d.ts
 .agents/
 .claude/skills/
 skills-lock.json
+
+# generated art options (only picked assets in public/art are committed)
+art/raw/
+art/contact.html

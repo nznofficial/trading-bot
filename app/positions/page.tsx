@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ART } from "@/components/art";
 import { unitFor } from "@/components/emblems";
 import { Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, Table } from "@/components/ui";
 import { dateTime, qty, signedPct, signedUsd, usd } from "@/lib/format";
@@ -69,7 +70,7 @@ async function Positions({ searchParams }: { searchParams: PageProps<"/positions
             </tbody>
           </Table>
         ) : (
-          <Empty>Flat: no open positions.</Empty>
+          <Empty art={ART.noContact}>Flat: no open positions.</Empty>
         )}
       </Card>
     </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ART } from "@/components/art";
 import { PerformanceChart, SymbolPnlChart } from "@/components/charts";
 import { unitFor } from "@/components/emblems";
 import { SimulatorConsole } from "@/components/simulator-console";
@@ -15,6 +16,8 @@ export default function SimulatorPage({ searchParams }: PageProps<"/simulator">)
         code="SYS-06 // Simulator"
         title="Simulator"
         subtitle="Replay the units over real history before trusting them with the account"
+        scene={ART.simdeck}
+        scenePosition="center 8%"
       />
       <div className="grid grid-cols-1 gap-5">
         <Card title="Mission parameters" subtitle="Defaults are the live settings" code="SIM-01" tone="amber">
@@ -52,7 +55,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
   if (!selected) {
     return (
       <Card>
-        <Empty>No simulations yet. Set parameters above and launch one.</Empty>
+        <Empty art={ART.awaiting}>No simulations yet. Set parameters above and launch one.</Empty>
       </Card>
     );
   }

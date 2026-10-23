@@ -3,6 +3,7 @@ import { Barlow, Barlow_Condensed, IBM_Plex_Mono, Shippori_Mincho_B1 } from "nex
 import Link from "next/link";
 import { Suspense } from "react";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { Copilot } from "@/components/copilot";
 import { Crest } from "@/components/emblems";
 import { LAUNCH_SCRIPT, LaunchIntro } from "@/components/launch-intro";
 import { SessionStatus, TargetFeed, TargetFeedSkeleton } from "@/components/market-strip";
@@ -57,6 +58,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </Suspense>
         </header>
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
+        {/* JC-316 copilot companion, on every page */}
+        <Suspense fallback={null}>
+          <Copilot />
+        </Suspense>
         <footer className="border-t border-line-2">
           <div className="hazard-thin opacity-40" aria-hidden />
           <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 px-4 py-5 text-[12px] text-muted sm:px-6">

@@ -437,3 +437,13 @@ tr[data-briefed] > td:first-child {
 @media (prefers-reduced-motion: no-preference) {
   [data-boost] .speed-lines { animation: speed-lines 0.18s linear infinite; }
 }
+
+/* JC-316's status chip minimizes the dock; on touch screens (no hover to reveal "Minimize") a caret hints at it. */
+.touch-caret {
+  display: none;
+}
+@media (hover: none) {
+  .touch-caret {
+    display: inline;
+  }
+}

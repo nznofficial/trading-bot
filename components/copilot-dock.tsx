@@ -619,7 +619,24 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
             <div className="min-w-0 flex-1 pb-1">
               <div className="flex items-center justify-between gap-2">
                 <span className="hud text-[12px] text-amber">JC-316 · Copilot</span>
-                <span className={`hud border px-1.5 text-[10px] ${STATE_TONE[report.state]}`}>{STATE_LABEL[report.state]}</span>
+                {/* The status chip doubles as the minimize control: hover/focus flips it to "Minimize". */}
+                <button
+                  type="button"
+                  onClick={() => writePref("min")}
+                  aria-label={`Minimize JC-316 (status: ${STATE_LABEL[report.state]})`}
+                  title="Minimize"
+                  className={`group hud shrink-0 border px-1.5 text-[10px] transition-colors hover:border-amber hover:text-amber focus-visible:border-amber focus-visible:text-amber ${STATE_TONE[report.state]}`}
+                >
+                  <span className="group-hover:hidden group-focus-visible:hidden">
+                    {STATE_LABEL[report.state]}
+                    <span aria-hidden className="touch-caret ml-1">
+                      ▾
+                    </span>
+                  </span>
+                  <span aria-hidden className="hidden group-hover:inline group-focus-visible:inline">
+                    Minimize ▾
+                  </span>
+                </button>
               </div>
               <p className="mt-1.5 min-h-[3.6em] text-[13px] leading-snug text-ink">
                 <Typed key={report.line} text={report.line} instant={reduced} />
@@ -636,14 +653,6 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
                 </button>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => writePref("min")}
-              aria-label="Minimize copilot"
-              className="hud absolute top-1.5 right-2 text-[12px] text-muted hover:text-ink"
-            >
-              —
-            </button>
           </div>
         </div>
       </aside>

@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { CHAT_SYSTEM } from "@/lib/chat-context";
-import { CHAT_LIMITS, takeChatToken, type Bump } from "@/lib/chat-limits";
+import { CHAT_LIMITS, takeChatToken, takeVoiceBudget, VOICE_BUDGET, type Bump } from "@/lib/chat-limits";
+import { chunkSpeech } from "@/lib/voice-lines";
 
 /** In-memory stand-in for the Postgres counter table. */
 function memoryBump() {
   const counts = new Map<string, number>();
-  const bump: Bump = async (bucket) => {
-    const n = (counts.get(bucket) ?? 0) + 1;
+  const bump: Bump = async (bucket, _exp, by = 1) => {
+    const n = (counts.get(bucket) ?? 0) + by;
     counts.set(bucket, n);
     return n;
   };
@@ -63,15 +64,6 @@ describe("chat brief", () => {
 });
 
 describe("voice replies", () => {
-  it("speaks the first two sentences, not splitting on decimals", async () => {
-    const { speakable } = await import("@/lib/chat-limits");
-    expect(speakable("Pilot, equity is $100,045.73, up 0.05% today. Three positions open. MSFT leads at +$141.98.")).toBe(
-      "Pilot, equity is $100,045.73, up 0.05% today. Three positions open.",
-    );
-    expect(speakable("No punctuation at all")).toBe("No punctuation at all");
-    expect(speakable("x".repeat(400)).length).toBe(260);
-  });
-
   it("only verifies signatures it issued", async () => {
     process.env.CRON_SECRET = "test-secret";
     const { signReply, verifyReply } = await import("@/lib/chat-limits");
@@ -79,5 +71,24 @@ describe("voice replies", () => {
     expect(verifyReply("Hello, pilot.", sig)).toBe(true);
     expect(verifyReply("Say something else.", sig)).toBe(false);
     expect(verifyReply("Hello, pilot.", "forged")).toBe(false);
+  });
+});
+
+describe("voice budget", () => {
+  it("charges characters, per visitor and overall", async () => {
+    const { bump } = memoryBump();
+    const now = new Date("2026-10-23T15:00:00Z");
+    const first = await takeVoiceBudget("a", 300, now, bump);
+    expect(first).toEqual({ ok: true, remainingToday: VOICE_BUDGET.visitorCharsPerDay - 300 });
+    const big = await takeVoiceBudget("a", VOICE_BUDGET.visitorCharsPerDay, new Date("2026-10-23T15:05:00Z"), bump);
+    expect(big.ok === false && big.scope).toBe("day");
+  });
+
+  it("splits replies into sentence chunks with a short first one", () => {
+    const parts = chunkSpeech("Pilot, equity is $100,045.73 today. Three positions open. " + "More detail here. ".repeat(30));
+    expect(parts[0]).toMatch(/^Pilot, equity is \$100,045\.73 today\. Three positions open\./);
+    expect(parts[0].length).toBeLessThanOrEqual(170);
+    expect(parts.every((p) => p.length <= 320)).toBe(true);
+    expect(parts.join(" ").replace(/\s+/g, " ")).toContain("$100,045.73");
   });
 });

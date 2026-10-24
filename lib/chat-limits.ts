@@ -9,13 +9,14 @@ export type Limits = { perMinute: number; perDay: number; globalPerDay: number }
 export const CHAT_LIMITS: Limits = { perMinute: 5, perDay: 30, globalPerDay: 300 };
 
 /**
- * Spoken replies (ElevenLabs) are pricier per message than text, so they get a tighter budget.
- * VOICE_DAILY_CAP overrides the global cap.
+ * Spoken lines (ElevenLabs bills per character) are budgeted in characters, not messages: a cap per
+ * visitor per day and a ceiling for everyone combined (VOICE_DAILY_CHARS overrides it). Requests
+ * per minute are capped too, generously, since one long reply is fetched in a few chunks.
  */
-export const VOICE_LIMITS: Limits = {
-  perMinute: 3,
-  perDay: 10,
-  globalPerDay: Number(process.env.VOICE_DAILY_CAP) || 25,
+export const VOICE_BUDGET = {
+  requestsPerMinute: 24,
+  visitorCharsPerDay: 8_000,
+  globalCharsPerDay: Number(process.env.VOICE_DAILY_CHARS) || 30_000,
 };
 
 /** Input caps: what one request may carry. Answers are capped by max_tokens in the route. */
@@ -24,8 +25,8 @@ export const CHAT_INPUT = { maxQuestionChars: 500, maxHistoryTurns: 10, maxTurnC
 export type ChatDenial = { ok: false; scope: "minute" | "day" | "global"; retryAfterSec: number };
 export type ChatGrant = { ok: true; remainingToday: number };
 
-/** Increment a counter bucket and return its new count (creating it with an expiry if new). */
-export type Bump = (bucket: string, expiresAt: Date) => Promise<number>;
+/** Increase a counter bucket by `by` (default 1) and return its new value (creating it with an expiry if new). */
+export type Bump = (bucket: string, expiresAt: Date, by?: number) => Promise<number>;
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
@@ -63,12 +64,28 @@ function secondsToNyMidnight(now: Date) {
   return Math.max(60, Math.ceil((t - now.getTime()) / 1000));
 }
 
+/**
+ * Take `chars` characters of speech from the voice budget. Same narrowest-first rule as chat: a
+ * refused request doesn't consume the wider budgets.
+ */
+export async function takeVoiceBudget(visitor: string, chars: number, now: Date, bump: Bump): Promise<ChatGrant | ChatDenial> {
+  const minute = Math.floor(now.getTime() / MINUTE);
+  const day = tradingDay(now);
+  if ((await bump(`voice:v:${visitor}:m:${minute}`, new Date((minute + 2) * MINUTE))) > VOICE_BUDGET.requestsPerMinute)
+    return { ok: false, scope: "minute", retryAfterSec: Math.ceil(((minute + 1) * MINUTE - now.getTime()) / 1000) };
+  const mine = await bump(`voice:v:${visitor}:c:${day}`, new Date(now.getTime() + 2 * DAY), chars);
+  if (mine > VOICE_BUDGET.visitorCharsPerDay) return { ok: false, scope: "day", retryAfterSec: secondsToNyMidnight(now) };
+  if ((await bump(`voice:g:c:${day}`, new Date(now.getTime() + 2 * DAY), chars)) > VOICE_BUDGET.globalCharsPerDay)
+    return { ok: false, scope: "global", retryAfterSec: secondsToNyMidnight(now) };
+  return { ok: true, remainingToday: VOICE_BUDGET.visitorCharsPerDay - mine };
+}
+
 /** Postgres-backed counter: one atomic upsert per bump. */
-export const dbBump: Bump = async (bucket, expiresAt) => {
+export const dbBump: Bump = async (bucket, expiresAt, by = 1) => {
   const [row] = await db()
     .insert(schema.chatCounters)
-    .values({ bucket, count: 1, expiresAt })
-    .onConflictDoUpdate({ target: schema.chatCounters.bucket, set: { count: sql`${schema.chatCounters.count} + 1` } })
+    .values({ bucket, count: by, expiresAt })
+    .onConflictDoUpdate({ target: schema.chatCounters.bucket, set: { count: sql`${schema.chatCounters.count} + ${by}` } })
     .returning({ count: schema.chatCounters.count });
   return row.count;
 };
@@ -94,15 +111,4 @@ export function verifyReply(text: string, sig: string) {
   const expected = signReply(text);
   if (!expected || expected.length !== sig.length) return false;
   return timingSafeEqual(Buffer.from(expected), Buffer.from(sig));
-}
-
-/** The bit worth hearing: the first two sentences, capped. Decimals like $14.66 don't end a sentence. */
-export function speakable(text: string, max = 260) {
-  const sentences = text.replace(/\s+/g, " ").trim().match(/.+?[.!?]+["”’)]*(?=\s|$)/g) ?? [text];
-  let out = "";
-  for (const s of sentences.slice(0, 2)) {
-    if (out && (out + s).length > max) break;
-    out += s;
-  }
-  return out.trim().slice(0, max);
 }

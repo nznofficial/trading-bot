@@ -142,10 +142,11 @@ function useBriefings(page: string) {
       const b = briefing(el.dataset.brief ?? "", ctx);
       if (!b) return;
       mark(el);
-      // Lock-on chirp, then the speaker keys their comms and (if Voice is on) says their line.
+      // Lock-on chirp, then the speaker keys their comms and (if Voice is on) says their line and the reading.
       play("lock");
       setTimeout(() => play(`voice-${b.speaker}`), 320);
-      setTimeout(() => sayBriefing(b.speaker, b.quote, Date.now()), 650);
+      const id = el.dataset.brief ?? "";
+      setTimeout(() => sayBriefing(b.speaker, b.quote, Date.now(), id, ctx), 650);
       setBrief((prev) => ({ ...b, page: window.location.pathname, seq: (prev?.seq ?? 0) + 1 }));
     };
     const onClick = (e: MouseEvent) => {

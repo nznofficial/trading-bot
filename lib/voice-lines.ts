@@ -90,3 +90,28 @@ export function allClips(): { who: Speaker; text: string }[] {
     ...wingmanLines(),
   ];
 }
+
+/**
+ * Split speech into chunks of whole sentences (≤ max chars) so a long reply can be synthesized in
+ * parallel pieces and start playing after the first (short) one. Decimals like $14.66 don't end a sentence.
+ * The browser and /api/voice both use this, so a part number means the same text on each side.
+ */
+export function chunkSpeech(text: string, max = 320, maxChunks = 8, firstMax = 170): string[] {
+  const sentences = text.replace(/\s+/g, " ").trim().match(/.+?[.!?]+["”’)]*(?=\s|$)|.+$/g) ?? [];
+  const chunks: string[] = [];
+  let cur = "";
+  for (const raw of sentences) {
+    // A runaway sentence gets cut at word boundaries.
+    const pieces = raw.length > max ? (raw.match(new RegExp(`.{1,${max}}(?=\\s|$)`, "g")) ?? [raw]) : [raw];
+    for (const p of pieces) {
+      const s = p.trim();
+      // The first chunk is kept short so playback starts sooner.
+      if (cur && (cur + " " + s).length > (chunks.length ? max : firstMax)) {
+        chunks.push(cur);
+        cur = s;
+      } else cur = cur ? `${cur} ${s}` : s;
+    }
+  }
+  if (cur) chunks.push(cur);
+  return chunks.slice(0, maxChunks);
+}

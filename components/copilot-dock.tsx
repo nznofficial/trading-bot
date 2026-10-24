@@ -227,12 +227,13 @@ const SPEAKERS: Record<Speaker, { name: string; code: string; role: string; art:
  * Full-length speaker art for the briefing: a tall framed ID panel (the key art, hangar and all) that
  * doubles as the drag handle. Mid-flight it lights up with speed lines (see globals.css).
  */
-function Portrait({ who }: { who: (typeof SPEAKERS)[Speaker] }) {
+function Portrait({ who, className = "" }: { who: (typeof SPEAKERS)[Speaker]; className?: string }) {
   return (
+    // Fixed size (not stretched to the text), so the art stays put from one briefing to the next.
     <div
       data-drag-handle
       title="Drag me to any corner"
-      className="portrait relative min-h-[230px] w-24 shrink-0 self-stretch overflow-hidden border border-line-2 sm:w-32"
+      className={`portrait relative h-[184px] w-20 shrink-0 self-start overflow-hidden border border-line-2 sm:h-[264px] sm:w-32 ${className}`}
     >
       <Image src={who.art} alt={`${who.name}, full frame`} fill sizes="128px" loading="eager" className="object-cover object-[50%_30%]" />
       <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[#08070c]/85 via-transparent via-40% to-transparent" />
@@ -539,11 +540,15 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
           <Thrusters />
           <div className="frame frame-amber">
             <div className="frame-body relative flex gap-3 p-3 pr-4">
-              <Portrait who={SPEAKERS.jc316} />
+              {/* Phones: no side portrait (the chat needs the width); a small avatar sits in the header. */}
+              <Portrait who={SPEAKERS.jc316} className="hidden sm:block" />
               <ChatPanel
                 chat={chat}
                 header={
                   <div className="flex items-center gap-2 pr-6">
+                    <span data-drag-handle className="relative size-8 shrink-0 overflow-hidden border border-line-2 sm:hidden">
+                      <Image src={ART.jc316Keyart} alt="" fill sizes="32px" className="object-cover object-[50%_12%]" />
+                    </span>
                     <span className="hud text-[12px] text-amber">JC-316 · Comms</span>
                     <span className="hud border border-sync/50 px-1.5 text-[10px] text-sync">
                       <span className="boost-off">{chat.busy ? "Receiving" : "Channel open"}</span>

@@ -120,7 +120,7 @@ export function ChatPanel({ chat, header }: { chat: Chat; header: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col">
       {header}
-      <div ref={logRef} className="mt-2 grid max-h-[min(42vh,340px)] min-h-24 content-start gap-2.5 overflow-y-auto pr-1" aria-live="polite">
+      <div ref={logRef} className="mt-2 grid max-h-[min(42dvh,340px)] min-h-24 content-start gap-2.5 overflow-y-auto pr-1" aria-live="polite">
         {chat.messages.length === 0 && (
           <div>
             <p className="text-[13px] leading-snug text-ink-2">
@@ -181,7 +181,7 @@ export function ChatPanel({ chat, header }: { chat: Chat; header: ReactNode }) {
           }}
           placeholder={out ? "Daily comms used up. Back after midnight ET." : "Ask JC-316…"}
           aria-label="Message JC-316"
-          className="min-w-0 flex-1 resize-none border border-line-2 bg-page px-2.5 py-1.5 text-[13px] text-ink placeholder:text-muted focus:border-amber"
+          className="min-w-0 flex-1 resize-none border border-line-2 bg-page px-2.5 py-1.5 text-[16px] text-ink placeholder:text-muted focus:border-amber sm:text-[13px]"
         />
         <button
           type="submit"

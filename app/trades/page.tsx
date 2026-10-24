@@ -139,7 +139,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
             </tbody>
           </Table>
         ) : (
-          <Empty art={ART.awaiting}>No closed trades yet.</Empty>
+          <Empty art={ART.awaitingLarge} cover position="45% 10%">No closed trades yet.</Empty>
         )}
       </Card>
 
@@ -198,7 +198,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
             </tbody>
           </Table>
         ) : (
-          <Empty>No orders yet.</Empty>
+          <Empty art={ART.noContactLarge} cover>No orders yet.</Empty>
         )}
       </Card>
     </div>

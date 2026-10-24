@@ -52,7 +52,7 @@ async function Bridge() {
   if (!o.hasData || !o.kpis) {
     return (
       <Card>
-        <Empty art={ART.cold}>Systems cold. The first sortie records a snapshot.</Empty>
+        <Empty art={ART.coldLarge} cover position="50% 22%">Systems cold. The first sortie records a snapshot.</Empty>
       </Card>
     );
   }
@@ -379,7 +379,7 @@ async function Bridge() {
             </tbody>
           </Table>
         ) : (
-          <Empty art={ART.noContact}>All units holding position. Entries fire when a strategy locks on.</Empty>
+          <Empty art={ART.noContactLarge} cover>All units holding position. Entries fire when a strategy locks on.</Empty>
         )}
       </Card>
 
@@ -433,7 +433,7 @@ async function Bridge() {
             </tbody>
           </Table>
         ) : (
-          <Empty art={ART.awaiting}>No engagements closed yet. Since launch {longDate(k.since)}.</Empty>
+          <Empty art={ART.awaitingLarge} cover position="45% 10%">No engagements closed yet. Since launch {longDate(k.since)}.</Empty>
         )}
       </Card>
     </div>

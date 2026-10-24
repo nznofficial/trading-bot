@@ -216,7 +216,7 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
             </tbody>
           </Table>
         ) : (
-          <Empty art={ART.awaiting}>Targeting comes online after the first sortie.</Empty>
+          <Empty art={ART.awaitingLarge} cover position="45% 10%">Targeting comes online after the first sortie.</Empty>
         )}
       </Card>
 
@@ -262,7 +262,7 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
             </tbody>
           </Table>
         ) : (
-          <Empty>No buy or sell calls yet. Units are holding.</Empty>
+          <Empty art={ART.noContactLarge} cover>No buy or sell calls yet. Units are holding.</Empty>
         )}
       </Card>
     </div>

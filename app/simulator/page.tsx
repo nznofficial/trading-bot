@@ -66,7 +66,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
   if (!selected) {
     return (
       <Card>
-        <Empty art={ART.awaiting}>No simulations yet. Set parameters above and launch one.</Empty>
+        <Empty art={ART.awaitingLarge} cover position="45% 10%">No simulations yet. Set parameters above and launch one.</Empty>
       </Card>
     );
   }
@@ -216,7 +216,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
           code="SIM-04"
           brief={briefAttrs("by-target", { scope: runScope, count: r.bySymbol.length })}
         >
-          {r.bySymbol.length ? <SymbolPnlChart data={r.bySymbol} /> : <Empty>No trades in this run.</Empty>}
+          {r.bySymbol.length ? <SymbolPnlChart data={r.bySymbol} /> : <Empty art={ART.noContactLarge} cover>No trades in this run.</Empty>}
         </Card>
       </div>
 
@@ -330,7 +330,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
             </tbody>
           </Table>
         ) : (
-          <Empty>No trades in this run.</Empty>
+          <Empty art={ART.noContactLarge} cover>No trades in this run.</Empty>
         )}
       </Card>
     </>

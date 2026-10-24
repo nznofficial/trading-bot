@@ -231,11 +231,22 @@ export function Table({ children }: { children: ReactNode }) {
  * Empty state. `art` adds an illustration: a small framed square by default, or with `cover` the
  * painting fills the whole panel (edge to edge) with the message over its lower edge.
  */
-export function Empty({ children, art, cover }: { children: ReactNode; art?: string; cover?: boolean }) {
+export function Empty({
+  children,
+  art,
+  cover,
+  position = "60% 55%",
+}: {
+  children: ReactNode;
+  art?: string;
+  cover?: boolean;
+  /** CSS object-position for the cover crop (keep the subject in frame). */
+  position?: string;
+}) {
   if (art && cover) {
     return (
       <div className="relative -m-5 min-h-[340px] overflow-hidden sm:min-h-[420px]">
-        <Image src={art} alt="" fill sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover object-[60%_55%]" />
+        <Image src={art} alt="" fill sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover" style={{ objectPosition: position }} />
         <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[#08070c]/95 via-[#08070c]/25 via-45% to-transparent" />
         <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-1.5 p-6 text-center">
           <span className="hud text-[13px] text-amber">— No contact —</span>

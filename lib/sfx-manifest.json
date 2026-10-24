@@ -1,0 +1,11 @@
+{
+  "cues": [
+    "boost",
+    "drop",
+    "engage",
+    "land",
+    "launch",
+    "pickup",
+    "win"
+  ]
+}

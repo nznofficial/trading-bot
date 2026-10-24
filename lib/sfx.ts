@@ -6,6 +6,8 @@
  * per browser. Browsers only allow audio after a user gesture, so cues before one are skipped.
  * Spoken lines are separate: see lib/voice-player.ts.
  */
+import sfxManifest from "./sfx-manifest.json";
+
 export type Cue =
   | "click"
   | "engage"
@@ -330,12 +332,54 @@ const CUES: Record<Cue, (b: Bus, t: number) => void> = {
   },
 };
 
+// ── Recorded effects ────────────────────────────────────────────────────────────────────────
+// The mechanical cues picked from ElevenLabs Sound Effects (scripts/generate-sfx.ts) play from
+// public/sfx; everything else, and any sample that hasn't loaded, uses the synth above.
+const SAMPLED = new Set<string>(sfxManifest.cues);
+const samples = new Map<string, AudioBuffer | Promise<AudioBuffer | null> | null>();
+
+function sample(b: Bus, cue: string) {
+  if (!SAMPLED.has(cue)) return null;
+  let s = samples.get(cue);
+  if (s === undefined) {
+    s = fetch(`/sfx/${cue}.mp3`)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+      .then((a) => b.ctx.decodeAudioData(a))
+      .then((buf) => (samples.set(cue, buf), buf))
+      .catch(() => (samples.set(cue, null), null));
+    samples.set(cue, s);
+  }
+  return s;
+}
+
+/** Fetch and decode every recorded effect once, so the first boost or fill doesn't lag. */
+function preload(b: Bus) {
+  for (const cue of SAMPLED) sample(b, cue);
+}
+
+function playBuffer(b: Bus, buf: AudioBuffer) {
+  const src = b.ctx.createBufferSource();
+  src.buffer = buf;
+  // Recorded effects are mastered hotter than the synth cues; trim them to sit at the same level.
+  const trim = b.ctx.createGain();
+  trim.gain.value = 0.55;
+  src.connect(trim).connect(b.out);
+  src.start(b.ctx.currentTime + 0.01);
+}
+
 export function play(cue: Cue, force = false) {
   if (!force && !soundEnabled()) return;
   try {
     const b = engine();
     if (b.ctx.state === "suspended") void b.ctx.resume();
-    CUES[cue](b, b.ctx.currentTime + 0.01);
+    preload(b);
+    const s = sample(b, cue);
+    if (s instanceof AudioBuffer) playBuffer(b, s);
+    else if (s instanceof Promise) {
+      // Still loading (e.g. the launch right after SFX is switched on): wait briefly, else synthesize.
+      const late = new Promise<null>((r) => setTimeout(() => r(null), 600));
+      void Promise.race([s, late]).then((buf) => (buf ? playBuffer(b, buf) : CUES[cue](b, b.ctx.currentTime + 0.01)));
+    } else CUES[cue](b, b.ctx.currentTime + 0.01);
   } catch {
     // Audio unavailable (or not yet allowed): ignore.
   }

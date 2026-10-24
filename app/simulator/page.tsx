@@ -308,6 +308,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
                       entry: usd(t.entryPrice),
                       exit: usd(t.exitPrice),
                       pnl: `${signedUsd(t.pnl)} (${signedPct(t.returnPct)})`,
+                      pnlRaw: t.pnl,
                       held: duration(t.holdMs),
                     })}
                   >

@@ -85,7 +85,17 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
  * Lock-on overlay: targeting brackets around the briefed element and a data-link line from the dock
  * to it. Follows scrolling, layout changes and the dock's own flight (rects include transforms).
  */
-export function LockOn({ target, dock, lockId }: { target: RefObject<HTMLElement | null>; dock: RefObject<HTMLElement | null>; lockId: number }) {
+export function LockOn({
+  target,
+  dock,
+  lockId,
+  color = "var(--amber)",
+}: {
+  target: RefObject<HTMLElement | null>;
+  dock: RefObject<HTMLElement | null>;
+  lockId: number;
+  color?: string;
+}) {
   const [geo, setGeo] = useState<{ t: Box; d: Box } | null>(null);
 
   useEffect(() => {
@@ -128,17 +138,17 @@ export function LockOn({ target, dock, lockId }: { target: RefObject<HTMLElement
     <svg aria-hidden className="lock-on pointer-events-none fixed inset-0 z-30 h-full w-full overflow-visible">
       <g key={lockId} className="lock-brackets" style={{ transformOrigin: `${tc.x}px ${tc.y}px` }}>
         {brackets.map((p) => (
-          <path key={p.slice(0, 4)} d={p} fill="none" stroke="var(--amber)" strokeWidth="2" />
+          <path key={p.slice(0, 4)} d={p} fill="none" stroke={color} strokeWidth="2" />
         ))}
-        <text x={t.l - g} y={t.t - g - 5} className="hud" fontSize="10" fill="var(--amber)">
+        <text x={t.l - g} y={t.t - g - 5} className="hud" fontSize="10" fill={color}>
           Lock
         </text>
       </g>
       {linked && (
         <>
-          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="var(--amber)" strokeOpacity="0.25" strokeWidth="4" />
-          <line className="lock-link" x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="var(--amber)" strokeWidth="1.5" strokeDasharray="6 5" />
-          <circle cx={b.x} cy={b.y} r="3" fill="var(--amber)" />
+          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeOpacity="0.25" strokeWidth="4" />
+          <line className="lock-link" x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeWidth="1.5" strokeDasharray="6 5" />
+          <circle cx={b.x} cy={b.y} r="3" fill={color} />
         </>
       )}
     </svg>

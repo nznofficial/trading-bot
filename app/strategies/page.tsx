@@ -106,6 +106,7 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
                     caption="Win rate on closed trades"
                     brief={briefAttrs("win-rate", {
                       scope: unit.callsign,
+                      unit: st.id,
                       value: st.stats.winRate === null ? "—" : pct(st.stats.winRate, 0),
                       sub: `${st.stats.wins} won, ${st.stats.losses} lost`,
                       count: st.stats.count,
@@ -117,7 +118,7 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
                     readout={st.stats.count}
                     color={unit.secondary}
                     caption="Closed trades (bar fills at 50)"
-                    brief={briefAttrs("unit-sorties", { scope: unit.callsign, value: st.stats.count })}
+                    brief={briefAttrs("unit-sorties", { scope: unit.callsign, unit: st.id, value: st.stats.count })}
                   />
                 </div>
 
@@ -135,7 +136,7 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
                     <div
                       key={label}
                       className="bg-surface px-5 py-3"
-                      {...briefAttrs(id, { scope: unit.callsign, value: text, count: st.stats.count })}
+                      {...briefAttrs(id, { scope: unit.callsign, unit: st.id, value: text, count: st.stats.count })}
                     >
                       <Metric label={label}>{value}</Metric>
                     </div>
@@ -242,6 +243,7 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
                   key={s.id}
                   {...briefAttrs("call", {
                     symbol: s.symbol,
+                    unit: s.strategy,
                     action: s.action,
                     reason: s.reason,
                     outcome: s.note ?? "—",

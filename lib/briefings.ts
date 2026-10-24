@@ -1,7 +1,7 @@
 import { CRYPTO_RISK, PORTFOLIO_RISK, RISK } from "./config";
 import { DAMAGE } from "./copilot";
 import { duration, pct, qty, signedPct, signedUsd, usd } from "./format";
-import { unitFor } from "./units";
+import { unitFor, type UnitId } from "./units";
 
 /**
  * JC-316's component briefings: click a panel (or a row inside one) and the copilot explains it.
@@ -11,7 +11,17 @@ import { unitFor } from "./units";
  */
 
 export type BriefCtx = Record<string, string | number | boolean | null | undefined>;
-export type Briefing = { title: string; what: string; now: string; note: string };
+/** Who delivers a briefing: JC-316, or the wingman unit the component belongs to. */
+export type Speaker = "jc316" | UnitId;
+export type Briefing = {
+  title: string;
+  what: string;
+  now: string;
+  note: string;
+  speaker: Speaker;
+  /** A line in the speaker's own voice (wingmen only). */
+  quote: string | null;
+};
 
 type Text = string | ((c: BriefCtx) => string);
 type Def = { title: Text; what: Text; now: Text; note: Text };
@@ -562,11 +572,66 @@ export const isBriefId = (id: string): id is BriefId => Object.hasOwn(BRIEFS, id
 
 const resolve = (t: Text, c: BriefCtx) => (typeof t === "function" ? t(c) : t);
 
-/** Build JC-316's briefing for a component; null for unknown ids. */
+/**
+ * Wingman voice lines. Vanguard is the brash trend-rider; Recoil the patient counter-puncher. Like the
+ * templates, they only reuse values from the context (symbol, win/loss), never new numbers.
+ */
+const VOICE: Record<UnitId, (id: BriefId, c: BriefCtx) => string> = {
+  sma_cross: (id, c) => {
+    const sym = c.symbol ? String(c.symbol) : "the target";
+    const pnl = n(c, "pnlRaw");
+    if (id === "position") return `Riding the trend on ${sym}. I don't leave until the averages cross back.`;
+    if (id === "trade" || id === "debrief-hero" || id === "sim-trade")
+      return pnl !== null && pnl > 0
+        ? `Caught the move on ${sym}. That's what trends are for.`
+        : `${sym} faded on me. Trend calls lose small and often; the big runs pay for them.`;
+    if (id === "signal" || id === "call")
+      return c.action === "buy"
+        ? `Crossover on ${sym}. Requesting clearance to engage.`
+        : c.action === "sell"
+          ? `Trend's broken on ${sym}. Pulling out.`
+          : `Nothing worth chasing on ${sym} yet. I wait for a fresh cross.`;
+    if (id === "order") return c.side === "buy" ? `Going in on ${sym}.` : `Out of ${sym}.`;
+    if (id === "unit") return "Unit-01 Vanguard. I hunt trends, and I don't flinch at a few scratches.";
+    if (id === "sim-unit") return "Run me through any year you like. Give me trends and I'll deliver.";
+    return "Vanguard on the line. Here's my read.";
+  },
+  rsi_revert: (id, c) => {
+    const sym = c.symbol ? String(c.symbol) : "the target";
+    const pnl = n(c, "pnlRaw");
+    if (id === "position") return `Bought the dip on ${sym}. Now I wait for the bounce.`;
+    if (id === "trade" || id === "debrief-hero" || id === "sim-trade")
+      return pnl !== null && pnl > 0
+        ? `${sym} snapped back. Counter-strike landed.`
+        : `${sym} kept falling. The stop did its job; I live to swing again.`;
+    if (id === "signal" || id === "call")
+      return c.action === "buy"
+        ? `${sym} is oversold. Moving in.`
+        : c.action === "sell"
+          ? `${sym} recovered. Taking the bounce and stepping back.`
+          : `${sym} isn't scared enough yet. Patience.`;
+    if (id === "order") return c.side === "buy" ? `Catching ${sym} on the way down.` : `Selling ${sym} into the recovery.`;
+    if (id === "unit") return "Unit-02 Recoil. When the market panics, I buy. When it calms down, I sell.";
+    if (id === "sim-unit") return "Calm markets are my hunting ground. Show me the dips.";
+    return "Recoil reporting. Here's the situation.";
+  },
+};
+
+const speakerOf = (c: BriefCtx): Speaker => (unitFor((c.unit as string) ?? null) ? (c.unit as UnitId) : "jc316");
+
+/** Build the briefing for a component; null for unknown ids. Unit-owned components are briefed by that unit. */
 export function briefing(id: string, ctx: BriefCtx = {}): Briefing | null {
   if (!isBriefId(id)) return null;
   const d: Def = BRIEFS[id];
-  return { title: resolve(d.title, ctx), what: resolve(d.what, ctx), now: resolve(d.now, ctx), note: resolve(d.note, ctx) };
+  const speaker = speakerOf(ctx);
+  return {
+    title: resolve(d.title, ctx),
+    what: resolve(d.what, ctx),
+    now: resolve(d.now, ctx),
+    note: resolve(d.note, ctx),
+    speaker,
+    quote: speaker === "jc316" ? null : VOICE[speaker](id, ctx),
+  };
 }
 
 /** Spread onto any element to make it briefable: `<tr {...briefAttrs("trade", {...})}>`. */

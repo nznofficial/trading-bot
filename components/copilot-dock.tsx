@@ -4,11 +4,12 @@ import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { fly, LockOn } from "@/components/copilot-flight";
-import { briefing, type BriefCtx, type Briefing } from "@/lib/briefings";
+import { briefing, type BriefCtx, type Briefing, type Speaker } from "@/lib/briefings";
 import { ART } from "@/components/art";
 import { CORNERS, pickCorner, type Corner } from "@/lib/dock-placement";
 import { COPILOT_STATES, copilotLine, copilotReport, type CopilotInput, type CopilotState } from "@/lib/copilot";
 import { play } from "@/lib/sfx";
+import { UNITS } from "@/lib/units";
 
 const STATE_LABEL: Record<CopilotState, string> = {
   alert: "Alert",
@@ -193,23 +194,49 @@ function Thrusters() {
 }
 
 /**
- * Full-length JC-316 for the briefing: a tall framed ID panel (the key art, hangar and all) that
+ * Who's talking. Unit-owned components (a position, trade, unit card, targeting call...) are briefed by
+ * that wingman, in its colors and with its own key art; everything else by JC-316.
+ */
+const SPEAKERS: Record<Speaker, { name: string; code: string; role: string; art: string; frame: string; accent: string }> = {
+  jc316: { name: "JC-316", code: "JC-316", role: "Cmd frame", art: ART.jc316Keyart, frame: "var(--amber)", accent: "var(--amber)" },
+  sma_cross: {
+    name: UNITS.sma_cross.callsign,
+    code: UNITS.sma_cross.code,
+    role: UNITS.sma_cross.role,
+    art: ART.vanguardKeyart,
+    frame: UNITS.sma_cross.primary,
+    accent: UNITS.sma_cross.secondary,
+  },
+  rsi_revert: {
+    name: UNITS.rsi_revert.callsign,
+    code: UNITS.rsi_revert.code,
+    role: UNITS.rsi_revert.role,
+    art: ART.recoilKeyart,
+    frame: UNITS.rsi_revert.primary,
+    accent: UNITS.rsi_revert.secondary,
+  },
+};
+
+/**
+ * Full-length speaker art for the briefing: a tall framed ID panel (the key art, hangar and all) that
  * doubles as the drag handle. Mid-flight it lights up with speed lines (see globals.css).
  */
-function Portrait() {
+function Portrait({ who }: { who: (typeof SPEAKERS)[Speaker] }) {
   return (
     <div
       data-drag-handle
       title="Drag me to any corner"
       className="portrait relative min-h-[230px] w-24 shrink-0 self-stretch overflow-hidden border border-line-2 sm:w-32"
     >
-      <Image src={ART.jc316Keyart} alt="JC-316, full frame" fill sizes="128px" loading="eager" className="object-cover object-[50%_30%]" />
+      <Image src={who.art} alt={`${who.name}, full frame`} fill sizes="128px" loading="eager" className="object-cover object-[50%_30%]" />
       <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[#08070c]/85 via-transparent via-40% to-transparent" />
       <div aria-hidden className="speed-lines absolute inset-0" />
       <div className="absolute inset-x-0 bottom-0 px-2 pb-1.5">
-        <div className="hud text-[11px] leading-none text-amber">JC-316</div>
+        <div className="hud text-[11px] leading-none" style={{ color: who.accent }}>
+          {who.name}
+        </div>
         <div className="hud mt-0.5 text-[9px] leading-none text-muted">
-          <span className="boost-off">Cmd frame</span>
+          <span className="boost-off">{who.role}</span>
           <span className="boost-on text-sync">Boost</span>
         </div>
       </div>
@@ -418,31 +445,40 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
   const at = CORNER_CLASS[corner];
 
   if (brief) {
+    const who = SPEAKERS[brief.speaker];
+    const jc = brief.speaker === "jc316";
     return (
       <>
-        <LockOn target={targetRef} dock={dockRef} lockId={brief.seq} />
+        <LockOn target={targetRef} dock={dockRef} lockId={brief.seq} color={who.frame} />
         {zones}
         <aside
           ref={setDock}
           {...dragProps}
           data-copilot
           aria-live="polite"
-          aria-label={`JC-316 briefing: ${brief.title}`}
+          aria-label={`${who.name} briefing: ${brief.title}`}
           className={`fixed ${at} z-40 w-[min(440px,calc(100vw-2rem))]`}
         >
           <Thrusters />
-          <div className="frame frame-amber">
+          <div className="frame" style={{ "--frame-line": who.frame } as React.CSSProperties}>
             <div className="frame-body relative flex gap-3 p-3 pr-4">
-              <Portrait />
+              <Portrait who={who} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 pr-6">
-                  <span className="hud text-[12px] text-amber">JC-316 · Briefing</span>
+                  <span className="hud text-[12px]" style={{ color: who.accent }}>
+                    {jc ? "JC-316" : `${who.code} ${who.name}`} · Briefing
+                  </span>
                   <span className="hud border border-cyan/50 px-1.5 text-[10px] text-cyan">
                     <span className="boost-off">Scanning</span>
                     <span className="boost-on">Evasive</span>
                   </span>
                 </div>
                 <h2 className="mt-1 font-title text-[19px] leading-tight font-extrabold text-ink">{brief.title}</h2>
+                {brief.quote && (
+                  <p className="mt-1.5 border-l-2 pl-2 text-[13px] leading-snug text-ink-2 italic" style={{ borderColor: who.frame }}>
+                    “{brief.quote}”
+                  </p>
+                )}
                 <div className="mt-2 grid max-h-[min(46vh,360px)] gap-2.5 overflow-y-auto pr-1">
                   <BriefSection label="What it is" tone="text-muted">
                     {brief.what}
@@ -450,7 +486,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
                   <BriefSection label="Reading now" tone="text-sync">
                     <Typed key={brief.seq} text={brief.now} instant={reduced} reserve />
                   </BriefSection>
-                  <BriefSection label="Pilot's note" tone="text-amber">
+                  <BriefSection label={jc ? "Pilot's note" : `${who.name}'s note`} tone="text-amber">
                     {brief.note}
                   </BriefSection>
                 </div>

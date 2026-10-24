@@ -63,6 +63,7 @@ async function Debrief({ searchParams }: { searchParams: PageProps<"/trades/debr
           symbol: t.symbol,
           unit: t.strategy,
           pnl: signedUsd(t.pnl),
+          pnlRaw: t.pnl,
           ret: signedPct(t.returnPct),
           exitBy: exitLabel,
         })}
@@ -157,6 +158,7 @@ async function Debrief({ searchParams }: { searchParams: PageProps<"/trades/debr
                     key={i}
                     {...briefAttrs("call", {
                       symbol: t.symbol,
+                      unit: t.strategy,
                       action: s.action,
                       reason: s.reason,
                       outcome: s.note ?? "—",

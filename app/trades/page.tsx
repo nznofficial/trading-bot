@@ -172,6 +172,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
                     side: o.side,
                     type: `${o.type}${o.stopPrice ? ` @ ${usd(o.stopPrice)}` : ""}`,
                     kind: o.type,
+                    unit: o.strategy,
                     leg: o.isLeg,
                     qty: o.qty === null ? null : qty(o.qty),
                     fill: o.filledAvgPrice ? usd(o.filledAvgPrice) : null,

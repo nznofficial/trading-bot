@@ -21,7 +21,7 @@ describe("briefings", () => {
       for (const ctx of [{}, CTX]) {
         const b = briefing(id, ctx)!;
         expect(b, id).not.toBeNull();
-        for (const text of Object.values(b)) {
+        for (const text of [b.title, b.what, b.now, b.note, b.quote ?? "—"]) {
           expect(text.length, id).toBeGreaterThan(0);
           expect(text, id).not.toMatch(/undefined|NaN|\[object|null/);
         }
@@ -83,5 +83,32 @@ describe("briefing readings", () => {
   it("says there's no reading instead of printing a dash", () => {
     expect(briefing("sharpe", { value: "—", sub: "1 day of history" })!.now).toBe("No reading yet · 1 day of history.");
     expect(briefing("sortino", { scope: "Run #3", value: "—" })!.now).toBe("Run #3: no reading yet.");
+  });
+});
+
+describe("briefing speakers", () => {
+  it("lets the owning unit deliver its own briefings", () => {
+    const pos = briefing("position", { unit: "sma_cross", symbol: "NVDA" })!;
+    expect(pos.speaker).toBe("sma_cross");
+    expect(pos.quote).toBe("Riding the trend on NVDA. I don't leave until the averages cross back.");
+    const win = briefing("trade", { unit: "rsi_revert", symbol: "MSFT", pnlRaw: 12 })!;
+    expect(win.speaker).toBe("rsi_revert");
+    expect(win.quote).toBe("MSFT snapped back. Counter-strike landed.");
+    expect(briefing("trade", { unit: "rsi_revert", symbol: "MSFT", pnlRaw: -3 })!.quote).toMatch(/kept falling/);
+  });
+
+  it("keeps JC-316 on account-wide and manual briefings", () => {
+    expect(briefing("equity", {})!.speaker).toBe("jc316");
+    expect(briefing("trade", { unit: null, symbol: "BTC/USD" })!).toMatchObject({ speaker: "jc316", quote: null });
+  });
+
+  it("gives every unit-owned briefing a clean voice line", () => {
+    for (const id of Object.keys(BRIEFS)) {
+      for (const unit of ["sma_cross", "rsi_revert"]) {
+        const q = briefing(id, { unit, symbol: "AMD", action: "hold", side: "buy" })!.quote!;
+        expect(q.length, id).toBeGreaterThan(0);
+        expect(q, id).not.toMatch(/undefined|NaN|null/);
+      }
+    }
   });
 });

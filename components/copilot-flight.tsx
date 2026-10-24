@@ -120,12 +120,20 @@ export function LockOn({
   const { t, d } = geo;
   if (t.b < 0 || t.t > window.innerHeight || t.r < 0 || t.l > window.innerWidth) return null;
 
-  // Line from the dock's nearest edge point to the target's nearest edge point.
+  // The link runs along the line between the two centers, drawn only in the gap between the boxes
+  // (it starts where that line leaves the dock and stops where it enters the target), so it points
+  // center to center without crossing either panel's content. A reticle marks the target's center.
   const dc = { x: (d.l + d.r) / 2, y: (d.t + d.b) / 2 };
   const tc = { x: (t.l + t.r) / 2, y: (t.t + t.b) / 2 };
-  const a = { x: clamp(tc.x, d.l, d.r), y: clamp(tc.y, d.t, d.b) };
-  const b = { x: clamp(dc.x, t.l, t.r), y: clamp(dc.y, t.t, t.b) };
-  const linked = Math.hypot(a.x - b.x, a.y - b.y) > 24;
+  const v = { x: tc.x - dc.x, y: tc.y - dc.y };
+  /** Fraction of v from a box's center to its edge along v. */
+  const exit = (hw: number, hh: number) => Math.min(v.x ? hw / Math.abs(v.x) : Infinity, v.y ? hh / Math.abs(v.y) : Infinity);
+  const fa = exit((d.r - d.l) / 2, (d.b - d.t) / 2);
+  const fb = exit((t.r - t.l) / 2, (t.b - t.t) / 2);
+  const a = { x: dc.x + v.x * fa, y: dc.y + v.y * fa };
+  const b = { x: tc.x - v.x * fb, y: tc.y - v.y * fb };
+  const linked = fa + fb < 1 && Math.hypot(a.x - b.x, a.y - b.y) > 12;
+  const rr = clamp(Math.min(t.r - t.l, t.b - t.t) / 4, 4, 8);
   const s = Math.min(16, (t.r - t.l) / 3, (t.b - t.t) / 2);
   const g = 4; // brackets sit just outside the element
   const brackets = [
@@ -144,12 +152,19 @@ export function LockOn({
         <text x={t.l - g} y={t.t - g - 5} className="hud" fontSize="10" fill={color}>
           Lock
         </text>
+        {/* Center reticle: ring, four ticks with a gap, and a pip. */}
+        <g stroke={color} strokeWidth="1.5" fill="none">
+          <circle cx={tc.x} cy={tc.y} r={rr} />
+          <path
+            d={`M${tc.x - rr - 5} ${tc.y}h4M${tc.x + rr + 1} ${tc.y}h4M${tc.x} ${tc.y - rr - 5}v4M${tc.x} ${tc.y + rr + 1}v4`}
+          />
+        </g>
+        <circle cx={tc.x} cy={tc.y} r="1.6" fill={color} />
       </g>
       {linked && (
         <>
           <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeOpacity="0.25" strokeWidth="4" />
           <line className="lock-link" x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeWidth="1.5" strokeDasharray="6 5" />
-          <circle cx={b.x} cy={b.y} r="3" fill={color} />
         </>
       )}
     </svg>

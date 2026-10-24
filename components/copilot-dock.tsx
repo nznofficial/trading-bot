@@ -133,6 +133,8 @@ function useBriefings(page: string) {
       if (el === targetRef.current) {
         mark(null);
         setBrief(null);
+        stopVoice();
+        play("brief-close");
         return;
       }
       let ctx: BriefCtx = {};
@@ -161,6 +163,8 @@ function useBriefings(page: string) {
       if (e.key === "Escape" && targetRef.current) {
         mark(null);
         setBrief(null);
+        stopVoice();
+        play("brief-close");
       } else if (e.key === "Enter" && e.target instanceof HTMLElement && e.target.dataset.brief) {
         open(e.target);
       }
@@ -173,8 +177,10 @@ function useBriefings(page: string) {
     };
   }, []);
 
-  const close = () => {
+  /** Close the briefing (with the lock-release cue unless something else is about to sound). */
+  const close = (quiet = false) => {
     stopVoice();
+    if (!quiet) play("brief-close");
     targetRef.current?.removeAttribute("data-briefed");
     targetRef.current = null;
     setBrief(null);
@@ -504,7 +510,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
                     type="button"
                     onClick={() => {
                       chat.ask(`Tell me more about "${brief.title}".`);
-                      close();
+                      close(true);
                     }}
                     className="hud justify-self-start text-[11px] text-amber hover:underline"
                   >
@@ -514,7 +520,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
               </div>
               <button
                 type="button"
-                onClick={close}
+                onClick={() => close()}
                 aria-label="Close briefing"
                 className="hud absolute top-1.5 right-2 px-1 text-[15px] text-muted hover:text-ink"
               >
@@ -583,7 +589,10 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
           data-drag-handle
           type="button"
           data-copilot
-          onClick={() => writePref("open")}
+          onClick={() => {
+            play("powerup");
+            writePref("open");
+          }}
           aria-label={`Open JC-316 copilot (${STATE_LABEL[report.state]})`}
           className={`fixed ${at} z-40 size-16`}
         >
@@ -623,7 +632,10 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
                 {/* The status chip doubles as the minimize control: hover/focus flips it to "Minimize". */}
                 <button
                   type="button"
-                  onClick={() => writePref("min")}
+                  onClick={() => {
+                    play("powerdown");
+                    writePref("min");
+                  }}
                   aria-label={`Minimize JC-316 (status: ${STATE_LABEL[report.state]})`}
                   title="Minimize"
                   className={`group hud shrink-0 border px-1.5 text-[10px] transition-colors hover:border-amber hover:text-amber focus-visible:border-amber focus-visible:text-amber ${STATE_TONE[report.state]}`}
@@ -647,7 +659,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
                 <p className="hud text-[10px] text-muted">Click any panel for a briefing · drag me anywhere</p>
                 <button
                   type="button"
-                  onClick={() => chat.setOpen(true)}
+                  onClick={() => chat.ask("")}
                   className="hud shrink-0 border border-amber/60 px-2 py-0.5 text-[11px] text-amber hover:bg-amber/10"
                 >
                   Comms ▸

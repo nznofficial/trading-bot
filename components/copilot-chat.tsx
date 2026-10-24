@@ -91,12 +91,14 @@ export function useChat() {
   const close = () => {
     abortRef.current?.abort();
     stopVoice();
+    play("comms-close");
     setOpen(false);
   };
-  /** Open comms with a question pre-filled (e.g. from a briefing). */
+  /** Open comms, optionally with a question pre-filled (e.g. from a briefing). */
   const ask = (question: string) => {
-    setDraft(question);
+    if (question) setDraft(question);
     setOpen(true);
+    play("comms-open");
   };
 
   return { open, setOpen, close, ask, messages, draft, setDraft, busy, remaining, send };

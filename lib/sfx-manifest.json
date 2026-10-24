@@ -1,11 +1,14 @@
 {
   "cues": [
     "boost",
+    "comms-close",
     "drop",
     "engage",
     "land",
     "launch",
     "pickup",
+    "powerdown",
+    "powerup",
     "win"
   ]
 }

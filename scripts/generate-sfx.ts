@@ -5,7 +5,7 @@
  *   npx tsx --env-file=.env.local scripts/generate-sfx.ts                 # 3 options per cue + preview page
  *   npx tsx --env-file=.env.local scripts/generate-sfx.ts --only land     # regenerate one cue
  *   npx tsx --env-file=.env.local scripts/generate-sfx.ts --pick boost=2,land=1
- *   npx tsx --env-file=.env.local scripts/generate-sfx.ts --page          # rebuild the page only (no API calls)
+ *   npx tsx --env-file=.env.local scripts/generate-sfx.ts --page [--cues a,b]  # rebuild the page only (no API calls)
  *
  * Options land in art/sfx/raw/ (gitignored) with art/sfx/preview.html. Picks are copied to
  * public/sfx/<cue>.mp3 and listed in lib/sfx-manifest.json; cues without a pick stay synthesized.
@@ -51,6 +51,30 @@ const CUES: Record<string, { seconds: number; prompt: string }> = {
     seconds: 2.2,
     prompt:
       "Sci-fi mech reactor powering up to full: a rising energy hum and turbine whine building into a triumphant heavy power surge with a bright metallic shimmer. No music, no voice.",
+  },
+  "comms-open": {
+    seconds: 0.7,
+    prompt:
+      "Military radio channel opening inside a robot cockpit: a key click, a short squelch burst opening up, then a crisp rising two-note electronic chirp. No music, no voice.",
+  },
+  "comms-close": {
+    seconds: 1.0,
+    prompt:
+      "Military radio transmission ending: a squelch tail cutting off, a brief burst of fading static, then a short descending two-tone sign-off beep. Sci-fi cockpit, no music, no voice.",
+  },
+  powerdown: {
+    seconds: 1.4,
+    prompt:
+      "Giant robot powering down to standby: a turbine whine spinning down in pitch, servos retracting, then a heavy mechanical relay clunk and a soft hydraulic sigh. No music.",
+  },
+  powerup: {
+    seconds: 1.2,
+    prompt:
+      "Giant robot powering back up from standby: a relay click, a turbine whine spinning up in pitch, servos unfolding, then a short bright ready chirp. No music.",
+  },
+  "brief-close": {
+    seconds: 0.6,
+    prompt: "Sci-fi targeting lock releasing: two quick descending electronic chirps and a soft click. Clean, no music.",
   },
   launch: {
     seconds: 2.6,
@@ -118,7 +142,7 @@ function pick(spec: string) {
 }
 
 /** Preview page: each option next to the current synthesized cue (bundled from lib/sfx.ts). */
-function writePage() {
+function writePage(only?: string[]) {
   const synth = buildSync({
     entryPoints: ["lib/sfx.ts"],
     bundle: true,
@@ -128,6 +152,7 @@ function writePage() {
     target: "es2020",
   }).outputFiles[0].text;
   const rows = Object.entries(CUES)
+    .filter(([cue]) => !only || only.includes(cue))
     .map(
       ([cue, c]) => `<h2>${cue} <small>${c.seconds}s</small></h2><p class="d">${c.prompt}</p><div class="row">
       <button data-synth="${cue}">▶ Current (synth)</button>
@@ -157,7 +182,7 @@ document.addEventListener("click", (e) => {
 
 async function main() {
   const spec = arg("pick");
-  if (args.includes("--page")) writePage();
+  if (args.includes("--page")) writePage(arg("cues")?.split(","));
   else if (spec) pick(spec);
   else await run(arg("only"));
 }

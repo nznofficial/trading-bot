@@ -21,6 +21,11 @@ export type Cue =
   | "squelch"
   | "chatter"
   | "launch"
+  | "comms-open"
+  | "comms-close"
+  | "powerdown"
+  | "powerup"
+  | "brief-close"
   | "voice-jc316"
   | "voice-sma_cross"
   | "voice-rsi_revert";
@@ -316,6 +321,44 @@ const CUES: Record<Cue, (b: Bus, t: number) => void> = {
     tone(b, { at: t, dur: 0.9, gain: 0.02, freq: 60, type: "square", attack: 0.1 });
     metal(b, t + 0.9, 180, 0.15, 1);
     CUES.boost(b, t + 0.85);
+  },
+  // Channel open: key click, squelch opening upward, a rising two-note chirp.
+  "comms-open": (b, t) => {
+    tone(b, { at: t, dur: 0.03, gain: 0.05, freq: 1000, type: "square" });
+    noise(b, { at: t + 0.02, dur: 0.18, gain: 0.12, freq: 700, q: 1.5, sweepTo: 2400 });
+    tone(b, { at: t + 0.16, dur: 0.07, gain: 0.07, freq: 880, type: "square" });
+    tone(b, { at: t + 0.24, dur: 0.11, gain: 0.07, freq: 1320, type: "square" });
+  },
+  // Channel cut: squelch falling away, a static tail, then a descending sign-off beep.
+  "comms-close": (b, t) => {
+    noise(b, { at: t, dur: 0.25, gain: 0.16, freq: 2200, q: 1.5, sweepTo: 500 });
+    noise(b, { at: t + 0.15, dur: 0.4, gain: 0.05, freq: 3200, q: 0.6, attack: 0.02 });
+    tone(b, { at: t + 0.42, dur: 0.07, gain: 0.07, freq: 1320, type: "square" });
+    tone(b, { at: t + 0.5, dur: 0.12, gain: 0.07, freq: 880, type: "square" });
+  },
+  // Standby: turbine whine spinning down, servos folding, then a heavy relay clunk and a sigh of air.
+  powerdown: (b, t) => {
+    tone(b, { at: t, dur: 0.8, gain: 0.06, freq: 900, slideTo: 110, type: "sawtooth", wet: 0.3 });
+    noise(b, { at: t, dur: 0.8, gain: 0.06, freq: 3000, filter: "lowpass", sweepTo: 200, q: 3 });
+    servo(b, t + 0.15, 0.4, 320, 120, 0.06);
+    tone(b, { at: t + 0.78, dur: 0.3, gain: 0.25, freq: 75, slideTo: 38, type: "sine", attack: 0.003 });
+    metal(b, t + 0.78, 120, 0.07, 0.6);
+    hiss(b, t + 0.85, 0.4, 0.04);
+  },
+  // Back online: relay click, turbine spinning up, servos unfolding, a ready chirp.
+  powerup: (b, t) => {
+    metal(b, t, 180, 0.05, 0.3);
+    tone(b, { at: t + 0.05, dur: 0.7, gain: 0.06, freq: 110, slideTo: 900, type: "sawtooth", attack: 0.1, wet: 0.3 });
+    noise(b, { at: t + 0.05, dur: 0.7, gain: 0.05, freq: 200, filter: "lowpass", sweepTo: 3200, q: 3, attack: 0.1 });
+    servo(b, t + 0.2, 0.35, 140, 320, 0.06);
+    tone(b, { at: t + 0.78, dur: 0.08, gain: 0.07, freq: 1320, type: "square" });
+    tone(b, { at: t + 0.87, dur: 0.14, gain: 0.07, freq: 1760, type: "square" });
+  },
+  // Lock released: the lock-on chirp in reverse, falling.
+  "brief-close": (b, t) => {
+    tone(b, { at: t, dur: 0.07, gain: 0.07, freq: 2400, slideTo: 1200, type: "square" });
+    tone(b, { at: t + 0.08, dur: 0.09, gain: 0.06, freq: 1800, slideTo: 700, type: "square" });
+    noise(b, { at: t + 0.16, dur: 0.03, gain: 0.15, freq: 2000, q: 2 });
   },
   // Comms voices: JC-316 steady and mid-range; Vanguard quick and rising; Recoil low and gritty.
   "voice-jc316": (b, t) => {

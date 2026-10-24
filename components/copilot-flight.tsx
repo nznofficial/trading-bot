@@ -120,9 +120,9 @@ export function LockOn({
   const { t, d } = geo;
   if (t.b < 0 || t.t > window.innerHeight || t.r < 0 || t.l > window.innerWidth) return null;
 
-  // The link runs along the line between the two centers, drawn only in the gap between the boxes
-  // (it starts where that line leaves the dock and stops where it enters the target), so it points
-  // center to center without crossing either panel's content. A reticle marks the target's center.
+  // The link runs along the line between the two centers: from where it leaves the dock (the dock
+  // sits above it) into the target, fading over the panel so its numbers stay readable, and ending
+  // at the reticle that marks the target's center.
   const dc = { x: (d.l + d.r) / 2, y: (d.t + d.b) / 2 };
   const tc = { x: (t.l + t.r) / 2, y: (t.t + t.b) / 2 };
   const v = { x: tc.x - dc.x, y: tc.y - dc.y };
@@ -132,8 +132,14 @@ export function LockOn({
   const fb = exit((t.r - t.l) / 2, (t.b - t.t) / 2);
   const a = { x: dc.x + v.x * fa, y: dc.y + v.y * fa };
   const b = { x: tc.x - v.x * fb, y: tc.y - v.y * fb };
-  const linked = fa + fb < 1 && Math.hypot(a.x - b.x, a.y - b.y) > 12;
   const rr = clamp(Math.min(t.r - t.l, t.b - t.t) / 4, 4, 8);
+  const len = Math.hypot(v.x, v.y);
+  // Stop just short of the reticle ring.
+  const stop = len ? 1 - (rr + 6) / len : 0;
+  const e = { x: dc.x + v.x * stop, y: dc.y + v.y * stop };
+  const linked = fa < stop && Math.hypot(e.x - a.x, e.y - a.y) > 12;
+  // Where the line crosses into the target, as a fraction of the drawn segment (for the fade).
+  const fadeAt = linked ? clamp((1 - fb - fa) / (stop - fa), 0, 1) : 0;
   const s = Math.min(16, (t.r - t.l) / 3, (t.b - t.t) / 2);
   const g = 4; // brackets sit just outside the element
   const brackets = [
@@ -163,8 +169,14 @@ export function LockOn({
       </g>
       {linked && (
         <>
-          <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeOpacity="0.25" strokeWidth="4" />
-          <line className="lock-link" x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeWidth="1.5" strokeDasharray="6 5" />
+          <defs>
+            <linearGradient id="lock-fade" gradientUnits="userSpaceOnUse" x1={a.x} y1={a.y} x2={e.x} y2={e.y}>
+              <stop offset={fadeAt} stopColor={color} stopOpacity="1" />
+              <stop offset="1" stopColor={color} stopOpacity="0.3" />
+            </linearGradient>
+          </defs>
+          {fa + fb < 1 && <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeOpacity="0.25" strokeWidth="4" />}
+          <line className="lock-link" x1={a.x} y1={a.y} x2={e.x} y2={e.y} stroke="url(#lock-fade)" strokeWidth="1.5" strokeDasharray="6 5" />
         </>
       )}
     </svg>

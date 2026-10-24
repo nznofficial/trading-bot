@@ -5,7 +5,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { fly, LockOn } from "@/components/copilot-flight";
 import { briefing, type BriefCtx, type Briefing } from "@/lib/briefings";
-import { pickCorner, type Corner } from "@/lib/dock-placement";
+import { ART } from "@/components/art";
+import { CORNERS, pickCorner, type Corner } from "@/lib/dock-placement";
 import { COPILOT_STATES, copilotLine, copilotReport, type CopilotInput, type CopilotState } from "@/lib/copilot";
 import { play } from "@/lib/sfx";
 
@@ -44,6 +45,23 @@ const readPref = () => {
 const writePref = (v: "open" | "min") => {
   try {
     localStorage.setItem(PREF, v);
+  } catch {}
+  window.dispatchEvent(new Event("pt-copilot"));
+};
+
+/** Home corner, chosen by dragging the dock; shares the pt-copilot change event. */
+const HOME = "pt-copilot-home";
+const readHome = (): Corner => {
+  try {
+    const v = localStorage.getItem(HOME);
+    return CORNERS.includes(v as Corner) ? (v as Corner) : "br";
+  } catch {
+    return "br";
+  }
+};
+const writeHome = (c: Corner) => {
+  try {
+    localStorage.setItem(HOME, c);
   } catch {}
   window.dispatchEvent(new Event("pt-copilot"));
 };
@@ -174,6 +192,31 @@ function Thrusters() {
   );
 }
 
+/**
+ * Full-length JC-316 for the briefing: a tall framed ID panel (the key art, hangar and all) that
+ * doubles as the drag handle. Mid-flight it lights up with speed lines (see globals.css).
+ */
+function Portrait() {
+  return (
+    <div
+      data-drag-handle
+      title="Drag me to any corner"
+      className="portrait relative min-h-[230px] w-24 shrink-0 self-stretch overflow-hidden border border-line-2 sm:w-32"
+    >
+      <Image src={ART.jc316Keyart} alt="JC-316, full frame" fill sizes="128px" loading="eager" className="object-cover object-[50%_30%]" />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[#08070c]/85 via-transparent via-40% to-transparent" />
+      <div aria-hidden className="speed-lines absolute inset-0" />
+      <div className="absolute inset-x-0 bottom-0 px-2 pb-1.5">
+        <div className="hud text-[11px] leading-none text-amber">JC-316</div>
+        <div className="hud mt-0.5 text-[9px] leading-none text-muted">
+          <span className="boost-off">Cmd frame</span>
+          <span className="boost-on text-sync">Boost</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** JC-316's launch portrait (optics blazing, thrusters lit), swapped in while boosting. */
 function LaunchBust() {
   return (
@@ -228,7 +271,9 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
   const src = `/art/jc316-bust-${report.state}.webp`;
 
   // Evasive maneuvers: while briefing, the dock moves to whichever corner hides the least of the
-  // target, flying there (see fly()). It returns home to bottom-right when the briefing closes.
+  // target, flying there (see fly()). It flies back to its home corner when the briefing closes.
+  // Home is bottom-right until the user drags the dock somewhere else.
+  const home = useSyncExternalStore(subscribe, readHome, () => "br" as const);
   const [corner, setCorner] = useState<Corner>("br");
   const cornerRef = useRef<Corner>("br");
   const dockRef = useRef<HTMLElement | null>(null);
@@ -236,16 +281,28 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
     dockRef.current = el;
   }, []);
   const departure = useRef<DOMRect | null>(null);
-  const moveTo = useCallback((c: Corner) => {
-    if (c === cornerRef.current) return;
-    departure.current = dockRef.current?.getBoundingClientRect() ?? null;
+  const reducedRef = useRef(reduced);
+  useEffect(() => {
+    reducedRef.current = reduced;
+  }, [reduced]);
+  /** Fly to `c`, from `from` (default: where the dock is now; null: jump without flying). */
+  const moveTo = useCallback((c: Corner, from?: DOMRect | null) => {
+    const start = from === undefined ? (dockRef.current?.getBoundingClientRect() ?? null) : from;
+    if (c === cornerRef.current) {
+      // Same corner (e.g. dropped back where it was): fly back from the drop point, if any.
+      if (start && dockRef.current) fly(dockRef.current, start, reducedRef.current);
+      return;
+    }
+    departure.current = start;
     cornerRef.current = c;
     setCorner(c);
   }, []);
+  // Dragged during a briefing: respect the pilot's choice until the next briefing.
+  const manual = useRef(false);
   const place = useCallback(() => {
     const t = targetRef.current;
     const d = dockRef.current;
-    if (!t?.isConnected || !d) return;
+    if (manual.current || !t?.isConnected || !d) return;
     const view = { w: window.innerWidth, h: window.innerHeight };
     moveTo(pickCorner(t.getBoundingClientRect(), { w: d.offsetWidth, h: d.offsetHeight }, view, cornerRef.current));
   }, [moveTo, targetRef]);
@@ -253,10 +310,22 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
   const seq = brief?.seq ?? 0;
   const briefing = !!brief;
   useEffect(() => {
+    if (!seq) return;
+    manual.current = false;
     // Next frame: the briefing has rendered at full size, so the dock can be measured.
-    const id = requestAnimationFrame(() => (briefing ? place() : moveTo("br")));
+    const id = requestAnimationFrame(place);
     return () => cancelAnimationFrame(id);
-  }, [seq, briefing, place, moveTo]);
+  }, [seq, place]);
+  const synced = useRef(false);
+  useEffect(() => {
+    if (briefing) return;
+    const id = requestAnimationFrame(() => {
+      // The first sync after load jumps straight to the saved home instead of flying there.
+      moveTo(home, synced.current ? undefined : null);
+      synced.current = true;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [briefing, home, moveTo]);
   useEffect(() => {
     if (!briefing) return;
     let t: ReturnType<typeof setTimeout>;
@@ -278,14 +347,84 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
     if (from && dockRef.current) fly(dockRef.current, from, reduced);
   }, [corner, reduced]);
 
+  // Drag to reposition: grab a [data-drag-handle] (the portrait), drop near any corner, and that
+  // corner becomes home. The dock follows the pointer, then boosts into the corner from the drop point.
+  const [drag, setDrag] = useState<{ nearest: Corner; w: number; h: number } | null>(null);
+  const justDragged = useRef(false);
+  const onPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    const el = dockRef.current;
+    if (!el || e.button !== 0 || !(e.target as Element).closest("[data-drag-handle]")) return;
+    const sx = e.clientX;
+    const sy = e.clientY;
+    const r0 = el.getBoundingClientRect();
+    let dragging = false;
+    let nearest: Corner = cornerRef.current;
+    const move = (ev: PointerEvent) => {
+      const dx = ev.clientX - sx;
+      const dy = ev.clientY - sy;
+      if (!dragging) {
+        if (Math.hypot(dx, dy) < 6) return;
+        dragging = true;
+        el.getAnimations().forEach((a) => a.cancel());
+        delete el.dataset.boost;
+        el.dataset.dragging = "";
+      }
+      el.style.transform = `translate(${dx}px, ${dy}px) rotate(${Math.max(-6, Math.min(6, dx / 40))}deg)`;
+      const cx = r0.left + r0.width / 2 + dx;
+      const cy = r0.top + r0.height / 2 + dy;
+      nearest = `${cy < window.innerHeight / 2 ? "t" : "b"}${cx < window.innerWidth / 2 ? "l" : "r"}` as Corner;
+      setDrag({ nearest, w: r0.width, h: r0.height });
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      if (!dragging) return;
+      const from = el.getBoundingClientRect();
+      el.style.transform = "";
+      delete el.dataset.dragging;
+      justDragged.current = true;
+      setTimeout(() => (justDragged.current = false), 0);
+      setDrag(null);
+      if (briefing) manual.current = true;
+      writeHome(nearest);
+      moveTo(nearest, from);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  };
+  // A drag ends with a click on whatever was under the pointer; swallow it.
+  const onClickCapture = (e: React.MouseEvent) => {
+    if (!justDragged.current) return;
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  const dragProps = { onPointerDown, onClickCapture };
+  const zones = drag && (
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-[35]">
+      {CORNERS.map((c) => (
+        <div
+          key={c}
+          className={`dock-zone fixed ${CORNER_CLASS[c]} ${c === drag.nearest ? "dock-zone-hot" : ""}`}
+          style={{ width: drag.w, height: drag.h }}
+        >
+          {c === drag.nearest && <span className="hud absolute top-2 left-3 text-[11px] text-amber">Set home</span>}
+        </div>
+      ))}
+    </div>
+  );
+
   const at = CORNER_CLASS[corner];
 
   if (brief) {
     return (
       <>
         <LockOn target={targetRef} dock={dockRef} lockId={brief.seq} />
-  <aside
+        {zones}
+        <aside
           ref={setDock}
+          {...dragProps}
           data-copilot
           aria-live="polite"
           aria-label={`JC-316 briefing: ${brief.title}`}
@@ -294,10 +433,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
           <Thrusters />
           <div className="frame frame-amber">
             <div className="frame-body relative flex gap-3 p-3 pr-4">
-              <div className="relative size-20 shrink-0 self-start drop-shadow-[0_0_16px_rgba(34,211,238,0.35)] sm:size-24">
-                <Image src="/art/jc316-bust-thinking.webp" alt="JC-316, analyzing" width={192} height={192} loading="eager" className="bust-main size-full object-contain" />
-                <LaunchBust />
-              </div>
+              <Portrait />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 pr-6">
                   <span className="hud text-[12px] text-amber">JC-316 · Briefing</span>
@@ -336,58 +472,67 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
 
   if (!open) {
     return (
-      <button
-        ref={setDock}
-        type="button"
-        data-copilot
-        onClick={() => writePref("open")}
-        aria-label={`Open JC-316 copilot (${STATE_LABEL[report.state]})`}
-        className={`frame fixed ${at} z-40 size-16 ${report.state === "alert" || report.state === "damaged" ? "frame-amber" : "frame-hot"}`}
-      >
-        <span className="frame-body block overflow-hidden">
-          <Image src={src} alt="" width={128} height={128} className="size-full object-cover" />
-        </span>
-      </button>
+      <>
+        {zones}
+        <button
+          ref={setDock}
+          {...dragProps}
+          data-drag-handle
+          type="button"
+          data-copilot
+          onClick={() => writePref("open")}
+          aria-label={`Open JC-316 copilot (${STATE_LABEL[report.state]})`}
+          className={`frame fixed ${at} z-40 size-16 ${report.state === "alert" || report.state === "damaged" ? "frame-amber" : "frame-hot"}`}
+        >
+          <span className="frame-body block overflow-hidden">
+            <Image src={src} alt="" width={128} height={128} className="size-full object-cover" />
+          </span>
+        </button>
+      </>
     );
   }
 
   return (
-    <aside
-      ref={setDock}
-      data-copilot
-      aria-live="polite"
-      aria-label="JC-316 copilot"
-      className={`fixed ${at} z-40 w-[min(380px,calc(100vw-2rem))]`}
-    >
-      <Thrusters />
-      <div className={`frame ${report.state === "alert" || report.state === "damaged" ? "frame-amber" : "frame-hot"}`}>
-        <div className="frame-body relative flex items-end gap-3 p-3 pr-4">
-          {/* Stays inside the frame: the chamfer's clip-path would cut off anything overflowing it. */}
-          <div className="relative size-28 shrink-0 drop-shadow-[0_0_16px_rgba(139,92,246,0.45)]">
-            <Image src={src} alt={`JC-316, ${STATE_LABEL[report.state]}`} width={256} height={256} priority className="bust-main size-full object-contain" />
-            <LaunchBust />
-          </div>
-          <div className="min-w-0 flex-1 pb-1">
-            <div className="flex items-center justify-between gap-2">
-              <span className="hud text-[12px] text-amber">JC-316 · Copilot</span>
-              <span className={`hud border px-1.5 text-[10px] ${STATE_TONE[report.state]}`}>{STATE_LABEL[report.state]}</span>
+    <>
+      {zones}
+      <aside
+        ref={setDock}
+        {...dragProps}
+        data-copilot
+        aria-live="polite"
+        aria-label="JC-316 copilot"
+        className={`fixed ${at} z-40 w-[min(380px,calc(100vw-2rem))]`}
+      >
+        <Thrusters />
+        <div className={`frame ${report.state === "alert" || report.state === "damaged" ? "frame-amber" : "frame-hot"}`}>
+          <div className="frame-body relative flex items-end gap-3 p-3 pr-4">
+            {/* Stays inside the frame: the chamfer's clip-path would cut off anything overflowing it. */}
+            <div data-drag-handle title="Drag me to any corner" className="relative size-28 shrink-0 drop-shadow-[0_0_16px_rgba(139,92,246,0.45)]">
+              <Image src={src} alt={`JC-316, ${STATE_LABEL[report.state]}`} width={256} height={256} priority className="bust-main size-full object-contain" />
+              <LaunchBust />
             </div>
-            <p className="mt-1.5 min-h-[3.6em] text-[13px] leading-snug text-ink">
-              <Typed key={report.line} text={report.line} instant={reduced} />
-              <span aria-hidden className="blink ml-0.5 inline-block h-3 w-1.5 translate-y-0.5 bg-sync" />
-            </p>
-            <p className="hud mt-1 text-[10px] text-muted">Click any panel and I&apos;ll brief you</p>
+            <div className="min-w-0 flex-1 pb-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="hud text-[12px] text-amber">JC-316 · Copilot</span>
+                <span className={`hud border px-1.5 text-[10px] ${STATE_TONE[report.state]}`}>{STATE_LABEL[report.state]}</span>
+              </div>
+              <p className="mt-1.5 min-h-[3.6em] text-[13px] leading-snug text-ink">
+                <Typed key={report.line} text={report.line} instant={reduced} />
+                <span aria-hidden className="blink ml-0.5 inline-block h-3 w-1.5 translate-y-0.5 bg-sync" />
+              </p>
+              <p className="hud mt-1 text-[10px] text-muted">Click any panel for a briefing · drag me to any corner</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => writePref("min")}
+              aria-label="Minimize copilot"
+              className="hud absolute top-1.5 right-2 text-[12px] text-muted hover:text-ink"
+            >
+              —
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => writePref("min")}
-            aria-label="Minimize copilot"
-            className="hud absolute top-1.5 right-2 text-[12px] text-muted hover:text-ink"
-          >
-            —
-          </button>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

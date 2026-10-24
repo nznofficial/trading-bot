@@ -3,7 +3,7 @@
 import { type RefObject, useEffect, useState } from "react";
 import { play } from "@/lib/sfx";
 
-const FLIGHT_MS = 760;
+const FLIGHT_MS = 1600;
 const AFTERIMAGES = 4;
 
 /**
@@ -47,7 +47,7 @@ export function fly(el: HTMLElement, from: DOMRect, reduced: boolean) {
     ghost.classList.add("afterimage");
     document.body.appendChild(ghost);
     ghost
-      .animate(frames(0.38 * (1 - i / (AFTERIMAGES + 1))), { duration: FLIGHT_MS, delay: i * 45, fill: "both" })
+      .animate(frames(0.38 * (1 - i / (AFTERIMAGES + 1))), { duration: FLIGHT_MS, delay: i * 90, fill: "both" })
       .finished.catch(() => {})
       .finally(() => ghost.remove());
   }

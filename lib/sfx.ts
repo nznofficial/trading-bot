@@ -59,10 +59,11 @@ export function play(cue: Cue, force = false) {
         tone(t + 0.36, 1047, 0.5, "triangle", 0.06);
         break;
       case "boost":
-        // Thrusters spooling up, the burn, then touchdown as the dock lands (~0.7s later).
-        tone(t, 120, 0.42, "sawtooth", 0.035, 760);
-        tone(t + 0.1, 1400, 0.05, "square", 0.015);
-        tone(t + 0.68, 140, 0.14, "triangle", 0.07, 55);
+        // Thrusters spooling up, a long burn, then touchdown as the dock lands (~1.4s later).
+        tone(t, 110, 0.5, "sawtooth", 0.035, 520);
+        tone(t + 0.22, 1400, 0.05, "square", 0.015);
+        tone(t + 0.3, 520, 0.85, "sawtooth", 0.025, 900);
+        tone(t + 1.42, 140, 0.16, "triangle", 0.07, 55);
         break;
       case "complete":
         tone(t, 880, 0.12, "sine", 0.08);

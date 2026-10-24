@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { SessionClock } from "@/components/session-clock";
-import { CueOnChange, SoundToggle } from "@/components/sound";
+import { CueOnChange, SoundToggle, VoiceToggle } from "@/components/sound";
 import { signedPct } from "@/lib/format";
 import { getMarketStrip } from "@/lib/queries";
 import type { Quote } from "@/lib/quotes";
@@ -18,6 +18,7 @@ export async function SessionStatus() {
       </span>
       {paused && <span className="border border-amber/60 px-1.5 text-amber">Bot on hold</span>}
       <SoundToggle />
+      <VoiceToggle />
       {/* Auto-refresh re-renders this; a new fill id chirps if sound is on. */}
       <CueOnChange value={latestFillId} cue="engage" />
     </div>

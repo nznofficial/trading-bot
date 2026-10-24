@@ -9,7 +9,7 @@ import { briefing, type BriefCtx, type Briefing, type Speaker } from "@/lib/brie
 import { ART } from "@/components/art";
 import { CORNERS, pickCorner, type Corner } from "@/lib/dock-placement";
 import { COPILOT_STATES, copilotLine, copilotReport, type CopilotInput, type CopilotState } from "@/lib/copilot";
-import { play } from "@/lib/sfx";
+import { hush, play, speak } from "@/lib/sfx";
 import { UNITS } from "@/lib/units";
 
 const STATE_LABEL: Record<CopilotState, string> = {
@@ -141,7 +141,10 @@ function useBriefings(page: string) {
       const b = briefing(el.dataset.brief ?? "", ctx);
       if (!b) return;
       mark(el);
-      play("click");
+      // Lock-on chirp, then the speaker keys their comms and (if Voice is on) reads the reading.
+      play("lock");
+      setTimeout(() => play(`voice-${b.speaker}`), 320);
+      setTimeout(() => speak(b.quote ? `${b.quote} ${b.now}` : b.now, b.speaker), 700);
       setBrief((prev) => ({ ...b, page: window.location.pathname, seq: (prev?.seq ?? 0) + 1 }));
     };
     const onClick = (e: MouseEvent) => {
@@ -169,6 +172,7 @@ function useBriefings(page: string) {
   }, []);
 
   const close = () => {
+    hush();
     targetRef.current?.removeAttribute("data-briefed");
     targetRef.current = null;
     setBrief(null);
@@ -395,6 +399,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
         if (Math.hypot(dx, dy) < 6) return;
         dragging = true;
         el.getAnimations().forEach((a) => a.cancel());
+        play("pickup");
         delete el.dataset.boost;
         el.dataset.dragging = "";
       }
@@ -416,6 +421,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
       setTimeout(() => (justDragged.current = false), 0);
       setDrag(null);
       if (briefing) manual.current = true;
+      play("drop");
       writeHome(nearest);
       moveTo(nearest, from);
     };

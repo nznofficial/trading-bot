@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { play, setSoundEnabled, soundEnabled, type Cue } from "@/lib/sfx";
+import { play, setSoundEnabled, setVoiceEnabled, soundEnabled, speak, voiceEnabled, type Cue } from "@/lib/sfx";
 
 const subscribe = (cb: () => void) => {
   window.addEventListener("pt-sound", cb);
@@ -12,7 +12,7 @@ const subscribe = (cb: () => void) => {
   };
 };
 
-/** Header toggle. Off by default; turning it on plays a confirmation chime (which also unlocks audio). */
+/** Header toggle. Off by default; turning it on fires the catapult launch (which also unlocks audio). */
 export function SoundToggle() {
   const on = useSyncExternalStore(subscribe, soundEnabled, () => false);
   return (
@@ -20,7 +20,7 @@ export function SoundToggle() {
       type="button"
       onClick={() => {
         setSoundEnabled(!on);
-        if (!on) play("complete", true);
+        if (!on) play("launch", true);
       }}
       aria-pressed={on}
       className={`hud border px-2 py-0.5 text-[11px] transition-colors ${
@@ -28,6 +28,30 @@ export function SoundToggle() {
       }`}
     >
       SFX {on ? "on" : "off"}
+    </button>
+  );
+}
+
+/**
+ * Opt-in spoken lines: JC-316 (and the wingmen) read briefings and comms replies aloud with the
+ * browser's speech engine. Off by default and independent of SFX.
+ */
+export function VoiceToggle() {
+  const on = useSyncExternalStore(subscribe, voiceEnabled, () => false);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setVoiceEnabled(!on);
+        if (!on) speak("JC-316 voice channel online, pilot.", "jc316", true);
+      }}
+      aria-pressed={on}
+      title="Read briefings and comms replies aloud"
+      className={`hud border px-2 py-0.5 text-[11px] transition-colors ${
+        on ? "border-sync/60 text-sync" : "border-line-2 text-muted hover:text-ink-2"
+      }`}
+    >
+      Voice {on ? "on" : "off"}
     </button>
   );
 }

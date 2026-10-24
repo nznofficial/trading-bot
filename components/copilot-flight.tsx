@@ -55,6 +55,7 @@ export function fly(el: HTMLElement, from: DOMRect, reduced: boolean) {
   el.animate(frames(), { duration: FLIGHT_MS }).finished.then(
     () => {
       delete el.dataset.boost;
+      play("land");
       // Touchdown: a flash on the frame and a shockwave under its feet.
       el.animate(
         [{ filter: "brightness(1.7) drop-shadow(0 0 18px rgba(255,164,27,.8))" }, { filter: "none" }],

@@ -1,12 +1,28 @@
 /**
- * Cockpit sound effects, synthesized with Web Audio (no audio files). Off by default; the header
- * toggle stores the choice per browser. Browsers only allow audio after a user gesture, so cues
- * that fire before any interaction are silently skipped.
+ * Cockpit sound design, synthesized live with Web Audio (no audio files). Every cue is built from a
+ * few layered parts: servo whine (filtered saw with vibrato), hydraulics (band-passed noise), metal
+ * (inharmonic FM partials through a small "hangar" reverb), thrusters (swept noise + sub rumble) and
+ * comms (band-limited squelch and data blips). Off by default; the header toggle stores the choice
+ * per browser. Browsers only allow audio after a user gesture, so cues before one are skipped.
  */
-export type Cue = "click" | "engage" | "win" | "complete" | "boost";
+export type Cue =
+  | "click"
+  | "engage"
+  | "win"
+  | "complete"
+  | "boost"
+  | "land"
+  | "lock"
+  | "pickup"
+  | "drop"
+  | "squelch"
+  | "chatter"
+  | "launch"
+  | "voice-jc316"
+  | "voice-sma_cross"
+  | "voice-rsi_revert";
 
 const KEY = "pt-sound";
-let ctx: AudioContext | null = null;
 
 export function soundEnabled() {
   try {
@@ -25,52 +41,356 @@ export function setSoundEnabled(on: boolean) {
   window.dispatchEvent(new Event("pt-sound"));
 }
 
-function tone(at: number, freq: number, dur: number, type: OscillatorType, gain: number, slideTo?: number) {
-  const c = ctx!;
-  const osc = c.createOscillator();
-  const g = c.createGain();
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, at);
-  if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, at + dur);
-  g.gain.setValueAtTime(0.0001, at);
-  g.gain.exponentialRampToValueAtTime(gain, at + 0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
-  osc.connect(g).connect(c.destination);
-  osc.start(at);
-  osc.stop(at + dur + 0.02);
+// ── Engine ──────────────────────────────────────────────────────────────────────────────────
+type Bus = { ctx: AudioContext; out: GainNode; verb: GainNode; noise: AudioBuffer; crunch: WaveShaperNode };
+let bus: Bus | null = null;
+
+function engine(): Bus {
+  if (bus) return bus;
+  const ctx = new AudioContext();
+  // Master: a soft-clip limiter, so stacked layers saturate gently instead of clipping. (A
+  // DynamicsCompressor's automatic makeup gain made transients spike unpredictably.)
+  const limiter = ctx.createWaveShaper();
+  const lc = new Float32Array(2048);
+  for (let i = 0; i < 2048; i++) lc[i] = Math.tanh(((i / 2047) * 2 - 1) * 1.5) / Math.tanh(1.5);
+  limiter.curve = lc;
+  limiter.connect(ctx.destination);
+  const out = ctx.createGain();
+  out.gain.value = 0.5;
+  out.connect(limiter);
+
+  // Hangar reverb: a short, bright decaying-noise impulse (metal bay, not a cathedral).
+  const len = Math.floor(ctx.sampleRate * 1.1);
+  const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    // 20ms fade-in so transients don't spike through the reverb; then a fast metallic decay.
+    const fade = ctx.sampleRate * 0.02;
+    // Seeded noise: the same hangar every time, so cue levels don't vary run to run.
+    let seed = 316 + ch;
+    const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32) * 2 - 1;
+    for (let i = 0; i < len; i++) d[i] = rnd() * Math.pow(1 - i / len, 3.2) * Math.min(1, i / fade);
+  }
+  const conv = ctx.createConvolver();
+  conv.buffer = ir;
+  const verb = ctx.createGain();
+  verb.gain.value = 0.28;
+  verb.connect(conv).connect(out);
+
+  const noise = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const nd = noise.getChannelData(0);
+  for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+
+  // Soft-clip curve for gritty mechanical layers.
+  const crunch = ctx.createWaveShaper();
+  const curve = new Float32Array(1024);
+  for (let i = 0; i < 1024; i++) {
+    const x = (i / 1023) * 2 - 1;
+    curve[i] = Math.tanh(x * 3);
+  }
+  crunch.curve = curve;
+  // Signals are driven hard into the curve (see phrase) and trimmed back down after it.
+  const trim = ctx.createGain();
+  trim.gain.value = 0.1;
+  crunch.connect(trim).connect(out);
+
+  bus = { ctx, out, verb, noise, crunch };
+  return bus;
 }
+
+type Env = { at: number; dur: number; gain: number; attack?: number; wet?: number; dest?: AudioNode };
+
+/** Gain envelope routed to the dry bus plus an optional reverb send. */
+function envelope(b: Bus, { at, dur, gain, attack = 0.005, wet = 0, dest }: Env) {
+  const g = b.ctx.createGain();
+  // Start silent: a GainNode defaults to 1, and the first sample can render before the automation
+  // kicks in, which came out as a one-sample click.
+  g.gain.value = 0.0001;
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(gain, at + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  g.connect(dest ?? b.out);
+  if (wet > 0) {
+    const s = b.ctx.createGain();
+    s.gain.value = wet;
+    g.connect(s).connect(b.verb);
+  }
+  return g;
+}
+
+function tone(
+  b: Bus,
+  o: Env & { freq: number; type?: OscillatorType; slideTo?: number; vibrato?: [rate: number, depth: number] },
+) {
+  const osc = b.ctx.createOscillator();
+  osc.type = o.type ?? "sine";
+  osc.frequency.setValueAtTime(o.freq, o.at);
+  if (o.slideTo) osc.frequency.exponentialRampToValueAtTime(o.slideTo, o.at + o.dur);
+  if (o.vibrato) {
+    const lfo = b.ctx.createOscillator();
+    const depth = b.ctx.createGain();
+    lfo.frequency.value = o.vibrato[0];
+    depth.gain.value = o.vibrato[1];
+    lfo.connect(depth).connect(osc.frequency);
+    lfo.start(o.at);
+    lfo.stop(o.at + o.dur + 0.05);
+  }
+  osc.connect(envelope(b, o));
+  osc.start(o.at);
+  osc.stop(o.at + o.dur + 0.05);
+  return osc;
+}
+
+function noise(
+  b: Bus,
+  o: Env & { filter?: BiquadFilterType; freq: number; q?: number; sweepTo?: number },
+) {
+  const src = b.ctx.createBufferSource();
+  src.buffer = b.noise;
+  src.loop = true;
+  const f = b.ctx.createBiquadFilter();
+  f.type = o.filter ?? "bandpass";
+  f.Q.value = o.q ?? 1;
+  f.frequency.setValueAtTime(o.freq, o.at);
+  if (o.sweepTo) f.frequency.exponentialRampToValueAtTime(o.sweepTo, o.at + o.dur);
+  src.connect(f).connect(envelope(b, o));
+  src.start(o.at, Math.random());
+  src.stop(o.at + o.dur + 0.05);
+}
+
+/** Struck metal: inharmonic partials (FM-style ratios) that ring into the reverb. */
+function metal(b: Bus, at: number, base: number, gain: number, ring = 0.6) {
+  [1, 2.76, 5.4, 8.93].forEach((r, i) =>
+    tone(b, { at, dur: ring / (i + 1), gain: gain / (i + 1.5), freq: base * r, type: "sine", wet: 0.6, attack: 0.002 }),
+  );
+  noise(b, { at, dur: 0.05, gain: gain * 0.8, freq: 3500, q: 0.7, filter: "highpass" });
+}
+
+/** Servo: a buzzy saw through a resonant band-pass that glides, with mechanical vibrato. */
+function servo(b: Bus, at: number, dur: number, from: number, to: number, gain = 0.05) {
+  const osc = b.ctx.createOscillator();
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(from, at);
+  osc.frequency.exponentialRampToValueAtTime(to, at + dur);
+  const lfo = b.ctx.createOscillator();
+  const depth = b.ctx.createGain();
+  lfo.frequency.value = 38;
+  depth.gain.value = from * 0.04;
+  lfo.connect(depth).connect(osc.frequency);
+  const bp = b.ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.Q.value = 6;
+  bp.frequency.setValueAtTime(from * 3, at);
+  bp.frequency.exponentialRampToValueAtTime(to * 3, at + dur);
+  osc.connect(bp).connect(envelope(b, { at, dur, gain, attack: 0.03, wet: 0.2 }));
+  lfo.start(at);
+  osc.start(at);
+  osc.stop(at + dur + 0.05);
+  lfo.stop(at + dur + 0.05);
+}
+
+/** Pneumatic release. */
+const hiss = (b: Bus, at: number, dur: number, gain = 0.05) =>
+  noise(b, { at, dur, gain, freq: 5200, q: 0.8, sweepTo: 2600, attack: 0.01, wet: 0.3 });
+
+/** Little computer chirps: random-pitched square blips (the "data" voice of the cockpit). */
+function blips(b: Bus, at: number, count: number, lo: number, hi: number, step = 0.045, gain = 0.03) {
+  for (let i = 0; i < count; i++) {
+    const f = lo * Math.pow(hi / lo, Math.random());
+    tone(b, { at: at + i * step, dur: step * 0.8, gain, freq: f, type: "square", attack: 0.002 });
+  }
+}
+
+/** Short comms "voice" phrase: formant-filtered pulse wave with pitch contour, per speaker. */
+function phrase(b: Bus, at: number, contour: number[], o: { formant: number; type: OscillatorType; gain: number; grit?: boolean; step: number }) {
+  const osc = b.ctx.createOscillator();
+  osc.type = o.type;
+  contour.forEach((f, i) => osc.frequency.setValueAtTime(f, at + i * o.step));
+  const bp = b.ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.Q.value = 3;
+  bp.frequency.value = o.formant;
+  // Syllable gating: an LFO-free amplitude chop, one bump per contour step.
+  const g = b.ctx.createGain();
+  g.gain.value = 0.0001;
+  g.gain.setValueAtTime(0.0001, at);
+  contour.forEach((_, i) => {
+    const t = at + i * o.step;
+    g.gain.exponentialRampToValueAtTime(o.gain, t + o.step * 0.25);
+    g.gain.exponentialRampToValueAtTime(o.gain * 0.15, t + o.step * 0.9);
+  });
+  g.gain.exponentialRampToValueAtTime(0.0001, at + contour.length * o.step + 0.05);
+  if (o.grit) {
+    const drive = b.ctx.createGain();
+    drive.gain.value = 12;
+    osc.connect(bp).connect(g).connect(drive).connect(b.crunch);
+  } else osc.connect(bp).connect(g).connect(b.out);
+  const s = b.ctx.createGain();
+  s.gain.value = 0.25;
+  g.connect(s).connect(b.verb);
+  osc.start(at);
+  osc.stop(at + contour.length * o.step + 0.1);
+}
+
+// ── Cues ────────────────────────────────────────────────────────────────────────────────────
+const CUES: Record<Cue, (b: Bus, t: number) => void> = {
+  // Relay click: a dry mechanical tick with a tiny metallic ping.
+  click: (b, t) => {
+    noise(b, { at: t, dur: 0.025, gain: 0.22, freq: 2400, q: 2 });
+    tone(b, { at: t, dur: 0.05, gain: 0.04, freq: 3100, type: "sine" });
+  },
+  // Order filled: arm actuator, latch clank, confirm tones.
+  engage: (b, t) => {
+    servo(b, t, 0.18, 220, 420, 0.1);
+    metal(b, t + 0.17, 310, 0.08, 0.5);
+    hiss(b, t + 0.2, 0.25, 0.035);
+    tone(b, { at: t + 0.32, dur: 0.1, gain: 0.08, freq: 880, type: "square" });
+    tone(b, { at: t + 0.43, dur: 0.16, gain: 0.08, freq: 1320, type: "square" });
+  },
+  // Target neutralized: reactor power-up, heavy chord stab, metallic shimmer.
+  win: (b, t) => {
+    servo(b, t, 0.5, 110, 440, 0.05);
+    noise(b, { at: t, dur: 0.5, gain: 0.05, freq: 400, filter: "lowpass", sweepTo: 4000, q: 4 });
+    [261.6, 329.6, 392, 523.3].forEach((f) =>
+      tone(b, { at: t + 0.5, dur: 0.9, gain: 0.05, freq: f, type: "sawtooth", wet: 0.5, attack: 0.01 }),
+    );
+    tone(b, { at: t + 0.5, dur: 0.6, gain: 0.12, freq: 65, type: "sine" });
+    metal(b, t + 0.5, 523, 0.06, 1.2);
+    blips(b, t + 0.62, 6, 1500, 3000, 0.05, 0.02);
+  },
+  // Process complete: computer arpeggio and a soft chime.
+  complete: (b, t) => {
+    blips(b, t, 5, 900, 1800, 0.04, 0.04);
+    tone(b, { at: t + 0.22, dur: 0.18, gain: 0.1, freq: 880, type: "triangle", wet: 0.4 });
+    tone(b, { at: t + 0.34, dur: 0.45, gain: 0.1, freq: 1320, type: "triangle", wet: 0.5 });
+  },
+  // Boost: servo crouch, thruster spool and burn (swept noise + sub rumble + crackle).
+  boost: (b, t) => {
+    servo(b, t, 0.2, 180, 90, 0.05);
+    hiss(b, t + 0.12, 0.3, 0.05);
+    noise(b, { at: t + 0.2, dur: 1.15, gain: 0.16, freq: 300, filter: "lowpass", sweepTo: 2600, q: 0.7, attack: 0.25, wet: 0.25 });
+    noise(b, { at: t + 0.25, dur: 1.0, gain: 0.05, freq: 1800, q: 6, sweepTo: 5200, attack: 0.3 });
+    tone(b, { at: t + 0.2, dur: 1.1, gain: 0.14, freq: 48, slideTo: 72, type: "sine", attack: 0.2 });
+    for (let i = 0; i < 9; i++) noise(b, { at: t + 0.35 + Math.random() * 0.8, dur: 0.03, gain: 0.07, freq: 1200 + Math.random() * 2500, q: 3 });
+  },
+  // Touchdown: heavy stomp, metal clank ringing in the bay, hydraulics settling.
+  land: (b, t) => {
+    tone(b, { at: t, dur: 0.35, gain: 0.35, freq: 72, slideTo: 34, type: "sine", attack: 0.003 });
+    noise(b, { at: t, dur: 0.18, gain: 0.25, freq: 180, filter: "lowpass", q: 1 });
+    metal(b, t + 0.01, 140, 0.16, 0.9);
+    hiss(b, t + 0.12, 0.45, 0.05);
+    servo(b, t + 0.2, 0.22, 140, 200, 0.03);
+  },
+  // Target lock: two quick rising sweeps, then a confirming double beep.
+  lock: (b, t) => {
+    tone(b, { at: t, dur: 0.08, gain: 0.09, freq: 1200, slideTo: 2400, type: "square" });
+    tone(b, { at: t + 0.09, dur: 0.08, gain: 0.09, freq: 1200, slideTo: 2400, type: "square" });
+    tone(b, { at: t + 0.2, dur: 0.05, gain: 0.08, freq: 2600, type: "square" });
+    tone(b, { at: t + 0.27, dur: 0.09, gain: 0.08, freq: 2600, type: "square" });
+  },
+  // Grabbed: servo strain upward and a clamp release.
+  pickup: (b, t) => {
+    metal(b, t, 420, 0.08, 0.3);
+    servo(b, t + 0.02, 0.28, 160, 330, 0.09);
+    hiss(b, t + 0.05, 0.2, 0.03);
+  },
+  // Released: servo settle and a lighter clank.
+  drop: (b, t) => {
+    servo(b, t, 0.2, 300, 150, 0.04);
+    metal(b, t + 0.16, 260, 0.07, 0.4);
+  },
+  // Radio squelch: band-limited noise burst with a key click.
+  squelch: (b, t) => {
+    noise(b, { at: t, dur: 0.16, gain: 0.18, freq: 1800, q: 1.5, sweepTo: 900 });
+    tone(b, { at: t, dur: 0.03, gain: 0.04, freq: 1000, type: "square" });
+    tone(b, { at: t + 0.12, dur: 0.06, gain: 0.03, freq: 1600, type: "square" });
+  },
+  // Incoming data: a short burst of soft chirps (throttled by the caller while text streams).
+  chatter: (b, t) => blips(b, t, 3, 1400, 2800, 0.035, 0.022),
+  // Catapult: capacitor charge whine and buzz, then the release slam and thrust.
+  launch: (b, t) => {
+    tone(b, { at: t, dur: 0.9, gain: 0.04, freq: 180, slideTo: 1900, type: "sawtooth", attack: 0.1 });
+    tone(b, { at: t, dur: 0.9, gain: 0.02, freq: 60, type: "square", attack: 0.1 });
+    metal(b, t + 0.9, 180, 0.15, 1);
+    CUES.boost(b, t + 0.85);
+  },
+  // Comms voices: JC-316 steady and mid-range; Vanguard quick and rising; Recoil low and gritty.
+  "voice-jc316": (b, t) => {
+    CUES.squelch(b, t);
+    phrase(b, t + 0.12, [220, 260, 240, 300, 250], { formant: 900, type: "sawtooth", gain: 0.13, step: 0.07 });
+  },
+  "voice-sma_cross": (b, t) => {
+    CUES.squelch(b, t);
+    phrase(b, t + 0.12, [330, 400, 480, 440, 560, 620], { formant: 1400, type: "square", gain: 0.1, step: 0.05 });
+  },
+  "voice-rsi_revert": (b, t) => {
+    CUES.squelch(b, t);
+    phrase(b, t + 0.12, [110, 95, 120, 100, 85], { formant: 500, type: "sawtooth", gain: 0.08, step: 0.09, grit: true });
+  },
+};
 
 export function play(cue: Cue, force = false) {
   if (!force && !soundEnabled()) return;
   try {
-    ctx ??= new AudioContext();
-    if (ctx.state === "suspended") void ctx.resume();
-    const t = ctx.currentTime + 0.01;
-    switch (cue) {
-      case "click":
-        tone(t, 1800, 0.04, "square", 0.025);
-        break;
-      case "engage":
-        tone(t, 660, 0.09, "triangle", 0.08);
-        tone(t + 0.09, 990, 0.14, "triangle", 0.08);
-        break;
-      case "win":
-        [523, 659, 784, 1047].forEach((f, i) => tone(t + i * 0.09, f, 0.22, "sawtooth", 0.05));
-        tone(t + 0.36, 1047, 0.5, "triangle", 0.06);
-        break;
-      case "boost":
-        // Thrusters spooling up, a long burn, then touchdown as the dock lands (~1.4s later).
-        tone(t, 110, 0.5, "sawtooth", 0.035, 520);
-        tone(t + 0.22, 1400, 0.05, "square", 0.015);
-        tone(t + 0.3, 520, 0.85, "sawtooth", 0.025, 900);
-        tone(t + 1.42, 140, 0.16, "triangle", 0.07, 55);
-        break;
-      case "complete":
-        tone(t, 880, 0.12, "sine", 0.08);
-        tone(t + 0.12, 1320, 0.25, "sine", 0.07);
-        break;
-    }
+    const b = engine();
+    if (b.ctx.state === "suspended") void b.ctx.resume();
+    CUES[cue](b, b.ctx.currentTime + 0.01);
   } catch {
     // Audio unavailable (or not yet allowed): ignore.
   }
 }
+
+// ── Voice (opt-in) ──────────────────────────────────────────────────────────────────────────
+const VOICE_KEY = "pt-voice";
+
+export function voiceEnabled() {
+  try {
+    return localStorage.getItem(VOICE_KEY) === "on" && "speechSynthesis" in window;
+  } catch {
+    return false;
+  }
+}
+
+export function setVoiceEnabled(on: boolean) {
+  try {
+    localStorage.setItem(VOICE_KEY, on ? "on" : "off");
+  } catch {}
+  if (!on) window.speechSynthesis?.cancel();
+  window.dispatchEvent(new Event("pt-sound"));
+}
+
+export type Voice = "jc316" | "sma_cross" | "rsi_revert";
+
+/** Browser speech, pitched per speaker: JC-316 low and measured, Vanguard brisk, Recoil deepest. */
+const VOICES: Record<Voice, { pitch: number; rate: number }> = {
+  jc316: { pitch: 0.55, rate: 0.98 },
+  sma_cross: { pitch: 0.9, rate: 1.12 },
+  rsi_revert: { pitch: 0.2, rate: 0.9 },
+};
+
+function pickVoice() {
+  const vs = window.speechSynthesis.getVoices().filter((v) => v.lang.startsWith("en"));
+  // Prefer plain, neutral system voices over novelty ones.
+  return vs.find((v) => /Daniel|Alex|Google UK English Male|Microsoft Guy|Fred/i.test(v.name)) ?? vs[0] ?? null;
+}
+
+/** Speak a line (replacing anything still being spoken). Off unless the VOICE toggle is on. */
+export function speak(text: string, who: Voice = "jc316", force = false) {
+  if (!force && !voiceEnabled()) return;
+  try {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/[−]/g, "minus ").replace(/\s+/g, " ").slice(0, 600));
+    const v = pickVoice();
+    if (v) u.voice = v;
+    u.pitch = VOICES[who].pitch;
+    u.rate = VOICES[who].rate;
+    synth.speak(u);
+  } catch {}
+}
+
+export const hush = () => {
+  try {
+    window.speechSynthesis?.cancel();
+  } catch {}
+};

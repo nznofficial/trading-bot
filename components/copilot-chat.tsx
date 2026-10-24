@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { play } from "@/lib/sfx";
+import { hush, play, speak } from "@/lib/sfx";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string; error?: boolean };
 
@@ -35,7 +35,7 @@ export function useChat() {
     setMessages([...messages, { role: "user", content: q }, { role: "assistant", content: "" }]);
     setDraft("");
     setBusy(true);
-    play("click");
+    play("squelch");
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     const update = (content: string, error = false) =>
@@ -58,13 +58,23 @@ export function useChat() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let text = "";
+      let lastBlip = 0;
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
         text += decoder.decode(value, { stream: true });
         update(text);
+        // Data chatter while the reply streams in, at most every ~180ms.
+        if (performance.now() - lastBlip > 180) {
+          lastBlip = performance.now();
+          play("chatter");
+        }
       }
       update(text.trim() || "No reply came through, pilot.", !text.trim());
+      if (text.trim()) {
+        play("squelch");
+        speak(text.trim());
+      }
     } catch (e) {
       if ((e as Error).name !== "AbortError") update("Signal lost. Try again, pilot.", true);
     } finally {
@@ -75,6 +85,7 @@ export function useChat() {
 
   const close = () => {
     abortRef.current?.abort();
+    hush();
     setOpen(false);
   };
   /** Open comms with a question pre-filled (e.g. from a briefing). */

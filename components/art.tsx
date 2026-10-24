@@ -16,6 +16,8 @@ export const ART = {
   victory: "/art/event-victory.webp",
   damage: "/art/event-damage.webp",
   noContact: "/art/empty-nocontact.webp",
+  /** Full 1024px version for empty states that fill a whole panel. */
+  noContactLarge: "/art/empty-nocontact-lg.webp",
   cold: "/art/empty-cold.webp",
   awaiting: "/art/empty-awaiting.webp",
 } as const;

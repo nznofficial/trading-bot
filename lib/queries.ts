@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, ne, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, ne, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import {
   aggregateFills,
@@ -332,11 +332,23 @@ export async function getStrategies(filter: ClassFilter) {
   };
 }
 
-export async function getRuns() {
+/** Page sizes the Sorties log offers (newest first). */
+export const RUN_PAGE_SIZES = [5, 25, 100] as const;
+
+export async function getRuns(page = 1, size: number = RUN_PAGE_SIZES[0]) {
   "use cache";
   botCache();
-  const rows = await db().select().from(schema.botRuns).orderBy(desc(schema.botRuns.id)).limit(150);
-  return rows.map((r) => ({
+  const d = db();
+  const [rows, [{ total }]] = await Promise.all([
+    d
+      .select()
+      .from(schema.botRuns)
+      .orderBy(desc(schema.botRuns.id))
+      .limit(size)
+      .offset((page - 1) * size),
+    d.select({ total: count() }).from(schema.botRuns),
+  ]);
+  const runs = rows.map((r) => ({
     id: r.id,
     startedAt: r.startedAt.getTime(),
     status: r.status,
@@ -348,6 +360,7 @@ export async function getRuns() {
     error: r.error,
     trigger: r.trigger,
   }));
+  return { runs, total, page, size, pages: Math.max(1, Math.ceil(total / size)) };
 }
 
 export type ClockState = { isOpen: boolean; nextOpen: string; nextClose: string; asOf: string };

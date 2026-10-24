@@ -80,7 +80,9 @@ async function Positions({ searchParams }: { searchParams: PageProps<"/positions
             </tbody>
           </Table>
         ) : (
-          <Empty art={ART.noContact}>Flat: no open positions.</Empty>
+          <Empty art={ART.noContactLarge} cover>
+            Flat: no open positions{filter === "all" ? "" : ` in ${filter === "crypto" ? "crypto" : "equities"}`}. Entries fire when a unit locks on.
+          </Empty>
         )}
       </Card>
     </div>

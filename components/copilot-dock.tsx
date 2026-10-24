@@ -526,7 +526,6 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
   }
 
   if (chat.open) {
-    const chatSrc = `/art/jc316-bust-${chat.busy ? "thinking" : "active"}.webp`;
     return (
       <>
         {zones}
@@ -540,10 +539,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
           <Thrusters />
           <div className="frame frame-amber">
             <div className="frame-body relative flex gap-3 p-3 pr-4">
-              <div data-drag-handle title="Drag me to any corner" className="relative size-16 shrink-0 self-start drop-shadow-[0_0_14px_rgba(163,255,60,0.3)] sm:size-20">
-                <Image src={chatSrc} alt="JC-316" width={160} height={160} className="bust-main size-full object-contain" />
-                <LaunchBust />
-              </div>
+              <Portrait who={SPEAKERS.jc316} />
               <ChatPanel
                 chat={chat}
                 header={
@@ -583,10 +579,13 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
           data-copilot
           onClick={() => writePref("open")}
           aria-label={`Open JC-316 copilot (${STATE_LABEL[report.state]})`}
-          className={`frame fixed ${at} z-40 size-16 ${report.state === "alert" || report.state === "damaged" ? "frame-amber" : "frame-hot"}`}
+          className={`fixed ${at} z-40 size-16`}
         >
-          <span className="frame-body block overflow-hidden">
-            <Image src={src} alt="" width={128} height={128} className="size-full object-cover" />
+          {/* The chamfer lives on an inner span: .frame sets position: relative, which would unpin a fixed button. */}
+          <span className={`frame block size-full ${report.state === "alert" || report.state === "damaged" ? "frame-amber" : "frame-hot"}`}>
+            <span className="frame-body block overflow-hidden">
+              <Image src={src} alt="" width={128} height={128} className="size-full object-cover" />
+            </span>
           </span>
         </button>
       </>

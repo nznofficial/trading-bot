@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { ChatPanel, useChat } from "@/components/copilot-chat";
 import { fly, LockOn } from "@/components/copilot-flight";
 import { briefing, type BriefCtx, type Briefing, type Speaker } from "@/lib/briefings";
 import { ART } from "@/components/art";
@@ -275,6 +276,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
   const params = useSearchParams();
   const firstVisit = useFirstVisit();
   const { brief, close, targetRef } = useBriefings(page);
+  const chat = useChat();
   const [greetingDone, setGreetingDone] = useState(false);
   useEffect(() => {
     if (!firstVisit) return;
@@ -489,12 +491,68 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
                   <BriefSection label={jc ? "Pilot's note" : `${who.name}'s note`} tone="text-amber">
                     {brief.note}
                   </BriefSection>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      chat.ask(`Tell me more about "${brief.title}".`);
+                      close();
+                    }}
+                    className="hud justify-self-start text-[11px] text-amber hover:underline"
+                  >
+                    Ask JC-316 about this ▸
+                  </button>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={close}
                 aria-label="Close briefing"
+                className="hud absolute top-1.5 right-2 px-1 text-[15px] text-muted hover:text-ink"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </aside>
+      </>
+    );
+  }
+
+  if (chat.open) {
+    const chatSrc = `/art/jc316-bust-${chat.busy ? "thinking" : "active"}.webp`;
+    return (
+      <>
+        {zones}
+        <aside
+          ref={setDock}
+          {...dragProps}
+          data-copilot
+          aria-label="JC-316 comms"
+          className={`fixed ${at} z-40 w-[min(440px,calc(100vw-2rem))]`}
+        >
+          <Thrusters />
+          <div className="frame frame-amber">
+            <div className="frame-body relative flex gap-3 p-3 pr-4">
+              <div data-drag-handle title="Drag me to any corner" className="relative size-16 shrink-0 self-start drop-shadow-[0_0_14px_rgba(163,255,60,0.3)] sm:size-20">
+                <Image src={chatSrc} alt="JC-316" width={160} height={160} className="bust-main size-full object-contain" />
+                <LaunchBust />
+              </div>
+              <ChatPanel
+                chat={chat}
+                header={
+                  <div className="flex items-center gap-2 pr-6">
+                    <span className="hud text-[12px] text-amber">JC-316 · Comms</span>
+                    <span className="hud border border-sync/50 px-1.5 text-[10px] text-sync">
+                      <span className="boost-off">{chat.busy ? "Receiving" : "Channel open"}</span>
+                      <span className="boost-on">Evasive</span>
+                    </span>
+                  </div>
+                }
+              />
+              <button
+                type="button"
+                onClick={chat.close}
+                aria-label="Close comms"
                 className="hud absolute top-1.5 right-2 px-1 text-[15px] text-muted hover:text-ink"
               >
                 ×
@@ -556,7 +614,16 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
                 <Typed key={report.line} text={report.line} instant={reduced} />
                 <span aria-hidden className="blink ml-0.5 inline-block h-3 w-1.5 translate-y-0.5 bg-sync" />
               </p>
-              <p className="hud mt-1 text-[10px] text-muted">Click any panel for a briefing · drag me to any corner</p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <p className="hud text-[10px] text-muted">Click any panel for a briefing · drag me anywhere</p>
+                <button
+                  type="button"
+                  onClick={() => chat.setOpen(true)}
+                  className="hud shrink-0 border border-amber/60 px-2 py-0.5 text-[11px] text-amber hover:bg-amber/10"
+                >
+                  Comms ▸
+                </button>
+              </div>
             </div>
             <button
               type="button"

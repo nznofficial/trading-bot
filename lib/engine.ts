@@ -824,7 +824,8 @@ async function alertFills(newFills: FillRow[]) {
 
 /**
  * Once a day, drop rows only the latest of which matters: position snapshots and "hold" signals
- * older than two weeks. Buy/sell signals, orders, fills, runs and equity snapshots are kept.
+ * older than two weeks, and expired chat rate-limit counters. Buy/sell signals, orders, fills, runs
+ * and equity snapshots are kept.
  */
 async function maybePrune(now: Date) {
   const today = tradingDay(now);
@@ -834,6 +835,7 @@ async function maybePrune(now: Date) {
   const d = db();
   await d.delete(schema.positionsSnapshot).where(lt(schema.positionsSnapshot.ts, cutoff));
   await d.delete(schema.signals).where(and(eq(schema.signals.action, "hold"), lt(schema.signals.ts, cutoff)));
+  await d.delete(schema.chatCounters).where(lt(schema.chatCounters.expiresAt, now));
 }
 
 /** Once a day after the US close (16:05 ET, every day so weekend crypto is covered). */

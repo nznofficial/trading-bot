@@ -169,3 +169,17 @@ export const simulations = pgTable(
   },
   (t) => [index("simulations_created_idx").on(t.createdAt)],
 );
+
+/**
+ * Rate-limit counters for JC-316 chat: one row per bucket (visitor-minute, visitor-day, global-day).
+ * Visitors are identified by a salted hash of their IP; messages themselves are never stored.
+ */
+export const chatCounters = pgTable(
+  "chat_counters",
+  {
+    bucket: text("bucket").primaryKey(),
+    count: integer("count").notNull().default(0),
+    expiresAt: ts("expires_at").notNull(),
+  },
+  (t) => [index("chat_counters_expires_idx").on(t.expiresAt)],
+);

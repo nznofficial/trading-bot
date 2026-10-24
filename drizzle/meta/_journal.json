@@ -36,6 +36,13 @@
       "when": 1792740575701,
       "tag": "0004_run_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792814526085,
+      "tag": "0005_chat_counters",
+      "breakpoints": true
     }
   ]
 }

@@ -336,23 +336,20 @@ const CUES: Record<Cue, (b: Bus, t: number) => void> = {
     tone(b, { at: t + 0.42, dur: 0.07, gain: 0.07, freq: 1320, type: "square" });
     tone(b, { at: t + 0.5, dur: 0.12, gain: 0.07, freq: 880, type: "square" });
   },
-  // Standby: turbine whine spinning down, servos folding, then a heavy relay clunk and a sigh of air.
+  // Standby, quick: a fast whine drop and one tight clunk.
   powerdown: (b, t) => {
-    tone(b, { at: t, dur: 0.8, gain: 0.06, freq: 900, slideTo: 110, type: "sawtooth", wet: 0.3 });
-    noise(b, { at: t, dur: 0.8, gain: 0.06, freq: 3000, filter: "lowpass", sweepTo: 200, q: 3 });
-    servo(b, t + 0.15, 0.4, 320, 120, 0.06);
-    tone(b, { at: t + 0.78, dur: 0.3, gain: 0.25, freq: 75, slideTo: 38, type: "sine", attack: 0.003 });
-    metal(b, t + 0.78, 120, 0.07, 0.6);
-    hiss(b, t + 0.85, 0.4, 0.04);
+    tone(b, { at: t, dur: 0.28, gain: 0.07, freq: 1100, slideTo: 140, type: "sawtooth", wet: 0.2 });
+    noise(b, { at: t, dur: 0.28, gain: 0.05, freq: 3200, filter: "lowpass", sweepTo: 300, q: 3 });
+    tone(b, { at: t + 0.26, dur: 0.16, gain: 0.22, freq: 90, slideTo: 45, type: "sine", attack: 0.003 });
+    metal(b, t + 0.26, 160, 0.05, 0.25);
   },
-  // Back online: relay click, turbine spinning up, servos unfolding, a ready chirp.
+  // Back online, upbeat: a quick spin-up into a bright rising major arpeggio.
   powerup: (b, t) => {
-    metal(b, t, 180, 0.05, 0.3);
-    tone(b, { at: t + 0.05, dur: 0.7, gain: 0.06, freq: 110, slideTo: 900, type: "sawtooth", attack: 0.1, wet: 0.3 });
-    noise(b, { at: t + 0.05, dur: 0.7, gain: 0.05, freq: 200, filter: "lowpass", sweepTo: 3200, q: 3, attack: 0.1 });
-    servo(b, t + 0.2, 0.35, 140, 320, 0.06);
-    tone(b, { at: t + 0.78, dur: 0.08, gain: 0.07, freq: 1320, type: "square" });
-    tone(b, { at: t + 0.87, dur: 0.14, gain: 0.07, freq: 1760, type: "square" });
+    tone(b, { at: t, dur: 0.25, gain: 0.05, freq: 220, slideTo: 880, type: "sawtooth", attack: 0.03, wet: 0.2 });
+    [523.3, 659.3, 784, 1046.5].forEach((f, i) =>
+      tone(b, { at: t + 0.22 + i * 0.075, dur: i === 3 ? 0.35 : 0.12, gain: 0.07, freq: f, type: "square", wet: 0.35 }),
+    );
+    tone(b, { at: t + 0.45, dur: 0.4, gain: 0.04, freq: 1568, type: "triangle", wet: 0.5 });
   },
   // Lock released: the lock-on chirp in reverse, falling.
   "brief-close": (b, t) => {

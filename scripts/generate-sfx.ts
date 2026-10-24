@@ -63,14 +63,14 @@ const CUES: Record<string, { seconds: number; prompt: string }> = {
       "Military radio transmission ending: a squelch tail cutting off, a brief burst of fading static, then a short descending two-tone sign-off beep. Sci-fi cockpit, no music, no voice.",
   },
   powerdown: {
-    seconds: 1.4,
+    seconds: 0.6,
     prompt:
-      "Giant robot powering down to standby: a turbine whine spinning down in pitch, servos retracting, then a heavy mechanical relay clunk and a soft hydraulic sigh. No music.",
+      "Quick robot power-down: a fast descending electronic whine that drops in pitch in a fraction of a second, ending in one tight mechanical clunk. Snappy and short, no tail, no music.",
   },
   powerup: {
-    seconds: 1.2,
+    seconds: 1.0,
     prompt:
-      "Giant robot powering back up from standby: a relay click, a turbine whine spinning up in pitch, servos unfolding, then a short bright ready chirp. No music.",
+      "Upbeat robot power-up: a quick rising electronic whine, then a bright cheerful ascending three-note synth chime arpeggio, energetic and positive like a system coming online. Sci-fi, no voice.",
   },
   "brief-close": {
     seconds: 0.6,
@@ -143,6 +143,11 @@ function pick(spec: string) {
 
 /** Preview page: each option next to the current synthesized cue (bundled from lib/sfx.ts). */
 function writePage(only?: string[]) {
+  // Copy shipped picks next to the options so the page can play them for comparison.
+  for (const cue of Object.keys(CUES)) {
+    const shipped = join(OUT, `${cue}.mp3`);
+    if (existsSync(shipped) && existsSync(RAW)) copyFileSync(shipped, join(RAW, `${cue}-current.mp3`));
+  }
   const synth = buildSync({
     entryPoints: ["lib/sfx.ts"],
     bundle: true,
@@ -155,7 +160,8 @@ function writePage(only?: string[]) {
     .filter(([cue]) => !only || only.includes(cue))
     .map(
       ([cue, c]) => `<h2>${cue} <small>${c.seconds}s</small></h2><p class="d">${c.prompt}</p><div class="row">
-      <button data-synth="${cue}">▶ Current (synth)</button>
+      <button data-synth="${cue}">▶ Synth</button>
+      ${existsSync(join(OUT, `${cue}.mp3`)) ? `<button data-src="raw/${cue}-current.mp3" class="cur">▶ Current pick</button>` : ""}
       ${Array.from({ length: OPTIONS }, (_, i) => `<button data-src="raw/${cue}-${i + 1}.mp3">▶ Option ${i + 1}</button>`).join("")}</div>`,
     )
     .join("");
@@ -164,8 +170,8 @@ function writePage(only?: string[]) {
     `<!doctype html><meta charset="utf-8"><title>MMC sound effects</title>
 <style>body{background:#0e0d14;color:#e9e6f2;font:15px system-ui;margin:32px;max-width:980px}h2{color:#ffa41b;margin:26px 0 4px}h2 small{color:#9a95ad;font-weight:400}
 .d{color:#9a95ad;margin:0 0 10px}.row{display:flex;gap:10px;flex-wrap:wrap}
-button{background:#1c1927;color:#e9e6f2;border:1px solid #4a4466;padding:8px 12px;cursor:pointer}button:hover{border-color:#ffa41b}button[data-synth]{border-style:dashed}</style>
-<h1>Mobile Market Corps · sound effects</h1><p>Compare each option with the current synthesized sound, then tell Claude your picks (e.g. boost=2, land=1, pickup=synth).</p>
+button{background:#1c1927;color:#e9e6f2;border:1px solid #4a4466;padding:8px 12px;cursor:pointer}button:hover{border-color:#ffa41b}button[data-synth]{border-style:dashed}button.cur{border-color:#a3ff3c}</style>
+<h1>Mobile Market Corps · sound effects</h1><p>Compare the options with the synthesized version and the currently shipped pick, then tell Claude your picks (e.g. boost=2, land=1, pickup=synth).</p>
 ${rows}
 <script>${synth}
 let cur;

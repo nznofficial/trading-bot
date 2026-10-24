@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { ART } from "@/components/art";
 import { PerformanceChart, SymbolPnlChart } from "@/components/charts";
 import { unitFor } from "@/components/emblems";
+import { Pager, PAGE_SIZES, readPaging, SizePicker, type PageHref } from "@/components/pager";
 import { SimulatorConsole } from "@/components/simulator-console";
 import { Card, Delta, Empty, PageHeader, Skeleton, StatStrip, Table } from "@/components/ui";
 import { dateTime, duration, pct, ratio, signedPct, signedUsd, usd } from "@/lib/format";
@@ -61,7 +62,8 @@ const theaterLabel = (t: string) => (t === "us_equity" ? "Equities" : t === "cry
 
 async function Results({ searchParams }: { searchParams: PageProps<"/simulator">["searchParams"] }) {
   await connection();
-  const runParam = Number((await searchParams).run);
+  const sp = await searchParams;
+  const runParam = Number(sp.run);
   const { runs, selected } = await getSimulations(Number.isFinite(runParam) && runParam > 0 ? runParam : null);
   if (!selected) {
     return (
@@ -77,6 +79,17 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
   const spyRet = first?.spy && last?.spy ? last.spy / first.spy - 1 : null;
   const btcRet = first?.btc && last?.btc ? last.btc / first.btc - 1 : null;
   const runScope = `Run #${selected.id}`;
+  // Simulated combat log: newest first, paged (?tpage/&tsize, keeping the selected run).
+  const { page, size } = readPaging(sp.tpage, sp.tsize);
+  const log = r.trades.slice().reverse();
+  const pages = Math.max(1, Math.ceil(log.length / size));
+  const shown = log.slice((page - 1) * size, page * size);
+  const tradeHref: PageHref = (p, n) =>
+    `/simulator?${new URLSearchParams({
+      run: String(selected.id),
+      ...(p > 1 ? { tpage: String(p) } : {}),
+      ...(n !== PAGE_SIZES[0] ? { tsize: String(n) } : {}),
+    })}`;
   const perf = r.equity.map((e) => ({
     date: e.date,
     portfolio: e.equity / s.startEquity - 1,
@@ -275,30 +288,33 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
         </Table>
       </Card>
 
-      <Card
-        title="Simulated combat log"
-        subtitle={`Latest ${Math.min(50, r.trades.length)} of ${s.count} trades`}
-        code="SIM-06"
-        brief={briefAttrs("sim-trades", { count: s.count })}
-      >
-        {r.trades.length ? (
-          <Table>
-            <thead>
-              <tr>
-                <th>Closed</th>
-                <th>Target</th>
-                <th>Unit</th>
-                <th>Exit</th>
-                <th className="text-right!">Entry → Exit</th>
-                <th className="text-right!">Result</th>
-                <th className="text-right!">Held</th>
-              </tr>
-            </thead>
-            <tbody>
-              {r.trades
-                .slice(-50)
-                .reverse()
-                .map((t, i) => (
+      <div>
+        <Card
+          title="Simulated combat log"
+          subtitle={
+            log.length
+              ? `${(page - 1) * size + 1}–${Math.min(log.length, page * size)} of ${log.length.toLocaleString()} · newest first${log.length < s.count ? ` · the run keeps its latest ${log.length} of ${s.count.toLocaleString()}` : ""}`
+              : undefined
+          }
+          code="SIM-06"
+          brief={briefAttrs("sim-trades", { count: s.count })}
+          action={log.length > PAGE_SIZES[0] ? <SizePicker size={size} href={tradeHref} label="Simulated trades per page" /> : undefined}
+        >
+          {r.trades.length ? (
+            <Table>
+              <thead>
+                <tr>
+                  <th>Closed</th>
+                  <th>Target</th>
+                  <th>Unit</th>
+                  <th>Exit</th>
+                  <th className="text-right!">Entry → Exit</th>
+                  <th className="text-right!">Result</th>
+                  <th className="text-right!">Held</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((t, i) => (
                   <tr
                     key={i}
                     {...briefAttrs("sim-trade", {
@@ -327,12 +343,14 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
                     <td className="num text-right text-ink-2">{duration(t.holdMs)}</td>
                   </tr>
                 ))}
-            </tbody>
-          </Table>
-        ) : (
-          <Empty art={ART.noContactLarge} cover>No trades in this run.</Empty>
-        )}
-      </Card>
+              </tbody>
+            </Table>
+          ) : (
+            <Empty art={ART.noContactLarge} cover>No trades in this run.</Empty>
+          )}
+        </Card>
+        <Pager page={page} pages={pages} size={size} href={tradeHref} label="Simulated trade pages" />
+      </div>
     </>
   );
 }

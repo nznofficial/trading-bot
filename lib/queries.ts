@@ -332,10 +332,7 @@ export async function getStrategies(filter: ClassFilter) {
   };
 }
 
-/** Page sizes the Sorties log offers (newest first). */
-export const RUN_PAGE_SIZES = [5, 25, 100] as const;
-
-export async function getRuns(page = 1, size: number = RUN_PAGE_SIZES[0]) {
+export async function getRuns(page = 1, size = 5) {
   "use cache";
   botCache();
   const d = db();

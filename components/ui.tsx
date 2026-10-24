@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { EmptyArt, SceneBanner } from "@/components/art";
+import type { BriefAttrs } from "@/lib/briefings";
 
 /** Title card: system code, oversized serif title, HUD subtitle. */
 export function PageHeader({
@@ -11,6 +12,7 @@ export function PageHeader({
   scene,
   figure,
   scenePosition,
+  brief,
 }: {
   code: string;
   title: string;
@@ -22,6 +24,8 @@ export function PageHeader({
   figure?: { src: string; alt: string };
   /** CSS object-position for the backdrop crop (e.g. "center 20%" to keep heads in frame). */
   scenePosition?: string;
+  /** JC-316 briefing for the page (see lib/briefings.ts). */
+  brief?: BriefAttrs;
 }) {
   const content = (
     <div className="flex flex-wrap items-end justify-between gap-4">
@@ -40,12 +44,16 @@ export function PageHeader({
   );
   if (scene) {
     return (
-      <SceneBanner src={scene} figure={figure} position={scenePosition}>
+      <SceneBanner src={scene} figure={figure} position={scenePosition} brief={brief}>
         {content}
       </SceneBanner>
     );
   }
-  return <div className="boot mb-7">{content}</div>;
+  return (
+    <div className="boot mb-7" {...brief}>
+      {content}
+    </div>
+  );
 }
 
 /** Chamfered cockpit panel with a HUD header. `tone` lights the frame. */
@@ -57,6 +65,7 @@ export function Card({
   tone,
   children,
   className = "",
+  brief,
 }: {
   title?: string;
   code?: string;
@@ -65,9 +74,10 @@ export function Card({
   tone?: "hot" | "amber";
   children: ReactNode;
   className?: string;
+  brief?: BriefAttrs;
 }) {
   return (
-    <section className={`frame boot ${tone === "hot" ? "frame-hot" : tone === "amber" ? "frame-amber" : ""} ${className}`}>
+    <section {...brief} tabIndex={brief ? 0 : undefined} className={`frame boot ${tone === "hot" ? "frame-hot" : tone === "amber" ? "frame-amber" : ""} ${className}`}>
       <div className="frame-body flex flex-col">
         {title && (
           <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
@@ -101,16 +111,18 @@ export function Gauge({
   readout,
   color = "var(--sync)",
   caption,
+  brief,
 }: {
   label: string;
   value: number;
   readout: ReactNode;
   color?: string;
   caption?: ReactNode;
+  brief?: BriefAttrs;
 }) {
   const v = Math.max(0, Math.min(1, value));
   return (
-    <div>
+    <div {...brief}>
       <div className="flex items-baseline justify-between gap-3">
         <span className="hud text-[12px] text-ink-2">{label}</span>
         <span className="num text-[15px] text-ink">{readout}</span>
@@ -124,7 +136,7 @@ export function Gauge({
   );
 }
 
-export type StatItem = { label: string; value: ReactNode; sub?: ReactNode };
+export type StatItem = { label: string; value: ReactNode; sub?: ReactNode; brief?: BriefAttrs };
 
 /** Readout strip: values in a single chamfered frame, separated by hairlines. */
 export function StatStrip({ items, cols = 4 }: { items: StatItem[]; cols?: 3 | 4 | 6 }) {
@@ -133,7 +145,7 @@ export function StatStrip({ items, cols = 4 }: { items: StatItem[]; cols?: 3 | 4
     <div className="frame boot">
       <div className={`frame-body grid grid-cols-2 gap-px bg-line ${grid}`}>
         {items.map((s) => (
-          <div key={s.label} className="bg-surface px-5 py-4">
+          <div key={s.label} {...s.brief} className="bg-surface px-5 py-4">
             <div className="hud text-[11px] text-muted">{s.label}</div>
             <div className="num mt-1 text-[22px] leading-tight text-ink">{s.value}</div>
             {s.sub && <div className="mt-0.5 truncate text-[12px] text-muted">{s.sub}</div>}
@@ -155,11 +167,11 @@ export function Metric({ label, children }: { label: string; children: ReactNode
 }
 
 /** System readout rows. */
-export function KeyValueList({ rows }: { rows: { label: string; value: ReactNode }[] }) {
+export function KeyValueList({ rows }: { rows: { label: string; value: ReactNode; brief?: BriefAttrs }[] }) {
   return (
     <dl className="divide-y divide-line">
       {rows.map((r) => (
-        <div key={r.label} className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0">
+        <div key={r.label} {...r.brief} className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0">
           <dt className="hud text-[13px] text-ink-2">{r.label}</dt>
           <dd className="num text-[14px] text-ink">{r.value}</dd>
         </div>

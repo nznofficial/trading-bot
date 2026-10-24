@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -8,8 +9,12 @@ import { unitFor } from "@/components/emblems";
 import { CueOnce } from "@/components/sound";
 import { Card, Delta, Empty, Gauge, KeyValueList, PageHeader, Skeleton, StatStrip, StatusBadge, Table } from "@/components/ui";
 import { classLabel, dateTime, duration, longDate, pct, qty, ratio, signedPct, signedUsd, usd } from "@/lib/format";
+import { briefAttrs, positionBrief, tradeBrief } from "@/lib/briefings";
+import { APP_SHORT } from "@/lib/config";
 import { DAMAGE } from "@/lib/copilot";
 import { getOverview } from "@/lib/queries";
+
+export const metadata: Metadata = { title: { absolute: `${APP_SHORT} · Bridge` } };
 
 export default function BridgePage() {
   return (
@@ -20,6 +25,7 @@ export default function BridgePage() {
         subtitle="Command overview · equities and crypto theaters"
         scene={ART.bridge}
         scenePosition="center 12%"
+        brief={briefAttrs("page-bridge")}
       />
       <Suspense fallback={<BridgeSkeleton />}>
         <Bridge />
@@ -65,7 +71,18 @@ async function Bridge() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Hero: frame value + equity curve */}
-        <section className="frame frame-hot boot lg:col-span-2">
+        <section
+          className="frame frame-hot boot lg:col-span-2"
+          tabIndex={0}
+          {...briefAttrs("equity", {
+            equity: usd(k.equity),
+            day: signedUsd(k.dayPnl),
+            dayPct: signedPct(k.dayPnlPct),
+            dayRaw: k.dayPnlPct,
+            total: signedUsd(gain),
+            totalPct: signedPct(k.totalReturn),
+          })}
+        >
           <div className="frame-body flex flex-col">
             <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 px-6 pt-5">
               <div>
@@ -106,6 +123,11 @@ async function Bridge() {
           title="Frame status"
           code="SYS-02"
           action={o.paused ? <StatusBadge status="paused" /> : o.lastRun && <StatusBadge status={o.lastRun.status} />}
+          brief={briefAttrs("frame-status", {
+            lastRun: o.lastRun ? dateTime(o.lastRun.startedAt) : null,
+            status: o.paused ? "hold" : (o.lastRun?.status ?? null),
+            paused: o.paused,
+          })}
         >
           <div className="grid grid-cols-1 gap-4">
             <Gauge
@@ -114,6 +136,7 @@ async function Bridge() {
               readout={pct(armor, 1)}
               color={armorColor}
               caption={`100% at peak · now ${pct(k.currentDrawdown)} drawdown`}
+              brief={briefAttrs("armor", { value: pct(armor, 1), drawdown: pct(k.currentDrawdown) })}
             />
             <Gauge
               label="Sync rate"
@@ -121,6 +144,12 @@ async function Bridge() {
               readout={s.winRate === null ? "—" : pct(s.winRate, 0)}
               color="var(--unit)"
               caption={`Win rate · ${s.wins} won / ${s.losses} lost`}
+              brief={briefAttrs("win-rate", {
+                scope: "All units",
+                value: s.winRate === null ? "—" : pct(s.winRate, 0),
+                sub: `${s.wins} won, ${s.losses} lost`,
+                count: s.count,
+              })}
             />
             <Gauge
               label="Power output"
@@ -128,10 +157,11 @@ async function Bridge() {
               readout={pct(k.exposure, 1)}
               color="var(--amber)"
               caption={`Capital deployed · ${k.openPositions} engagement${k.openPositions === 1 ? "" : "s"}`}
+              brief={briefAttrs("exposure", { value: pct(k.exposure, 1), open: k.openPositions })}
             />
           </div>
 
-          <div className="mt-5 flex items-center justify-between border-y border-line py-3">
+          <div className="mt-5 flex items-center justify-between border-y border-line py-3" {...briefAttrs("streak", { value: o.streak })}>
             <span className="hud text-[12px] text-ink-2">Combo</span>
             <span className="flex items-baseline gap-2">
               <span className={`font-title text-[34px] leading-none font-extrabold ${o.streak > 0 ? "text-sync" : "text-muted"}`}>
@@ -144,10 +174,25 @@ async function Bridge() {
           <div className="mt-4">
             <KeyValueList
               rows={[
-                { label: "Cash reserves", value: usd(k.cash) },
-                { label: "Realized", value: <Delta value={k.realizedPnl}>{signedUsd(k.realizedPnl)}</Delta> },
-                { label: "Unrealized", value: <Delta value={k.unrealizedPnl}>{signedUsd(k.unrealizedPnl)}</Delta> },
-                { label: "Last sortie", value: o.lastRun ? dateTime(o.lastRun.startedAt) : "—" },
+                { label: "Cash reserves", value: usd(k.cash), brief: briefAttrs("cash", { value: usd(k.cash) }) },
+                {
+                  label: "Realized",
+                  value: <Delta value={k.realizedPnl}>{signedUsd(k.realizedPnl)}</Delta>,
+                  brief: briefAttrs("realized", { scope: "All units", value: signedUsd(k.realizedPnl) }),
+                },
+                {
+                  label: "Unrealized",
+                  value: <Delta value={k.unrealizedPnl}>{signedUsd(k.unrealizedPnl)}</Delta>,
+                  brief: briefAttrs("unrealized", { scope: "All units", value: signedUsd(k.unrealizedPnl) }),
+                },
+                {
+                  label: "Last sortie",
+                  value: o.lastRun ? dateTime(o.lastRun.startedAt) : "—",
+                  brief: briefAttrs("last-sortie", {
+                    value: o.lastRun ? dateTime(o.lastRun.startedAt) : null,
+                    status: o.lastRun?.status ?? null,
+                  }),
+                },
               ]}
             />
           </div>
@@ -158,17 +203,64 @@ async function Bridge() {
       <StatStrip
         cols={6}
         items={[
-          { label: "Max damage", value: pct(k.maxDrawdown), sub: "largest drawdown" },
-          { label: "Sharpe", value: ratio(k.sharpe), sub: `annualized · ${k.days}d` },
-          { label: "Sortino", value: ratio(k.sortino), sub: "annualized" },
-          { label: "Engagements won", value: s.winRate === null ? "—" : pct(s.winRate, 0), sub: `${s.count} closed` },
-          { label: "Profit factor", value: ratio(s.profitFactor), sub: "gross win ÷ loss" },
-          { label: "Expectancy", value: s.expectancy === null ? "—" : signedUsd(s.expectancy), sub: "per trade" },
+          {
+            label: "Max damage",
+            value: pct(k.maxDrawdown),
+            sub: "largest drawdown",
+            brief: briefAttrs("max-drawdown", { value: pct(k.maxDrawdown) }),
+          },
+          {
+            label: "Sharpe",
+            value: ratio(k.sharpe),
+            sub: `annualized · ${k.days}d`,
+            brief: briefAttrs("sharpe", { value: ratio(k.sharpe), sub: `${k.days} day${k.days === 1 ? "" : "s"} of history`, days: k.days }),
+          },
+          { label: "Sortino", value: ratio(k.sortino), sub: "annualized", brief: briefAttrs("sortino", { value: ratio(k.sortino) }) },
+          {
+            label: "Engagements won",
+            value: s.winRate === null ? "—" : pct(s.winRate, 0),
+            sub: `${s.count} closed`,
+            brief: briefAttrs("win-rate", {
+              scope: "All units",
+              value: s.winRate === null ? "—" : pct(s.winRate, 0),
+              sub: `${s.wins} won, ${s.losses} lost`,
+              count: s.count,
+            }),
+          },
+          {
+            label: "Profit factor",
+            value: ratio(s.profitFactor),
+            sub: "gross win ÷ loss",
+            brief: briefAttrs("profit-factor", { scope: "All units", value: ratio(s.profitFactor), count: s.count }),
+          },
+          {
+            label: "Expectancy",
+            value: s.expectancy === null ? "—" : signedUsd(s.expectancy),
+            sub: "per trade",
+            brief: briefAttrs("expectancy", {
+              scope: "All units",
+              value: s.expectancy === null ? "—" : signedUsd(s.expectancy),
+              sub: `over ${s.count} trades`,
+              count: s.count,
+            }),
+          },
         ]}
       />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <Card title="Versus" subtitle="Cumulative return · you vs SPY vs BTC" code="SYS-03" className="lg:col-span-2">
+        <Card
+          title="Versus"
+          subtitle="Cumulative return · you vs SPY vs BTC"
+          code="SYS-03"
+          className="lg:col-span-2"
+          brief={briefAttrs("versus", {
+            you: last ? signedPct(last.portfolio) : null,
+            spy: last?.spy == null ? null : signedPct(last.spy),
+            btc: last?.btc == null ? null : signedPct(last.btc),
+            youRaw: o.performance.length > 1 ? (last?.portfolio ?? null) : null,
+            spyRaw: last?.spy ?? null,
+          })}
+        >
           {last && (
             <div className="mb-5 grid grid-cols-3 items-center gap-2 text-center">
               <VsSide label="You" value={last.portfolio} color="var(--series-1)" />
@@ -182,7 +274,12 @@ async function Bridge() {
             <Empty>The versus chart opens after two days of history.</Empty>
           )}
         </Card>
-        <Card title="Damage report" subtitle="Drawdown from peak" code="SYS-04">
+        <Card
+          title="Damage report"
+          subtitle="Drawdown from peak"
+          code="SYS-04"
+          brief={briefAttrs("drawdown-chart", { max: pct(k.maxDrawdown), current: pct(k.currentDrawdown) })}
+        >
           <DrawdownChart data={o.drawdown} />
           <p className="mt-3 text-[13px] text-muted">
             Worst hit so far: <span className="num text-ink">{pct(k.maxDrawdown)}</span>
@@ -190,7 +287,7 @@ async function Bridge() {
         </Card>
       </div>
 
-      <Card title="Theaters" subtitle="Allocation by asset class" code="SYS-05">
+      <Card title="Theaters" subtitle="Allocation by asset class" code="SYS-05" brief={briefAttrs("theaters")}>
         <Table>
           <thead>
             <tr>
@@ -205,7 +302,19 @@ async function Bridge() {
           </thead>
           <tbody>
             {classes.map((c) => (
-              <tr key={c.cls}>
+              <tr
+                key={c.cls}
+                {...briefAttrs("theater", {
+                  cls: c.cls,
+                  label: classLabel(c.cls),
+                  deployed: pct(k.equity ? c.exposure / k.equity : 0, 1),
+                  open: c.openPositions,
+                  realized: signedUsd(c.realized),
+                  unrealized: signedUsd(c.unrealized),
+                  fees: usd(c.fees),
+                  won: c.winRate === null ? "—" : pct(c.winRate, 0),
+                })}
+              >
                 <td className="whitespace-nowrap">
                   <span className="hud text-ink">{classLabel(c.cls)}</span>
                   <span className="ml-2 text-[12px] text-muted">{c.cls === "crypto" ? "BTC · ETH · SOL · 24/7" : "10 symbols · market hours"}</span>
@@ -230,6 +339,7 @@ async function Bridge() {
         title="Active engagements"
         subtitle="Open positions"
         code="SYS-06"
+        brief={briefAttrs("active-engagements", { count: o.positions.length })}
         action={
           <Link href="/positions" className="hud text-[12px] text-amber hover:underline">
             All →
@@ -250,7 +360,10 @@ async function Bridge() {
             </thead>
             <tbody>
               {o.positions.map((p) => (
-                <tr key={p.symbol}>
+                <tr
+                  key={p.symbol}
+                  {...positionBrief(p)}
+                >
                   <td className="num font-medium text-ink">{p.symbol}</td>
                   <td className="hud text-[12px] text-ink-2">{unitFor(p.strategy)?.code ?? "Manual"}</td>
                   <td className="num text-right">{qty(p.qty)}</td>
@@ -274,6 +387,7 @@ async function Bridge() {
         title="Combat log"
         subtitle="Latest closed trades"
         code="SYS-07"
+        brief={briefAttrs("recent-trades", { count: o.recentTrades.length })}
         action={
           <Link href="/trades" className="hud text-[12px] text-amber hover:underline">
             Full log →
@@ -295,7 +409,7 @@ async function Bridge() {
             </thead>
             <tbody>
               {o.recentTrades.map((t, i) => (
-                <tr key={i}>
+                <tr key={i} {...tradeBrief(t)}>
                   <td className="num whitespace-nowrap text-ink-2">{dateTime(t.exitTs)}</td>
                   <td className="num font-medium text-ink">{t.symbol}</td>
                   <td className="hud text-[12px] text-ink-2">{unitFor(t.strategy)?.code ?? "Manual"}</td>
@@ -342,7 +456,11 @@ function VsSide({ label, value, color }: { label: string; value: number | null; 
 /** "Target neutralized" banner for a big recent win (≥ 2% in the last 24h). */
 function KoBanner({ trade }: { trade: { symbol: string; pnl: number; returnPct: number; exitTs: number } }) {
   return (
-    <section className="frame frame-amber boot" role="status">
+    <section
+      className="frame frame-amber boot"
+      role="status"
+      {...briefAttrs("ko-banner", { symbol: trade.symbol, pnl: signedUsd(trade.pnl), ret: signedPct(trade.returnPct) })}
+    >
       <CueOnce id={`${trade.symbol}-${trade.exitTs}`} cue="win" />
       <div className="frame-body relative overflow-hidden px-6 py-4">
         <Image src={ART.victory} alt="" fill sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover object-[center_35%] opacity-60" />
@@ -366,7 +484,7 @@ function KoBanner({ trade }: { trade: { symbol: string; pnl: number; returnPct: 
 /** Red-day banner (day P&L ≤ −1%), the same threshold that puts JC-316 in its damaged state. */
 function DamageBanner({ dayPnl, dayPnlPct }: { dayPnl: number; dayPnlPct: number }) {
   return (
-    <section className="frame boot" role="status">
+    <section className="frame boot" role="status" {...briefAttrs("damage-banner", { pnl: signedUsd(dayPnl), pct: signedPct(dayPnlPct) })}>
       <div className="frame-body relative overflow-hidden px-6 py-4">
         <Image src={ART.damage} alt="" fill sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover object-[center_40%] opacity-55" />
         <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-[#08070c] via-[#08070c]/75 to-transparent" />

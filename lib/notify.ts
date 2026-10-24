@@ -2,6 +2,7 @@
  * Discord alerts ("incoming transmissions"). A no-op unless DISCORD_WEBHOOK_URL is set, and never
  * throws: an alert failing must not fail a trading tick.
  */
+import { APP_NAME } from "./config";
 
 export type Embed = {
   title: string;
@@ -32,11 +33,11 @@ export async function notify(embeds: Embed[]) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: "Paper Trader // Bridge",
+          username: `JC-316 · ${APP_NAME}`,
           embeds: embeds.slice(i, i + 10).map((e) => ({
             ...e,
             url: DASHBOARD_URL,
-            footer: e.footer ?? { text: "Paper Trader · simulated account" },
+            footer: e.footer ?? { text: `${APP_NAME} · simulated account` },
             timestamp: e.timestamp ?? new Date().toISOString(),
           })),
         }),

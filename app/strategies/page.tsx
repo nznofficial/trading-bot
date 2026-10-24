@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import Image from "next/image";
@@ -6,7 +7,10 @@ import { UNITS, unitFor, type UnitId } from "@/components/emblems";
 import { TuneConsole } from "@/components/tune-console";
 import { ActionBadge, Card, ClassTabs, Delta, Empty, Gauge, Metric, PageHeader, Skeleton, Table, Tag } from "@/components/ui";
 import { dateTime, duration, pct, ratio, signedUsd } from "@/lib/format";
+import { briefAttrs } from "@/lib/briefings";
 import { getStrategies, parseClassFilter } from "@/lib/queries";
+
+export const metadata: Metadata = { title: "Hangar" };
 
 export default function HangarPage({ searchParams }: PageProps<"/strategies">) {
   return (
@@ -17,6 +21,7 @@ export default function HangarPage({ searchParams }: PageProps<"/strategies">) {
         subtitle="Strategy units · loadout, combat record, targeting"
         scene={ART.hangar}
         scenePosition="center 18%"
+        brief={briefAttrs("page-hangar")}
       />
       <Suspense fallback={<Skeleton />}>
         <Hangar searchParams={searchParams} />
@@ -44,7 +49,22 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
         {strategies.map((st) => {
           const unit = UNITS[st.id as UnitId];
           return (
-            <section key={st.id} className="frame frame-hot boot">
+            <section
+              key={st.id}
+              className="frame frame-hot boot"
+              tabIndex={0}
+              {...briefAttrs("unit", {
+                unit: st.id,
+                code: unit.code,
+                role: unit.role,
+                description: st.description,
+                count: st.stats.count,
+                winRate: st.stats.winRate === null ? "—" : pct(st.stats.winRate, 0),
+                realized: signedUsd(st.stats.totalPnl),
+                open: st.openPositions,
+                symbols: st.symbols.join(", "),
+              })}
+            >
               <div className="frame-body relative overflow-hidden">
                 {/* Unit key art, faded behind the stats */}
                 <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-1/2">
@@ -84,6 +104,12 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
                     readout={st.stats.winRate === null ? "—" : pct(st.stats.winRate, 0)}
                     color={unit.primary}
                     caption="Win rate on closed trades"
+                    brief={briefAttrs("win-rate", {
+                      scope: unit.callsign,
+                      value: st.stats.winRate === null ? "—" : pct(st.stats.winRate, 0),
+                      sub: `${st.stats.wins} won, ${st.stats.losses} lost`,
+                      count: st.stats.count,
+                    })}
                   />
                   <Gauge
                     label="Sorties flown"
@@ -91,20 +117,27 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
                     readout={st.stats.count}
                     color={unit.secondary}
                     caption="Closed trades (bar fills at 50)"
+                    brief={briefAttrs("unit-sorties", { scope: unit.callsign, value: st.stats.count })}
                   />
                 </div>
 
                 <dl className="relative mt-5 grid grid-cols-3 gap-px border-t border-line bg-line">
-                  {[
-                    ["Realized", <Delta key="r" value={st.stats.totalPnl}>{signedUsd(st.stats.totalPnl)}</Delta>],
-                    ["Unrealized", <Delta key="u" value={st.unrealizedPl}>{signedUsd(st.unrealizedPl)}</Delta>],
-                    ["Deployed", st.openPositions],
-                    ["Profit factor", ratio(st.stats.profitFactor)],
-                    ["Avg hold", duration(st.stats.avgHoldMs)],
-                    ["Expectancy", st.stats.expectancy === null ? "—" : signedUsd(st.stats.expectancy)],
-                  ].map(([label, value]) => (
-                    <div key={label as string} className="bg-surface px-5 py-3">
-                      <Metric label={label as string}>{value}</Metric>
+                  {(
+                    [
+                      ["Realized", <Delta key="r" value={st.stats.totalPnl}>{signedUsd(st.stats.totalPnl)}</Delta>, "realized", signedUsd(st.stats.totalPnl)],
+                      ["Unrealized", <Delta key="u" value={st.unrealizedPl}>{signedUsd(st.unrealizedPl)}</Delta>, "unrealized", signedUsd(st.unrealizedPl)],
+                      ["Deployed", st.openPositions, "deployed", st.openPositions],
+                      ["Profit factor", ratio(st.stats.profitFactor), "profit-factor", ratio(st.stats.profitFactor)],
+                      ["Avg hold", duration(st.stats.avgHoldMs), "avg-hold", duration(st.stats.avgHoldMs)],
+                      ["Expectancy", st.stats.expectancy === null ? "—" : signedUsd(st.stats.expectancy), "expectancy", st.stats.expectancy === null ? "—" : signedUsd(st.stats.expectancy)],
+                    ] as const
+                  ).map(([label, value, id, text]) => (
+                    <div
+                      key={label}
+                      className="bg-surface px-5 py-3"
+                      {...briefAttrs(id, { scope: unit.callsign, value: text, count: st.stats.count })}
+                    >
+                      <Metric label={label}>{value}</Metric>
                     </div>
                   ))}
                 </dl>
@@ -128,11 +161,21 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
         subtitle={`Live now · stop ${(live.stopLossPct * 100).toFixed(1)}% · equities ${live.stocksEnabled ? "armed" : "safed"} · crypto ${live.cryptoEnabled ? "armed" : "safed"}`}
         code="HGR-01"
         tone="amber"
+        brief={briefAttrs("tune", {
+          stop: `${(live.stopLossPct * 100).toFixed(1)}%`,
+          stocks: live.stocksEnabled ? "armed" : "safed",
+          crypto: live.cryptoEnabled ? "armed" : "safed",
+        })}
       >
         <TuneConsole current={live} />
       </Card>
 
-      <Card title="Targeting computer" subtitle="Latest evaluation of every target" code="TGT-01">
+      <Card
+        title="Targeting computer"
+        subtitle="Latest evaluation of every target"
+        code="TGT-01"
+        brief={briefAttrs("targeting", { count: latest.length })}
+      >
         {latest.length ? (
           <Table>
             <thead>
@@ -147,7 +190,16 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
             </thead>
             <tbody>
               {latest.map((s) => (
-                <tr key={s.id}>
+                <tr
+                  key={s.id}
+                  {...briefAttrs("signal", {
+                    symbol: s.symbol,
+                    unit: s.strategy,
+                    action: s.action,
+                    reason: s.note ?? s.reason,
+                    telemetry: fmtIndicators(s.indicators),
+                  })}
+                >
                   <td className="num font-medium text-ink">{s.symbol}</td>
                   <td className="hud text-[12px] whitespace-nowrap" style={{ color: unitFor(s.strategy)?.secondary }}>
                     {unitFor(s.strategy)?.code ?? s.strategy}
@@ -167,7 +219,12 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
         )}
       </Card>
 
-      <Card title="Engagement orders" subtitle="Last 100 buy/sell calls, including ones blocked by risk limits" code="TGT-02">
+      <Card
+        title="Engagement orders"
+        subtitle="Last 100 buy/sell calls, including ones blocked by risk limits"
+        code="TGT-02"
+        brief={briefAttrs("calls", { count: recent.length })}
+      >
         {recent.length ? (
           <Table>
             <thead>
@@ -181,7 +238,16 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
             </thead>
             <tbody>
               {recent.map((s) => (
-                <tr key={s.id}>
+                <tr
+                  key={s.id}
+                  {...briefAttrs("call", {
+                    symbol: s.symbol,
+                    action: s.action,
+                    reason: s.reason,
+                    outcome: s.note ?? "—",
+                    acted: s.acted,
+                  })}
+                >
                   <td className="num whitespace-nowrap text-ink-2">{dateTime(s.ts)}</td>
                   <td className="num font-medium text-ink">{s.symbol}</td>
                   <td>

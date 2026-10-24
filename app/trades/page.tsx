@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -6,12 +7,20 @@ import { unitFor } from "@/components/emblems";
 import { SymbolPnlChart } from "@/components/charts";
 import { ActionBadge, Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, StatStrip, Table } from "@/components/ui";
 import { dateTime, duration, pct, qty, ratio, signedPct, signedUsd, usd } from "@/lib/format";
+import { briefAttrs, tradeBrief } from "@/lib/briefings";
 import { getTrades, parseClassFilter } from "@/lib/queries";
+
+export const metadata: Metadata = { title: "Combat Log" };
 
 export default function TradesPage({ searchParams }: PageProps<"/trades">) {
   return (
     <>
-      <PageHeader code="SYS-03 // Combat log" title="Combat Log" subtitle="Closed engagements (first-in first-out) and every order fired" />
+      <PageHeader
+        code="SYS-03 // Combat log"
+        title="Combat Log"
+        subtitle="Closed engagements (first-in first-out) and every order fired"
+        brief={briefAttrs("page-combat-log")}
+      />
       <Suspense fallback={<Skeleton />}>
         <Trades searchParams={searchParams} />
       </Suspense>
@@ -29,16 +38,40 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
       <ClassTabs path="/trades" active={filter} />
       <StatStrip
         items={[
-          { label: "Closed trades", value: s.count, sub: `avg hold ${duration(s.avgHoldMs)}` },
-          { label: "Win rate", value: s.winRate === null ? "—" : pct(s.winRate, 0), sub: `${s.wins} won · ${s.losses} lost` },
+          {
+            label: "Closed trades",
+            value: s.count,
+            sub: `avg hold ${duration(s.avgHoldMs)}`,
+            brief: briefAttrs("closed-count", { value: s.count, sub: `average hold ${duration(s.avgHoldMs)}` }),
+          },
+          {
+            label: "Win rate",
+            value: s.winRate === null ? "—" : pct(s.winRate, 0),
+            sub: `${s.wins} won · ${s.losses} lost`,
+            brief: briefAttrs("win-rate", {
+              value: s.winRate === null ? "—" : pct(s.winRate, 0),
+              sub: `${s.wins} won, ${s.losses} lost`,
+              count: s.count,
+            }),
+          },
           {
             label: "Expectancy",
             value: s.expectancy === null ? "—" : <Delta value={s.expectancy}>{signedUsd(s.expectancy)}</Delta>,
             sub: `avg win ${s.avgWin === null ? "—" : signedUsd(s.avgWin)} · avg loss ${s.avgLoss === null ? "—" : signedUsd(s.avgLoss)}`,
+            brief: briefAttrs("expectancy", {
+              value: s.expectancy === null ? "—" : signedUsd(s.expectancy),
+              sub: `average win ${s.avgWin === null ? "—" : signedUsd(s.avgWin)}, average loss ${s.avgLoss === null ? "—" : signedUsd(s.avgLoss)}`,
+              count: s.count,
+            }),
           },
           {
             label: "Profit factor",
             value: ratio(s.profitFactor),
+            brief: briefAttrs("profit-factor", {
+              value: ratio(s.profitFactor),
+              sub: `total ${signedUsd(s.totalPnl)}${fees > 0 ? `, fees ${usd(fees)}` : ""}`,
+              count: s.count,
+            }),
             sub: (
               <>
                 total <Delta value={s.totalPnl}>{signedUsd(s.totalPnl)}</Delta>
@@ -50,12 +83,17 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
       />
 
       {bySymbol.length > 0 && (
-        <Card title="Damage dealt by target" subtitle="Realized P&L per symbol" code="LOG-01">
+        <Card
+          title="Damage dealt by target"
+          subtitle="Realized P&L per symbol"
+          code="LOG-01"
+          brief={briefAttrs("by-target", { count: bySymbol.length })}
+        >
           <SymbolPnlChart data={bySymbol} />
         </Card>
       )}
 
-      <Card title="Closed engagements" code="LOG-02">
+      <Card title="Closed engagements" code="LOG-02" brief={briefAttrs("closed-trades", { count: trades.length })}>
         {trades.length ? (
           <Table>
             <thead>
@@ -74,7 +112,7 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
             </thead>
             <tbody>
               {trades.map((t, i) => (
-                <tr key={i}>
+                <tr key={i} {...tradeBrief(t)}>
                   <td className="num whitespace-nowrap text-ink-2">{dateTime(t.entryTs)}</td>
                   <td className="num whitespace-nowrap text-ink-2">{dateTime(t.exitTs)}</td>
                   <td className="num font-medium text-ink">{t.symbol}</td>
@@ -105,7 +143,12 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
         )}
       </Card>
 
-      <Card title="Orders fired" subtitle="Latest 200, including protective stops" code="LOG-03">
+      <Card
+        title="Orders fired"
+        subtitle="Latest 200, including protective stops"
+        code="LOG-03"
+        brief={briefAttrs("orders", { count: orders.length })}
+      >
         {orders.length ? (
           <Table>
             <thead>
@@ -122,7 +165,19 @@ async function Trades({ searchParams }: { searchParams: PageProps<"/trades">["se
             </thead>
             <tbody>
               {orders.map((o) => (
-                <tr key={o.id}>
+                <tr
+                  key={o.id}
+                  {...briefAttrs("order", {
+                    symbol: o.symbol,
+                    side: o.side,
+                    type: `${o.type}${o.stopPrice ? ` @ ${usd(o.stopPrice)}` : ""}`,
+                    kind: o.type,
+                    leg: o.isLeg,
+                    qty: o.qty === null ? null : qty(o.qty),
+                    fill: o.filledAvgPrice ? usd(o.filledAvgPrice) : null,
+                    status: o.status,
+                  })}
+                >
                   <td className="num whitespace-nowrap text-ink-2">{dateTime(o.submittedAt)}</td>
                   <td className="num font-medium text-ink">{o.symbol}</td>
                   <td>

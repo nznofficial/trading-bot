@@ -1,3 +1,7 @@
+/** Display name (header, tab title, launch intro, Discord alerts). */
+export const APP_NAME = "Mobile Market Corps";
+export const APP_SHORT = "MMC";
+
 export type StrategyId = "sma_cross" | "rsi_revert";
 export type AssetClass = "us_equity" | "crypto";
 

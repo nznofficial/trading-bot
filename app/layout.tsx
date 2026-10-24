@@ -8,6 +8,7 @@ import { Crest } from "@/components/emblems";
 import { LAUNCH_SCRIPT, LaunchIntro } from "@/components/launch-intro";
 import { SessionStatus, TargetFeed, TargetFeedSkeleton } from "@/components/market-strip";
 import { Nav } from "@/components/nav";
+import { APP_NAME, APP_SHORT } from "@/lib/config";
 import "./globals.css";
 
 const barlow = Barlow({ variable: "--font-barlow", subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -16,7 +17,7 @@ const mincho = Shippori_Mincho_B1({ variable: "--font-mincho", subsets: ["latin"
 const mono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
-  title: "Paper Trader",
+  title: { default: APP_NAME, template: `${APP_SHORT} · %s` },
   description: "Mecha-cockpit paper trading HUD: stocks and crypto on Alpaca, with live positions, combat log and analytics.",
 };
 
@@ -41,7 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/" className="flex items-center gap-3">
               <Crest />
               <div className="leading-none">
-                <div className="font-title text-[19px] font-extrabold tracking-tight text-ink">Paper Trader</div>
+                <div className="font-title text-[19px] font-extrabold tracking-tight text-ink">{APP_NAME}</div>
                 <div className="hud mt-1 text-[10px] text-amber">Tactical trading frame · Alpaca paper</div>
               </div>
             </Link>

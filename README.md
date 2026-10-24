@@ -1,4 +1,4 @@
-# Paper Trader
+# Mobile Market Corps
 
 A rule-based trading bot that paper-trades US stocks and crypto on **Alpaca's paper account** using real market data, with a public read-only dashboard for history, positions, and analytics.
 

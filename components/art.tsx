@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
+import type { BriefAttrs } from "@/lib/briefings";
 
 /** Generated art lives in public/art (see art/manifest.ts for what each piece is). */
 export const ART = {
@@ -31,15 +32,17 @@ export function SceneBanner({
   figure,
   height = "h-56 sm:h-64",
   position = "center",
+  brief,
 }: {
   src: string;
   children: ReactNode;
   figure?: { src: string; alt: string };
   height?: string;
   position?: string;
+  brief?: BriefAttrs;
 }) {
   return (
-    <section className={`frame boot relative mb-7 ${height}`}>
+    <section {...brief} className={`frame boot relative mb-7 ${height}`}>
       <div className="frame-body relative overflow-hidden">
         <Image
           src={src}

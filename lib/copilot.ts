@@ -95,7 +95,7 @@ const LINES: Record<CopilotState, ((i: CopilotInput) => string)[]> = {
     () => `Vanguard hunts trends, Recoil catches dips. I keep them honest.`,
   ],
   greeting: [
-    () => `JC-316 online. Welcome aboard, pilot.`,
+    () => `JC-316 online. Welcome to the Corps, pilot.`,
     () => `Sync confirmed. All units reporting. Welcome back.`,
   ],
 };

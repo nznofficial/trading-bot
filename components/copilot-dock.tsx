@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { briefing, type BriefCtx, type Briefing } from "@/lib/briefings";
 import { COPILOT_STATES, copilotLine, copilotReport, type CopilotInput, type CopilotState } from "@/lib/copilot";
+import { play } from "@/lib/sfx";
 
 const STATE_LABEL: Record<CopilotState, string> = {
   alert: "Alert",
@@ -62,7 +64,10 @@ const useFirstVisit = () => useSyncExternalStore(noSubscribe, readFirstVisit, ()
 const useReducedMotion = () =>
   useSyncExternalStore(noSubscribe, () => window.matchMedia("(prefers-reduced-motion: reduce)").matches, () => true);
 
-/** Types its text out; remount (via key) to restart. Instant for reduced-motion users and on the server. */
+/**
+ * Types its text out; remount (via key) to restart. Instant for reduced-motion users and on the server.
+ * Screen readers get the whole line at once instead of every keystroke.
+ */
 function Typed({ text, instant }: { text: string; instant: boolean }) {
   const [n, setN] = useState(instant ? text.length : 0);
   useEffect(() => {
@@ -70,7 +75,89 @@ function Typed({ text, instant }: { text: string; instant: boolean }) {
     const id = setInterval(() => setN((v) => (v >= text.length ? (clearInterval(id), v) : v + 2)), 18);
     return () => clearInterval(id);
   }, [text, instant]);
-  return <>{text.slice(0, instant ? text.length : n)}</>;
+  return (
+    <>
+      <span aria-hidden>{text.slice(0, instant ? text.length : n)}</span>
+      <span className="sr-only">{text}</span>
+    </>
+  );
+}
+
+/** Clicks on these keep their own behavior; they never open a briefing. */
+const INTERACTIVE = "a, button, input, select, textarea, label, summary, [role=button], [role=tab], [contenteditable]";
+
+type ActiveBrief = { page: string; seq: number } & Briefing;
+
+/**
+ * Click-to-brief: any element marked with `data-brief` (see lib/briefings.ts) opens JC-316's briefing
+ * on click, or on Enter when focused. The innermost marked element wins, so a table row beats its panel.
+ */
+function useBriefings(page: string) {
+  const [brief, setBrief] = useState<ActiveBrief | null>(null);
+  const targetRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const mark = (el: HTMLElement | null) => {
+      targetRef.current?.removeAttribute("data-briefed");
+      targetRef.current = el;
+      el?.setAttribute("data-briefed", "");
+    };
+    const open = (el: HTMLElement) => {
+      if (el === targetRef.current) {
+        mark(null);
+        setBrief(null);
+        return;
+      }
+      let ctx: BriefCtx = {};
+      try {
+        ctx = JSON.parse(el.dataset.briefCtx ?? "{}");
+      } catch {}
+      const b = briefing(el.dataset.brief ?? "", ctx);
+      if (!b) return;
+      mark(el);
+      play("click");
+      setBrief((prev) => ({ ...b, page: window.location.pathname, seq: (prev?.seq ?? 0) + 1 }));
+    };
+    const onClick = (e: MouseEvent) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const t = e.target;
+      if (!(t instanceof Element) || t.closest(INTERACTIVE) || t.closest("[data-copilot]")) return;
+      if (window.getSelection()?.toString()) return; // selecting text, not targeting
+      const el = t.closest<HTMLElement>("[data-brief]");
+      if (el) open(el);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && targetRef.current) {
+        mark(null);
+        setBrief(null);
+      } else if (e.key === "Enter" && e.target instanceof HTMLElement && e.target.dataset.brief) {
+        open(e.target);
+      }
+    };
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  const close = () => {
+    targetRef.current?.removeAttribute("data-briefed");
+    targetRef.current = null;
+    setBrief(null);
+  };
+  // A briefing belongs to the page it was opened on; navigating away drops it.
+  return { brief: brief && brief.page === page ? brief : null, close };
+}
+
+function BriefSection({ label, tone, children }: { label: string; tone: string; children: ReactNode }) {
+  return (
+    <div>
+      <div className={`hud text-[10px] ${tone}`}>{label}</div>
+      <p className="mt-0.5 text-[13px] leading-snug text-ink">{children}</p>
+    </div>
+  );
 }
 
 /**
@@ -81,6 +168,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
   const page = usePathname();
   const params = useSearchParams();
   const firstVisit = useFirstVisit();
+  const { brief, close } = useBriefings(page);
   const [greetingDone, setGreetingDone] = useState(false);
   useEffect(() => {
     if (!firstVisit) return;
@@ -103,10 +191,56 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
   const open = pref ? pref === "open" : !smallDefault;
   const src = `/art/jc316-bust-${report.state}.webp`;
 
+  if (brief) {
+    return (
+      <aside
+        data-copilot
+        aria-live="polite"
+        aria-label={`JC-316 briefing: ${brief.title}`}
+        className="fixed right-4 bottom-4 z-40 w-[min(440px,calc(100vw-2rem))]"
+      >
+        <div className="frame frame-amber">
+          <div className="frame-body relative flex gap-3 p-3 pr-4">
+            <div className="relative size-20 shrink-0 self-start drop-shadow-[0_0_16px_rgba(34,211,238,0.35)] sm:size-24">
+              <Image src="/art/jc316-bust-thinking.webp" alt="JC-316, analyzing" width={192} height={192} loading="eager" className="size-full object-contain" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 pr-6">
+                <span className="hud text-[12px] text-amber">JC-316 · Briefing</span>
+                <span className="hud border border-cyan/50 px-1.5 text-[10px] text-cyan">Scanning</span>
+              </div>
+              <h2 className="mt-1 font-title text-[19px] leading-tight font-extrabold text-ink">{brief.title}</h2>
+              <div className="mt-2 grid max-h-[min(46vh,360px)] gap-2.5 overflow-y-auto pr-1">
+                <BriefSection label="What it is" tone="text-muted">
+                  {brief.what}
+                </BriefSection>
+                <BriefSection label="Reading now" tone="text-sync">
+                  <Typed key={brief.seq} text={brief.now} instant={reduced} />
+                </BriefSection>
+                <BriefSection label="Pilot's note" tone="text-amber">
+                  {brief.note}
+                </BriefSection>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Close briefing"
+              className="hud absolute top-1.5 right-2 px-1 text-[15px] text-muted hover:text-ink"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
   if (!open) {
     return (
       <button
         type="button"
+        data-copilot
         onClick={() => writePref("open")}
         aria-label={`Open JC-316 copilot (${STATE_LABEL[report.state]})`}
         className={`frame fixed right-4 bottom-4 z-40 size-16 ${report.state === "alert" || report.state === "damaged" ? "frame-amber" : "frame-hot"}`}
@@ -120,6 +254,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
 
   return (
     <aside
+      data-copilot
       aria-live="polite"
       aria-label="JC-316 copilot"
       className="fixed right-4 bottom-4 z-40 w-[min(380px,calc(100vw-2rem))]"
@@ -139,6 +274,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
               <Typed key={report.line} text={report.line} instant={reduced} />
               <span aria-hidden className="blink ml-0.5 inline-block h-3 w-1.5 translate-y-0.5 bg-sync" />
             </p>
+            <p className="hud mt-1 text-[10px] text-muted">Click any panel and I&apos;ll brief you</p>
           </div>
           <button
             type="button"

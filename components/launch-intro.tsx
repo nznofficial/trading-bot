@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ART } from "@/components/art";
+import { APP_NAME } from "@/lib/config";
 
 /**
  * Launch sequence shown once per browser session. Rendered on the server so it covers the first
@@ -30,7 +31,7 @@ export function LaunchIntro() {
         LAUNCH
       </div>
       <div className="hud wipe relative mt-4 text-[15px] text-sync" style={{ animationDelay: "0.75s" }}>
-        Paper Trader — all units, sortie
+        {APP_NAME} — all units, sortie
       </div>
     </div>
   );

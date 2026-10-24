@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -7,7 +8,10 @@ import { unitFor } from "@/components/emblems";
 import { SimulatorConsole } from "@/components/simulator-console";
 import { Card, Delta, Empty, PageHeader, Skeleton, StatStrip, Table } from "@/components/ui";
 import { dateTime, duration, pct, ratio, signedPct, signedUsd, usd } from "@/lib/format";
+import { briefAttrs } from "@/lib/briefings";
 import { getLiveSettings, getSimulations, type SimulationRow } from "@/lib/queries";
+
+export const metadata: Metadata = { title: "Simulator" };
 
 export default function SimulatorPage({ searchParams }: PageProps<"/simulator">) {
   return (
@@ -18,9 +22,16 @@ export default function SimulatorPage({ searchParams }: PageProps<"/simulator">)
         subtitle="Replay the units over real history before trusting them with the account"
         scene={ART.simdeck}
         scenePosition="center 8%"
+        brief={briefAttrs("page-simulator")}
       />
       <div className="grid grid-cols-1 gap-5">
-        <Card title="Mission parameters" subtitle="Defaults are the live settings" code="SIM-01" tone="amber">
+        <Card
+          title="Mission parameters"
+          subtitle="Defaults are the live settings"
+          code="SIM-01"
+          tone="amber"
+          brief={briefAttrs("sim-params")}
+        >
           <Suspense fallback={<Skeleton className="h-64" />}>
             <Console />
           </Suspense>
@@ -65,6 +76,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
   const last = r.equity.at(-1);
   const spyRet = first?.spy && last?.spy ? last.spy / first.spy - 1 : null;
   const btcRet = first?.btc && last?.btc ? last.btc / first.btc - 1 : null;
+  const runScope = `Run #${selected.id}`;
   const perf = r.equity.map((e) => ({
     date: e.date,
     portfolio: e.equity / s.startEquity - 1,
@@ -79,6 +91,15 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
         subtitle={`${selected.params.months} mo · ${theaterLabel(selected.params.theater)} · ${paramLine(selected.params)}`}
         code="SIM-02"
         tone="hot"
+        brief={briefAttrs("sim-debrief", {
+          id: selected.id,
+          period: `${selected.params.months} mo · ${theaterLabel(selected.params.theater)}`,
+          ret: signedPct(s.totalReturn),
+          spy: spyRet === null ? null : signedPct(spyRet),
+          btc: btcRet === null ? null : signedPct(btcRet),
+          retRaw: s.totalReturn,
+          spyRaw: spyRet,
+        })}
       >
         <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Versus label="Units" value={s.totalReturn} color="var(--series-1)" />
@@ -95,17 +116,57 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
       <StatStrip
         cols={6}
         items={[
-          { label: "Final equity", value: usd(s.endEquity), sub: `from ${usd(s.startEquity)}` },
-          { label: "Max damage", value: pct(s.maxDrawdown), sub: "worst drawdown" },
-          { label: "Sharpe", value: ratio(s.sharpe), sub: `Sortino ${ratio(s.sortino)}` },
-          { label: "Sync rate", value: s.winRate === null ? "—" : pct(s.winRate, 0), sub: `${s.count} trades` },
-          { label: "Profit factor", value: ratio(s.profitFactor), sub: `expectancy ${s.expectancy === null ? "—" : signedUsd(s.expectancy)}` },
-          { label: "Fees paid", value: usd(s.feesPaid), sub: `avg exposure ${pct(s.exposureAvg, 0)}` },
+          {
+            label: "Final equity",
+            value: usd(s.endEquity),
+            sub: `from ${usd(s.startEquity)}`,
+            brief: briefAttrs("final-equity", { scope: runScope, value: usd(s.endEquity), sub: `from ${usd(s.startEquity)}` }),
+          },
+          {
+            label: "Max damage",
+            value: pct(s.maxDrawdown),
+            sub: "worst drawdown",
+            brief: briefAttrs("max-drawdown", { scope: runScope, value: pct(s.maxDrawdown) }),
+          },
+          {
+            label: "Sharpe",
+            value: ratio(s.sharpe),
+            sub: `Sortino ${ratio(s.sortino)}`,
+            brief: briefAttrs("sharpe", { scope: runScope, value: ratio(s.sharpe), sub: `Sortino ${ratio(s.sortino)}` }),
+          },
+          {
+            label: "Sync rate",
+            value: s.winRate === null ? "—" : pct(s.winRate, 0),
+            sub: `${s.count} trades`,
+            brief: briefAttrs("win-rate", {
+              scope: runScope,
+              value: s.winRate === null ? "—" : pct(s.winRate, 0),
+              sub: `${s.count} trades`,
+              count: s.count,
+            }),
+          },
+          {
+            label: "Profit factor",
+            value: ratio(s.profitFactor),
+            sub: `expectancy ${s.expectancy === null ? "—" : signedUsd(s.expectancy)}`,
+            brief: briefAttrs("profit-factor", {
+              scope: runScope,
+              value: ratio(s.profitFactor),
+              sub: `expectancy ${s.expectancy === null ? "—" : signedUsd(s.expectancy)}`,
+              count: s.count,
+            }),
+          },
+          {
+            label: "Fees paid",
+            value: usd(s.feesPaid),
+            sub: `avg exposure ${pct(s.exposureAvg, 0)}`,
+            brief: briefAttrs("fees", { scope: runScope, value: usd(s.feesPaid), sub: `average exposure ${pct(s.exposureAvg, 0)}` }),
+          },
         ]}
       />
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
-        <Card title="Unit performance" code="SIM-03">
+        <Card title="Unit performance" code="SIM-03" brief={briefAttrs("sim-units")}>
           <Table>
             <thead>
               <tr>
@@ -121,7 +182,18 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
               {r.byUnit.map((u) => {
                 const unit = unitFor(u.strategy);
                 return (
-                  <tr key={u.strategy}>
+                  <tr
+                    key={u.strategy}
+                    {...briefAttrs("sim-unit", {
+                      unit: u.strategy,
+                      trades: u.stats.count,
+                      tradesRaw: u.stats.count,
+                      win: u.stats.winRate === null ? "—" : pct(u.stats.winRate, 0),
+                      pnl: signedUsd(u.stats.totalPnl),
+                      fees: usd(u.feesPaid),
+                      hold: duration(u.stats.avgHoldMs),
+                    })}
+                  >
                     <td className="hud whitespace-nowrap" style={{ color: unit?.secondary }}>
                       {unit ? `${unit.code} ${unit.callsign}` : u.strategy}
                     </td>
@@ -138,12 +210,17 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
             </tbody>
           </Table>
         </Card>
-        <Card title="Damage dealt by target" subtitle="Net P&L per symbol" code="SIM-04">
+        <Card
+          title="Damage dealt by target"
+          subtitle="Net P&L per symbol"
+          code="SIM-04"
+          brief={briefAttrs("by-target", { scope: runScope, count: r.bySymbol.length })}
+        >
           {r.bySymbol.length ? <SymbolPnlChart data={r.bySymbol} /> : <Empty>No trades in this run.</Empty>}
         </Card>
       </div>
 
-      <Card title="Compare runs" subtitle="Click a run to load its debrief" code="SIM-05">
+      <Card title="Compare runs" subtitle="Click a run to load its debrief" code="SIM-05" brief={briefAttrs("sim-runs", { count: runs.length })}>
         <Table>
           <thead>
             <tr>
@@ -160,7 +237,21 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
           </thead>
           <tbody>
             {runs.map((run) => (
-              <tr key={run.id} className={run.id === selected.id ? "bg-unit/10" : undefined}>
+              <tr
+                key={run.id}
+                className={run.id === selected.id ? "bg-unit/10" : undefined}
+                {...briefAttrs("sim-run", {
+                  id: run.id,
+                  period: `${run.params.months} mo · ${theaterLabel(run.params.theater)}`,
+                  settings: paramLine(run.params),
+                  ret: signedPct(run.summary.totalReturn),
+                  dd: pct(run.summary.maxDrawdown, 1),
+                  sharpe: ratio(run.summary.sharpe),
+                  win: run.summary.winRate === null ? "—" : pct(run.summary.winRate, 0),
+                  trades: run.summary.count,
+                  fees: usd(run.summary.feesPaid),
+                })}
+              >
                 <td>
                   <Link href={`/simulator?run=${run.id}`} className="num text-amber hover:underline">
                     {run.id}
@@ -184,7 +275,12 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
         </Table>
       </Card>
 
-      <Card title="Simulated combat log" subtitle={`Latest ${Math.min(50, r.trades.length)} of ${s.count} trades`} code="SIM-06">
+      <Card
+        title="Simulated combat log"
+        subtitle={`Latest ${Math.min(50, r.trades.length)} of ${s.count} trades`}
+        code="SIM-06"
+        brief={briefAttrs("sim-trades", { count: s.count })}
+      >
         {r.trades.length ? (
           <Table>
             <thead>
@@ -203,7 +299,18 @@ async function Results({ searchParams }: { searchParams: PageProps<"/simulator">
                 .slice(-50)
                 .reverse()
                 .map((t, i) => (
-                  <tr key={i}>
+                  <tr
+                    key={i}
+                    {...briefAttrs("sim-trade", {
+                      symbol: t.symbol,
+                      unit: t.strategy,
+                      reason: t.exitReason,
+                      entry: usd(t.entryPrice),
+                      exit: usd(t.exitPrice),
+                      pnl: `${signedUsd(t.pnl)} (${signedPct(t.returnPct)})`,
+                      held: duration(t.holdMs),
+                    })}
+                  >
                     <td className="num whitespace-nowrap text-ink-2">{dateTime(Date.parse(t.exitTs))}</td>
                     <td className="num font-medium text-ink">{t.symbol}</td>
                     <td className="hud text-[12px] text-ink-2">{unitFor(t.strategy)?.code ?? t.strategy}</td>

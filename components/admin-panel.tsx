@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { briefAttrs } from "@/lib/briefings";
 
 type Action = "tick" | "dryRun" | "pause" | "resume" | "liquidate" | "testAlert";
 
@@ -36,7 +37,7 @@ export function AdminPanel() {
   }
 
   return (
-    <div className="frame frame-amber">
+    <div className="frame frame-amber" {...briefAttrs("override")}>
       <details className="frame-body group">
         <summary className="hud flex cursor-pointer list-none items-center gap-3 px-5 py-3 text-[14px] text-amber">
           <span aria-hidden className="hazard inline-block h-3 w-6" />

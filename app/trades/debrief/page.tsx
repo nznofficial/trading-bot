@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -5,12 +6,20 @@ import { DebriefChart } from "@/components/charts";
 import { UnitEmblem, unitFor, type UnitId } from "@/components/emblems";
 import { ActionBadge, Card, Delta, Empty, KeyValueList, PageHeader, Skeleton, StatStrip, Table } from "@/components/ui";
 import { dateTime, duration, qty, signedPct, signedUsd, usd } from "@/lib/format";
+import { briefAttrs } from "@/lib/briefings";
 import { getDebrief } from "@/lib/queries";
+
+export const metadata: Metadata = { title: "Mission debrief" };
 
 export default function DebriefPage({ searchParams }: PageProps<"/trades/debrief">) {
   return (
     <>
-      <PageHeader code="SYS-03 // Combat log // Debrief" title="Mission debrief" subtitle="One closed engagement, start to finish">
+      <PageHeader
+        code="SYS-03 // Combat log // Debrief"
+        title="Mission debrief"
+        subtitle="One closed engagement, start to finish"
+        brief={briefAttrs("page-debrief")}
+      >
         <Link href="/trades" className="hud text-[13px] text-amber hover:underline">
           ← Combat log
         </Link>
@@ -47,7 +56,17 @@ async function Debrief({ searchParams }: { searchParams: PageProps<"/trades/debr
 
   return (
     <div className="grid grid-cols-1 gap-5">
-      <section className={`frame boot ${win ? "frame-hot" : ""}`}>
+      <section
+        className={`frame boot ${win ? "frame-hot" : ""}`}
+        tabIndex={0}
+        {...briefAttrs("debrief-hero", {
+          symbol: t.symbol,
+          unit: t.strategy,
+          pnl: signedUsd(t.pnl),
+          ret: signedPct(t.returnPct),
+          exitBy: exitLabel,
+        })}
+      >
         <div className="frame-body flex flex-wrap items-center gap-x-8 gap-y-4 px-6 py-5">
           {unit ? (
             <UnitEmblem unit={t.strategy as UnitId} size={64} />
@@ -78,11 +97,26 @@ async function Debrief({ searchParams }: { searchParams: PageProps<"/trades/debr
           { label: "Entry", value: usd(t.entryPrice), sub: dateTime(t.entryTs) },
           { label: "Exit", value: usd(t.exitPrice), sub: dateTime(t.exitTs) },
           { label: "Held", value: duration(t.holdMs), sub: `${qty(t.qty)} ${t.assetClass === "crypto" ? "coins" : "shares"}` },
-          { label: "Exit by", value: exitLabel, sub: t.fees > 0 ? `fees ${usd(t.fees)}` : "no fees" },
+          {
+            label: "Exit by",
+            value: exitLabel,
+            sub: t.fees > 0 ? `fees ${usd(t.fees)}` : "no fees",
+            brief: briefAttrs("exit-by", { value: exitLabel, kind: t.exitKind }),
+          },
         ]}
       />
 
-      <Card title="Flight path" subtitle="15-minute closes around the engagement" code="DBR-01" tone="hot">
+      <Card
+        title="Flight path"
+        subtitle="15-minute closes around the engagement"
+        code="DBR-01"
+        tone="hot"
+        brief={briefAttrs("flight-path", {
+          entry: usd(t.entryPrice),
+          exit: usd(t.exitPrice),
+          stop: t.stopPrice ? usd(t.stopPrice) : null,
+        })}
+      >
         {t.bars.length > 1 ? (
           <DebriefChart
             bars={t.bars}
@@ -99,7 +133,13 @@ async function Debrief({ searchParams }: { searchParams: PageProps<"/trades/debr
       </Card>
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-3">
-        <Card title="Why it fired" subtitle="Buy/sell calls on this target during the engagement" code="DBR-02" className="lg:col-span-2">
+        <Card
+          title="Why it fired"
+          subtitle="Buy/sell calls on this target during the engagement"
+          code="DBR-02"
+          className="lg:col-span-2"
+          brief={briefAttrs("why-fired", { count: t.signals.length })}
+        >
           {t.signals.length ? (
             <Table>
               <thead>
@@ -113,7 +153,16 @@ async function Debrief({ searchParams }: { searchParams: PageProps<"/trades/debr
               </thead>
               <tbody>
                 {t.signals.map((s, i) => (
-                  <tr key={i}>
+                  <tr
+                    key={i}
+                    {...briefAttrs("call", {
+                      symbol: t.symbol,
+                      action: s.action,
+                      reason: s.reason,
+                      outcome: s.note ?? "—",
+                      acted: s.acted,
+                    })}
+                  >
                     <td className="num whitespace-nowrap text-ink-2">{dateTime(s.ts)}</td>
                     <td>
                       <ActionBadge action={s.action} />
@@ -129,7 +178,11 @@ async function Debrief({ searchParams }: { searchParams: PageProps<"/trades/debr
             <Empty>No strategy calls recorded. This was placed manually or before signals were logged.</Empty>
           )}
         </Card>
-        <Card title="Flight data" code="DBR-03">
+        <Card
+          title="Flight data"
+          code="DBR-03"
+          brief={briefAttrs("flight-data", { stop: t.stopPrice ? usd(t.stopPrice) : null, fees: usd(t.fees) })}
+        >
           <KeyValueList
             rows={[
               { label: "Protective stop", value: t.stopPrice ? usd(t.stopPrice) : "—" },

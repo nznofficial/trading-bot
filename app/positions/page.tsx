@@ -1,15 +1,24 @@
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ART } from "@/components/art";
 import { unitFor } from "@/components/emblems";
 import { Card, ClassTabs, Delta, Empty, PageHeader, Skeleton, Table } from "@/components/ui";
 import { dateTime, qty, signedPct, signedUsd, usd } from "@/lib/format";
+import { briefAttrs, positionBrief } from "@/lib/briefings";
 import { getPositions, parseClassFilter } from "@/lib/queries";
+
+export const metadata: Metadata = { title: "Engagements" };
 
 export default function PositionsPage({ searchParams }: PageProps<"/positions">) {
   return (
     <>
-      <PageHeader code="SYS-02 // Engagements" title="Engagements" subtitle="Open positions · as of the latest sortie" />
+      <PageHeader
+        code="SYS-02 // Engagements"
+        title="Engagements"
+        subtitle="Open positions · as of the latest sortie"
+        brief={briefAttrs("page-engagements")}
+      />
       <Suspense fallback={<Skeleton />}>
         <Positions searchParams={searchParams} />
       </Suspense>
@@ -30,6 +39,7 @@ async function Positions({ searchParams }: { searchParams: PageProps<"/positions
       <Card
         title={`${positions.length} open position${positions.length === 1 ? "" : "s"}`}
         subtitle={asOf ? `Snapshot ${dateTime(asOf)}` : undefined}
+        brief={briefAttrs("positions", { count: positions.length, value: usd(total), upl: signedUsd(upl) })}
       >
         {positions.length ? (
           <Table>
@@ -46,7 +56,7 @@ async function Positions({ searchParams }: { searchParams: PageProps<"/positions
             </thead>
             <tbody>
               {positions.map((p) => (
-                <tr key={p.symbol}>
+                <tr key={p.symbol} {...positionBrief(p)}>
                   <td className="num font-medium text-ink">{p.symbol}</td>
                   <td className="hud text-[12px] whitespace-nowrap text-ink-2">{unitFor(p.strategy)?.code ?? "Manual"}</td>
                   <td className="num text-right">{qty(p.qty)}</td>

@@ -1,14 +1,23 @@
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AdminPanel } from "@/components/admin-panel";
 import { Card, Empty, PageHeader, Skeleton, StatusBadge, Table } from "@/components/ui";
 import { dateTime } from "@/lib/format";
+import { briefAttrs } from "@/lib/briefings";
 import { getRuns } from "@/lib/queries";
+
+export const metadata: Metadata = { title: "Sorties" };
 
 export default function RunsPage() {
   return (
     <>
-      <PageHeader code="SYS-05 // Sorties" title="Sorties" subtitle="Every scheduled launch · 15-minute cycle, around the clock" />
+      <PageHeader
+        code="SYS-05 // Sorties"
+        title="Sorties"
+        subtitle="Every scheduled launch · 15-minute cycle, around the clock"
+        brief={briefAttrs("page-sorties")}
+      />
       <div className="grid grid-cols-1 gap-4">
         <Suspense fallback={<Skeleton />}>
           <Runs />
@@ -23,7 +32,12 @@ async function Runs() {
   await connection(); // DB-backed: render at request time, never at build
   const runs = await getRuns();
   return (
-    <Card title="Sortie record" subtitle="Latest 150" code="OPS-01">
+    <Card
+      title="Sortie record"
+      subtitle="Latest 150"
+      code="OPS-01"
+      brief={briefAttrs("sortie-record", { count: runs.length, latest: runs[0] ? dateTime(runs[0].startedAt) : null })}
+    >
       {runs.length ? (
         <Table>
           <thead>
@@ -40,7 +54,19 @@ async function Runs() {
           </thead>
           <tbody>
             {runs.map((r) => (
-              <tr key={r.id}>
+              <tr
+                key={r.id}
+                {...briefAttrs("sortie", {
+                  id: r.id,
+                  status: r.status,
+                  started: dateTime(r.startedAt),
+                  trigger: r.trigger,
+                  signals: r.signals,
+                  orders: r.ordersPlaced,
+                  duration: r.durationMs === null ? null : `${(r.durationMs / 1000).toFixed(1)}s`,
+                  detail: r.error ?? r.message,
+                })}
+              >
                 <td className="text-muted">{r.id}</td>
                 <td className="num whitespace-nowrap text-ink-2">{dateTime(r.startedAt)}</td>
                 <td className="whitespace-nowrap"><StatusBadge status={r.status} /></td>

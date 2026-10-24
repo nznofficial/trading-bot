@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
-import { type ReactNode, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { fly, LockOn } from "@/components/copilot-flight";
 import { briefing, type BriefCtx, type Briefing } from "@/lib/briefings";
+import { pickCorner, type Corner } from "@/lib/dock-placement";
 import { COPILOT_STATES, copilotLine, copilotReport, type CopilotInput, type CopilotState } from "@/lib/copilot";
 import { play } from "@/lib/sfx";
 
@@ -68,7 +70,7 @@ const useReducedMotion = () =>
  * Types its text out; remount (via key) to restart. Instant for reduced-motion users and on the server.
  * Screen readers get the whole line at once instead of every keystroke.
  */
-function Typed({ text, instant }: { text: string; instant: boolean }) {
+function Typed({ text, instant, reserve = false }: { text: string; instant: boolean; reserve?: boolean }) {
   const [n, setN] = useState(instant ? text.length : 0);
   useEffect(() => {
     if (instant) return;
@@ -77,7 +79,11 @@ function Typed({ text, instant }: { text: string; instant: boolean }) {
   }, [text, instant]);
   return (
     <>
-      <span aria-hidden>{text.slice(0, instant ? text.length : n)}</span>
+      <span aria-hidden>
+        {text.slice(0, instant ? text.length : n)}
+        {/* `reserve` holds the final size from the start, so the dock doesn't grow while typing. */}
+        {reserve && !instant && <span className="opacity-0">{text.slice(n)}</span>}
+      </span>
       <span className="sr-only">{text}</span>
     </>
   );
@@ -148,7 +154,37 @@ function useBriefings(page: string) {
     setBrief(null);
   };
   // A briefing belongs to the page it was opened on; navigating away drops it.
-  return { brief: brief && brief.page === page ? brief : null, close };
+  return { brief: brief && brief.page === page ? brief : null, close, targetRef };
+}
+
+const CORNER_CLASS: Record<Corner, string> = {
+  br: "right-4 bottom-4",
+  bl: "left-4 bottom-4",
+  tr: "right-4 top-4",
+  tl: "left-4 top-4",
+};
+
+/** Exhaust plumes behind the dock; only visible mid-flight (`data-boost`), aimed by --thrust-angle. */
+function Thrusters() {
+  return (
+    <span aria-hidden className="thrusters">
+      <span className="plume" />
+      <span className="plume plume-2" />
+    </span>
+  );
+}
+
+/** JC-316's launch portrait (optics blazing, thrusters lit), swapped in while boosting. */
+function LaunchBust() {
+  return (
+    <Image
+      src="/art/jc316-bust-launch.webp"
+      alt=""
+      width={256}
+      height={256}
+      className="bust-launch pointer-events-none absolute inset-0 size-full object-contain"
+    />
+  );
 }
 
 function BriefSection({ label, tone, children }: { label: string; tone: string; children: ReactNode }) {
@@ -168,7 +204,7 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
   const page = usePathname();
   const params = useSearchParams();
   const firstVisit = useFirstVisit();
-  const { brief, close } = useBriefings(page);
+  const { brief, close, targetRef } = useBriefings(page);
   const [greetingDone, setGreetingDone] = useState(false);
   useEffect(() => {
     if (!firstVisit) return;
@@ -191,59 +227,122 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
   const open = pref ? pref === "open" : !smallDefault;
   const src = `/art/jc316-bust-${report.state}.webp`;
 
+  // Evasive maneuvers: while briefing, the dock moves to whichever corner hides the least of the
+  // target, flying there (see fly()). It returns home to bottom-right when the briefing closes.
+  const [corner, setCorner] = useState<Corner>("br");
+  const cornerRef = useRef<Corner>("br");
+  const dockRef = useRef<HTMLElement | null>(null);
+  const setDock = useCallback((el: HTMLElement | null) => {
+    dockRef.current = el;
+  }, []);
+  const departure = useRef<DOMRect | null>(null);
+  const moveTo = useCallback((c: Corner) => {
+    if (c === cornerRef.current) return;
+    departure.current = dockRef.current?.getBoundingClientRect() ?? null;
+    cornerRef.current = c;
+    setCorner(c);
+  }, []);
+  const place = useCallback(() => {
+    const t = targetRef.current;
+    const d = dockRef.current;
+    if (!t?.isConnected || !d) return;
+    const view = { w: window.innerWidth, h: window.innerHeight };
+    moveTo(pickCorner(t.getBoundingClientRect(), { w: d.offsetWidth, h: d.offsetHeight }, view, cornerRef.current));
+  }, [moveTo, targetRef]);
+
+  const seq = brief?.seq ?? 0;
+  const briefing = !!brief;
+  useEffect(() => {
+    // Next frame: the briefing has rendered at full size, so the dock can be measured.
+    const id = requestAnimationFrame(() => (briefing ? place() : moveTo("br")));
+    return () => cancelAnimationFrame(id);
+  }, [seq, briefing, place, moveTo]);
+  useEffect(() => {
+    if (!briefing) return;
+    let t: ReturnType<typeof setTimeout>;
+    const settle = () => {
+      clearTimeout(t);
+      t = setTimeout(place, 220); // after scrolling stops, not on every frame
+    };
+    window.addEventListener("scroll", settle, { passive: true });
+    window.addEventListener("resize", settle);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("scroll", settle);
+      window.removeEventListener("resize", settle);
+    };
+  }, [briefing, place]);
+  useLayoutEffect(() => {
+    const from = departure.current;
+    departure.current = null;
+    if (from && dockRef.current) fly(dockRef.current, from, reduced);
+  }, [corner, reduced]);
+
+  const at = CORNER_CLASS[corner];
+
   if (brief) {
     return (
-      <aside
-        data-copilot
-        aria-live="polite"
-        aria-label={`JC-316 briefing: ${brief.title}`}
-        className="fixed right-4 bottom-4 z-40 w-[min(440px,calc(100vw-2rem))]"
-      >
-        <div className="frame frame-amber">
-          <div className="frame-body relative flex gap-3 p-3 pr-4">
-            <div className="relative size-20 shrink-0 self-start drop-shadow-[0_0_16px_rgba(34,211,238,0.35)] sm:size-24">
-              <Image src="/art/jc316-bust-thinking.webp" alt="JC-316, analyzing" width={192} height={192} loading="eager" className="size-full object-contain" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 pr-6">
-                <span className="hud text-[12px] text-amber">JC-316 · Briefing</span>
-                <span className="hud border border-cyan/50 px-1.5 text-[10px] text-cyan">Scanning</span>
+      <>
+        <LockOn target={targetRef} dock={dockRef} lockId={brief.seq} />
+  <aside
+          ref={setDock}
+          data-copilot
+          aria-live="polite"
+          aria-label={`JC-316 briefing: ${brief.title}`}
+          className={`fixed ${at} z-40 w-[min(440px,calc(100vw-2rem))]`}
+        >
+          <Thrusters />
+          <div className="frame frame-amber">
+            <div className="frame-body relative flex gap-3 p-3 pr-4">
+              <div className="relative size-20 shrink-0 self-start drop-shadow-[0_0_16px_rgba(34,211,238,0.35)] sm:size-24">
+                <Image src="/art/jc316-bust-thinking.webp" alt="JC-316, analyzing" width={192} height={192} loading="eager" className="bust-main size-full object-contain" />
+                <LaunchBust />
               </div>
-              <h2 className="mt-1 font-title text-[19px] leading-tight font-extrabold text-ink">{brief.title}</h2>
-              <div className="mt-2 grid max-h-[min(46vh,360px)] gap-2.5 overflow-y-auto pr-1">
-                <BriefSection label="What it is" tone="text-muted">
-                  {brief.what}
-                </BriefSection>
-                <BriefSection label="Reading now" tone="text-sync">
-                  <Typed key={brief.seq} text={brief.now} instant={reduced} />
-                </BriefSection>
-                <BriefSection label="Pilot's note" tone="text-amber">
-                  {brief.note}
-                </BriefSection>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 pr-6">
+                  <span className="hud text-[12px] text-amber">JC-316 · Briefing</span>
+                  <span className="hud border border-cyan/50 px-1.5 text-[10px] text-cyan">
+                    <span className="boost-off">Scanning</span>
+                    <span className="boost-on">Evasive</span>
+                  </span>
+                </div>
+                <h2 className="mt-1 font-title text-[19px] leading-tight font-extrabold text-ink">{brief.title}</h2>
+                <div className="mt-2 grid max-h-[min(46vh,360px)] gap-2.5 overflow-y-auto pr-1">
+                  <BriefSection label="What it is" tone="text-muted">
+                    {brief.what}
+                  </BriefSection>
+                  <BriefSection label="Reading now" tone="text-sync">
+                    <Typed key={brief.seq} text={brief.now} instant={reduced} reserve />
+                  </BriefSection>
+                  <BriefSection label="Pilot's note" tone="text-amber">
+                    {brief.note}
+                  </BriefSection>
+                </div>
               </div>
+              <button
+                type="button"
+                onClick={close}
+                aria-label="Close briefing"
+                className="hud absolute top-1.5 right-2 px-1 text-[15px] text-muted hover:text-ink"
+              >
+                ×
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={close}
-              aria-label="Close briefing"
-              className="hud absolute top-1.5 right-2 px-1 text-[15px] text-muted hover:text-ink"
-            >
-              ×
-            </button>
           </div>
-        </div>
-      </aside>
+        </aside>
+      </>
     );
   }
 
   if (!open) {
     return (
       <button
+        ref={setDock}
         type="button"
         data-copilot
         onClick={() => writePref("open")}
         aria-label={`Open JC-316 copilot (${STATE_LABEL[report.state]})`}
-        className={`frame fixed right-4 bottom-4 z-40 size-16 ${report.state === "alert" || report.state === "damaged" ? "frame-amber" : "frame-hot"}`}
+        className={`frame fixed ${at} z-40 size-16 ${report.state === "alert" || report.state === "damaged" ? "frame-amber" : "frame-hot"}`}
       >
         <span className="frame-body block overflow-hidden">
           <Image src={src} alt="" width={128} height={128} className="size-full object-cover" />
@@ -254,16 +353,19 @@ export function CopilotDock({ data }: { data: Omit<CopilotInput, "page"> }) {
 
   return (
     <aside
+      ref={setDock}
       data-copilot
       aria-live="polite"
       aria-label="JC-316 copilot"
-      className="fixed right-4 bottom-4 z-40 w-[min(380px,calc(100vw-2rem))]"
+      className={`fixed ${at} z-40 w-[min(380px,calc(100vw-2rem))]`}
     >
+      <Thrusters />
       <div className={`frame ${report.state === "alert" || report.state === "damaged" ? "frame-amber" : "frame-hot"}`}>
         <div className="frame-body relative flex items-end gap-3 p-3 pr-4">
           {/* Stays inside the frame: the chamfer's clip-path would cut off anything overflowing it. */}
           <div className="relative size-28 shrink-0 drop-shadow-[0_0_16px_rgba(139,92,246,0.45)]">
-            <Image src={src} alt={`JC-316, ${STATE_LABEL[report.state]}`} width={256} height={256} priority className="size-full object-contain" />
+            <Image src={src} alt={`JC-316, ${STATE_LABEL[report.state]}`} width={256} height={256} priority className="bust-main size-full object-contain" />
+            <LaunchBust />
           </div>
           <div className="min-w-0 flex-1 pb-1">
             <div className="flex items-center justify-between gap-2">

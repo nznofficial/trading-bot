@@ -293,3 +293,99 @@ tr[data-briefed] > td {
 tr[data-briefed] > td:first-child {
   box-shadow: inset 3px 0 0 var(--amber);
 }
+
+/* JC-316 evasive maneuvers (components/copilot-flight.tsx). fly() sets data-boost on the dock for the
+   length of the flight, plus --thrust-angle (exhaust direction) and --thrust-reach (center → edge). */
+.thrusters {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: -1;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  transform: rotate(var(--thrust-angle, 90deg));
+  transition: opacity 0.12s;
+  pointer-events: none;
+}
+.plume {
+  position: absolute;
+  left: calc(var(--thrust-reach, 60px) - 16px);
+  top: -16px;
+  width: 200px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #fff 0%, var(--sync) 14%, var(--amber) 42%, rgb(255 59 78 / 0.5) 70%, transparent);
+  filter: blur(3px);
+  transform-origin: left center;
+}
+.plume-2 {
+  top: -5px;
+  width: 120px;
+  height: 10px;
+  background: linear-gradient(90deg, #fff, #e8ffd0 40%, transparent);
+  filter: blur(1px);
+}
+[data-boost] .thrusters {
+  opacity: 1;
+}
+.bust-launch {
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+[data-boost] .bust-launch {
+  opacity: 1;
+}
+[data-boost] .bust-main {
+  opacity: 0;
+}
+.boost-on,
+[data-boost] .boost-off {
+  display: none;
+}
+[data-boost] .boost-on {
+  display: inline;
+}
+/* Mass afterimages trailing the dock: tinted toward unit violet, blended additively. */
+.afterimage {
+  z-index: 39 !important;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  filter: saturate(1.4) hue-rotate(-24deg) blur(1.5px) drop-shadow(0 0 12px rgb(139 92 246 / 0.7));
+}
+.afterimage .thrusters {
+  display: none;
+}
+.landing-ring {
+  position: fixed;
+  z-index: 38;
+  width: 40px;
+  height: 8px;
+  border: 2px solid var(--amber);
+  border-radius: 50%;
+  pointer-events: none;
+  translate: -50% -50%;
+  animation: landing-ring 0.5s ease-out forwards;
+}
+@keyframes landing-ring {
+  to { width: 360px; height: 46px; opacity: 0; border-width: 1px; }
+}
+@keyframes plume-flicker {
+  from { transform: scaleX(1) scaleY(1); }
+  to { transform: scaleX(0.78) scaleY(0.85); }
+}
+@keyframes lock-in {
+  0% { opacity: 0; transform: scale(1.5) rotate(8deg); }
+  60% { opacity: 1; transform: scale(0.96); }
+  75% { opacity: 0.4; }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes lock-link {
+  to { stroke-dashoffset: -22; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .plume { animation: plume-flicker 0.06s steps(2) infinite alternate; }
+  .plume-2 { animation-duration: 0.045s; }
+  .lock-brackets { animation: lock-in 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .lock-link { animation: lock-link 0.6s linear infinite; }
+}

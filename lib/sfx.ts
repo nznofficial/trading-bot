@@ -3,7 +3,7 @@
  * toggle stores the choice per browser. Browsers only allow audio after a user gesture, so cues
  * that fire before any interaction are silently skipped.
  */
-export type Cue = "click" | "engage" | "win" | "complete";
+export type Cue = "click" | "engage" | "win" | "complete" | "boost";
 
 const KEY = "pt-sound";
 let ctx: AudioContext | null = null;
@@ -57,6 +57,12 @@ export function play(cue: Cue, force = false) {
       case "win":
         [523, 659, 784, 1047].forEach((f, i) => tone(t + i * 0.09, f, 0.22, "sawtooth", 0.05));
         tone(t + 0.36, 1047, 0.5, "triangle", 0.06);
+        break;
+      case "boost":
+        // Thrusters spooling up, the burn, then touchdown as the dock lands (~0.7s later).
+        tone(t, 120, 0.42, "sawtooth", 0.035, 760);
+        tone(t + 0.1, 1400, 0.05, "square", 0.015);
+        tone(t + 0.68, 140, 0.14, "triangle", 0.07, 55);
         break;
       case "complete":
         tone(t, 880, 0.12, "sine", 0.08);

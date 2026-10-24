@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- JC-316's head as a tab icon: chamfered cockpit tile, angular helmet, offset blade antenna, sync-green twin optics. -->
+  <path d="M6 1h25v24l-6 6H1V7z" fill="#0e0d14" stroke="#ffa41b" stroke-width="1.6"/>
+  <path d="M12.8 2.8 10.8 9.6" stroke="#d9d6cc" stroke-width="1.8"/>
+  <path d="M5.6 13.2h2.4v6H5.6zM24 13.2h2.4v6H24z" fill="#8a8f98"/>
+  <path d="M8 12.4 12 8.2h8l4 4.2v6.8l-5.2 5.6h-5.6L8 19.2z" fill="#d9d6cc"/>
+  <path d="M9.2 14h13.6v4.2H9.2z" fill="#14121c"/>
+  <path d="M10.2 14.9 15 15.9v1.4l-4.4-.6z" fill="#a3ff3c"/>
+  <path d="M21.8 14.9 17 15.9v1.4l4.4-.6z" fill="#a3ff3c"/>
+  <path d="M14 20.6h4l-.6 2h-2.8z" fill="#3a3f47"/>
+</svg>

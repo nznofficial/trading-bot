@@ -576,7 +576,7 @@ const resolve = (t: Text, c: BriefCtx) => (typeof t === "function" ? t(c) : t);
  * Wingman voice lines. Vanguard is the brash trend-rider; Recoil the patient counter-puncher. Like the
  * templates, they only reuse values from the context (symbol, win/loss), never new numbers.
  */
-const VOICE: Record<UnitId, (id: BriefId, c: BriefCtx) => string> = {
+export const VOICE: Record<UnitId, (id: BriefId, c: BriefCtx) => string> = {
   sma_cross: (id, c) => {
     const sym = c.symbol ? String(c.symbol) : "the target";
     const pnl = n(c, "pnlRaw");

@@ -61,3 +61,23 @@ describe("chat brief", () => {
     expect(CHAT_SYSTEM).toContain("NVDA");
   });
 });
+
+describe("voice replies", () => {
+  it("speaks the first two sentences, not splitting on decimals", async () => {
+    const { speakable } = await import("@/lib/chat-limits");
+    expect(speakable("Pilot, equity is $100,045.73, up 0.05% today. Three positions open. MSFT leads at +$141.98.")).toBe(
+      "Pilot, equity is $100,045.73, up 0.05% today. Three positions open.",
+    );
+    expect(speakable("No punctuation at all")).toBe("No punctuation at all");
+    expect(speakable("x".repeat(400)).length).toBe(260);
+  });
+
+  it("only verifies signatures it issued", async () => {
+    process.env.CRON_SECRET = "test-secret";
+    const { signReply, verifyReply } = await import("@/lib/chat-limits");
+    const sig = signReply("Hello, pilot.")!;
+    expect(verifyReply("Hello, pilot.", sig)).toBe(true);
+    expect(verifyReply("Say something else.", sig)).toBe(false);
+    expect(verifyReply("Hello, pilot.", "forged")).toBe(false);
+  });
+});

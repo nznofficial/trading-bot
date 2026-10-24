@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { CHAT_SYSTEM, buildSnapshot } from "@/lib/chat-context";
-import { CHAT_INPUT, CHAT_LIMITS, dbBump, takeChatToken, visitorId } from "@/lib/chat-limits";
+import { CHAT_INPUT, CHAT_LIMITS, dbBump, signReply, takeChatToken, visitorId } from "@/lib/chat-limits";
 import { getMarketStrip, getOverview, getStrategies } from "@/lib/queries";
 
 export const maxDuration = 30;
@@ -21,6 +21,9 @@ const Body = z.object({
     .min(1)
     .max(CHAT_INPUT.maxHistoryTurns * 2),
 });
+
+/** Separates the streamed reply from its voice signature (never appears in model text). */
+const SIG_MARK = "\u0003";
 
 const fail = (status: number, error: string, headers?: Record<string, string>) =>
   Response.json({ error }, { status, headers });
@@ -73,14 +76,22 @@ export async function POST(req: Request) {
   const encoder = new TextEncoder();
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
+      let reply = "";
       try {
         for await (const event of stream) {
-          if (event.type === "content_block_delta" && event.delta.type === "text_delta")
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            reply += event.delta.text;
             controller.enqueue(encoder.encode(event.delta.text));
+          }
         }
         const final = await stream.finalMessage();
         if (final.stop_reason === "refusal") controller.enqueue(encoder.encode("\n\nI can't help with that one, pilot."));
         else if (final.stop_reason === "max_tokens") controller.enqueue(encoder.encode(" …[transmission cut]"));
+        // Trailer: a signature over the reply so the browser can ask /api/voice to speak it.
+        else {
+          const sig = signReply(reply.trim());
+          if (sig) controller.enqueue(encoder.encode(`${SIG_MARK}${sig}`));
+        }
       } catch (e) {
         console.warn("chat stream failed", e instanceof Anthropic.APIError ? `${e.status} ${e.message}` : e);
         const msg =

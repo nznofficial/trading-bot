@@ -1,7 +1,8 @@
 "use client";
 
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { hush, play, speak } from "@/lib/sfx";
+import { play } from "@/lib/sfx";
+import { sayReply, stopVoice } from "@/lib/voice-player";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string; error?: boolean };
 
@@ -57,23 +58,27 @@ export function useChat() {
       }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let text = "";
+      let raw = "";
       let lastBlip = 0;
+      // The stream ends with "\u0003<signature>" (see /api/chat), which lets us ask for the voice.
+      const visible = () => raw.split("\u0003")[0];
       for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
-        text += decoder.decode(value, { stream: true });
-        update(text);
+        raw += decoder.decode(value, { stream: true });
+        update(visible());
         // Data chatter while the reply streams in, at most every ~180ms.
         if (performance.now() - lastBlip > 180) {
           lastBlip = performance.now();
           play("chatter");
         }
       }
-      update(text.trim() || "No reply came through, pilot.", !text.trim());
-      if (text.trim()) {
+      const text = visible().trim();
+      const sig = raw.split("\u0003")[1];
+      update(text || "No reply came through, pilot.", !text);
+      if (text) {
         play("squelch");
-        speak(text.trim());
+        if (sig) void sayReply(text, sig);
       }
     } catch (e) {
       if ((e as Error).name !== "AbortError") update("Signal lost. Try again, pilot.", true);
@@ -85,7 +90,7 @@ export function useChat() {
 
   const close = () => {
     abortRef.current?.abort();
-    hush();
+    stopVoice();
     setOpen(false);
   };
   /** Open comms with a question pre-filled (e.g. from a briefing). */

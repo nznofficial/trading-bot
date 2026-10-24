@@ -50,3 +50,6 @@ skills-lock.json
 # generated art options (only picked assets in public/art are committed)
 art/raw/
 art/contact.html
+art/voices/raw/
+art/voices/preview.html
+art/voices/previews.json

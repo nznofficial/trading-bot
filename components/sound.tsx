@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { play, setSoundEnabled, setVoiceEnabled, soundEnabled, speak, voiceEnabled, type Cue } from "@/lib/sfx";
+import { play, setSoundEnabled, setVoiceEnabled, soundEnabled, voiceEnabled, type Cue } from "@/lib/sfx";
+import { JC_LINES } from "@/lib/voice-lines";
+import { sayLine, stopVoice } from "@/lib/voice-player";
 
 const subscribe = (cb: () => void) => {
   window.addEventListener("pt-sound", cb);
@@ -33,8 +35,9 @@ export function SoundToggle() {
 }
 
 /**
- * Opt-in spoken lines: JC-316 (and the wingmen) read briefings and comms replies aloud with the
- * browser's speech engine. Off by default and independent of SFX.
+ * Opt-in spoken lines in the ElevenLabs voices (lib/voice-player.ts): wingman catchphrases and
+ * JC-316's acknowledgements on briefings, and the opening of comms replies. Off by default and
+ * independent of SFX.
  */
 export function VoiceToggle() {
   const on = useSyncExternalStore(subscribe, voiceEnabled, () => false);
@@ -43,7 +46,8 @@ export function VoiceToggle() {
       type="button"
       onClick={() => {
         setVoiceEnabled(!on);
-        if (!on) speak("JC-316 voice channel online, pilot.", "jc316", true);
+        if (!on) sayLine("jc316", JC_LINES.online, true);
+        else stopVoice();
       }}
       aria-pressed={on}
       title="Read briefings and comms replies aloud"

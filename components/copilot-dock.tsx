@@ -9,7 +9,8 @@ import { briefing, type BriefCtx, type Briefing, type Speaker } from "@/lib/brie
 import { ART } from "@/components/art";
 import { CORNERS, pickCorner, type Corner } from "@/lib/dock-placement";
 import { COPILOT_STATES, copilotLine, copilotReport, type CopilotInput, type CopilotState } from "@/lib/copilot";
-import { hush, play, speak } from "@/lib/sfx";
+import { play } from "@/lib/sfx";
+import { sayBriefing, stopVoice } from "@/lib/voice-player";
 import { UNITS } from "@/lib/units";
 
 const STATE_LABEL: Record<CopilotState, string> = {
@@ -141,10 +142,10 @@ function useBriefings(page: string) {
       const b = briefing(el.dataset.brief ?? "", ctx);
       if (!b) return;
       mark(el);
-      // Lock-on chirp, then the speaker keys their comms and (if Voice is on) reads the reading.
+      // Lock-on chirp, then the speaker keys their comms and (if Voice is on) says their line.
       play("lock");
       setTimeout(() => play(`voice-${b.speaker}`), 320);
-      setTimeout(() => speak(b.quote ? `${b.quote} ${b.now}` : b.now, b.speaker), 700);
+      setTimeout(() => sayBriefing(b.speaker, b.quote, Date.now()), 650);
       setBrief((prev) => ({ ...b, page: window.location.pathname, seq: (prev?.seq ?? 0) + 1 }));
     };
     const onClick = (e: MouseEvent) => {
@@ -172,7 +173,7 @@ function useBriefings(page: string) {
   }, []);
 
   const close = () => {
-    hush();
+    stopVoice();
     targetRef.current?.removeAttribute("data-briefed");
     targetRef.current = null;
     setBrief(null);

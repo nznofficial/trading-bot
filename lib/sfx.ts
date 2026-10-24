@@ -4,6 +4,7 @@
  * (inharmonic FM partials through a small "hangar" reverb), thrusters (swept noise + sub rumble) and
  * comms (band-limited squelch and data blips). Off by default; the header toggle stores the choice
  * per browser. Browsers only allow audio after a user gesture, so cues before one are skipped.
+ * Spoken lines are separate: see lib/voice-player.ts.
  */
 export type Cue =
   | "click"
@@ -341,11 +342,12 @@ export function play(cue: Cue, force = false) {
 }
 
 // ── Voice (opt-in) ──────────────────────────────────────────────────────────────────────────
+// The voices themselves (ElevenLabs clips) play through lib/voice-player.ts; this is just the toggle.
 const VOICE_KEY = "pt-voice";
 
 export function voiceEnabled() {
   try {
-    return localStorage.getItem(VOICE_KEY) === "on" && "speechSynthesis" in window;
+    return localStorage.getItem(VOICE_KEY) === "on";
   } catch {
     return false;
   }
@@ -355,42 +357,5 @@ export function setVoiceEnabled(on: boolean) {
   try {
     localStorage.setItem(VOICE_KEY, on ? "on" : "off");
   } catch {}
-  if (!on) window.speechSynthesis?.cancel();
   window.dispatchEvent(new Event("pt-sound"));
 }
-
-export type Voice = "jc316" | "sma_cross" | "rsi_revert";
-
-/** Browser speech, pitched per speaker: JC-316 low and measured, Vanguard brisk, Recoil deepest. */
-const VOICES: Record<Voice, { pitch: number; rate: number }> = {
-  jc316: { pitch: 0.55, rate: 0.98 },
-  sma_cross: { pitch: 0.9, rate: 1.12 },
-  rsi_revert: { pitch: 0.2, rate: 0.9 },
-};
-
-function pickVoice() {
-  const vs = window.speechSynthesis.getVoices().filter((v) => v.lang.startsWith("en"));
-  // Prefer plain, neutral system voices over novelty ones.
-  return vs.find((v) => /Daniel|Alex|Google UK English Male|Microsoft Guy|Fred/i.test(v.name)) ?? vs[0] ?? null;
-}
-
-/** Speak a line (replacing anything still being spoken). Off unless the VOICE toggle is on. */
-export function speak(text: string, who: Voice = "jc316", force = false) {
-  if (!force && !voiceEnabled()) return;
-  try {
-    const synth = window.speechSynthesis;
-    synth.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/[−]/g, "minus ").replace(/\s+/g, " ").slice(0, 600));
-    const v = pickVoice();
-    if (v) u.voice = v;
-    u.pitch = VOICES[who].pitch;
-    u.rate = VOICES[who].rate;
-    synth.speak(u);
-  } catch {}
-}
-
-export const hush = () => {
-  try {
-    window.speechSynthesis?.cancel();
-  } catch {}
-};

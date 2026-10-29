@@ -22,7 +22,7 @@ export default function HangarPage({ searchParams }: PageProps<"/strategies">) {
         title="Hangar"
         subtitle="Strategy units · loadout, combat record, targeting"
         scene={ART.hangar}
-        scenePosition="center 18%"
+        scenePosition="center 3%"
         brief={briefAttrs("page-hangar")}
       />
       <Suspense fallback={<Skeleton />}>

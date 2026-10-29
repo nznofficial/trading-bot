@@ -126,10 +126,13 @@ bar, massive shoulder armor framing the head. Isolated character, no background 
     id: "scene-hangar",
     phase: "C",
     size: "1920x1088",
-    characters: ["jc316", "vanguard", "recoil"],
-    scene: `Wide painted background of a mech hangar bay: JC-316 standing in the center maintenance gantry, Vanguard in the \
-left gantry and Recoil in the right, overhead crane rails, welding sparks, amber hazard stripes on the floor, warm sodium \
-lights and cool haze. Leave the lower third darker and calmer so UI can sit on top.`,
+    characters: ["bastion", "vanguard", "recoil"],
+    scene: `Dramatic low-angle wide shot inside a mech hangar bay, camera near the floor looking up so the three mechs \
+loom over the viewer, framed from mid-thigh up: Bastion in the center bay under a large stenciled bay number "00", towering \
+and slightly closer to camera with its shoulder shields folded; Vanguard in the left bay under bay number "01"; Recoil in the \
+right bay under bay number "02". No other bay numbers and no other mechs. Gantry walkways crossing in front of their chests, \
+overhead crane rails, welding sparks, amber hazard stripes, warm sodium lights cutting through cool haze. All three heads and \
+the bay numbers sit in the upper half of the frame; leave the lower third darker and calmer so UI can sit on top.`,
     usedIn: "Hangar backdrop",
   },
   {

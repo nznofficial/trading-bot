@@ -539,13 +539,13 @@ export const BRIEFS = {
     title: "Health · rolling Sharpe",
     what: "Sharpe of the unit's daily realized P&L over the last 90 days, with days that closed nothing counted as zero, against the same measure over the backtest.",
     now: (c) => `${scope(c)}${v(c, "value")} over ${v(c, "days")} days (${v(c, "sample")} trades closed), backtest ${v(c, "baseline")}. ${v(c, "status")}.`,
-    note: "Red at zero or below, amber under half the backtest's. It needs 30 days before it counts. Trend units have long flat stretches, so judge it over months, not weeks.",
+    note: "Red at zero or below, amber under half the backtest's. It needs 30 days before it counts. Units can sit idle for stretches, so judge it over months, not weeks.",
   },
   "health-expectancy": {
     title: "Health · rolling expectancy",
     what: "Average return per trade over the unit's last 25 closed trades, against its average across the backtest.",
     now: (c) => `${scope(c)}${v(c, "value")} per trade over ${v(c, "sample")} trades, backtest ${v(c, "baseline")}. ${v(c, "status")}.`,
-    note: "Red when the recent average turns negative, amber under half the backtest's. It needs 10 trades. This matters more than win rate: a trend unit can lose most trades and still pay.",
+    note: "Red when the recent average turns negative, amber under half the backtest's. It needs 10 trades. This matters more than win rate: a unit can lose most trades and still pay, or win most and still lose.",
   },
   "sim-units": {
     title: "Unit performance",
@@ -640,6 +640,10 @@ export const VOICE: Record<UnitId, (id: BriefId, c: BriefCtx) => string> = {
           : `${sym} isn't scared enough yet. Patience.`;
     if (id === "order") return c.side === "buy" ? `Catching ${sym} on the way down.` : `Selling ${sym} into the recovery.`;
     if (id === "unit") return "Unit-02 Recoil. When the market panics, I buy. When it calms down, I sell.";
+    if (id === "unit-health" || id.startsWith("health-"))
+      return c.status === "Breach"
+        ? "These dips aren't bouncing like they used to. Test me in the Simulator before you change a thing."
+        : "Counter-strike systems check. A few dips that keep falling are part of the job.";
     if (id === "sim-unit") return "Calm markets are my hunting ground. Show me the dips.";
     return "Recoil reporting. Here's the situation.";
   },

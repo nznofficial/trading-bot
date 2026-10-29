@@ -104,6 +104,11 @@ describe("matchesLive", () => {
     expect(matchesLive({ ...params, rsi: { ...params.rsi, entry: 20 } }, DEFAULT_LIVE_PARAMS, "sma_cross", "all")).toBe(true);
   });
 
+  it("matches Recoil on its RSI settings, not Vanguard's", () => {
+    expect(matchesLive({ ...params, sma: { ...params.sma, slow: 60 } }, DEFAULT_LIVE_PARAMS, "rsi_revert", "all")).toBe(true);
+    expect(matchesLive({ ...params, rsi: { ...params.rsi, entry: 20 } }, DEFAULT_LIVE_PARAMS, "rsi_revert", "all")).toBe(false);
+  });
+
   it("requires the run to cover the theater being viewed", () => {
     expect(matchesLive({ ...params, theater: "crypto" }, DEFAULT_LIVE_PARAMS, "sma_cross", "us_equity")).toBe(false);
     expect(matchesLive({ ...params, theater: "all" }, DEFAULT_LIVE_PARAMS, "sma_cross", "us_equity")).toBe(true);

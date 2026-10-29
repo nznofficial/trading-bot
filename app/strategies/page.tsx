@@ -41,7 +41,11 @@ const fmtIndicators = (ind: Record<string, number | null>) =>
 async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">["searchParams"] }) {
   await connection(); // DB-backed: render at request time, never at build
   const filter = parseClassFilter((await searchParams).class);
-  const [{ live, strategies, latest, recent }, vanguardHealth] = await Promise.all([getStrategies(filter), getUnitHealth("sma_cross", filter)]);
+  const [{ live, strategies, latest, recent }, vanguardHealth, recoilHealth] = await Promise.all([
+    getStrategies(filter),
+    getUnitHealth("sma_cross", filter),
+    getUnitHealth("rsi_revert", filter),
+  ]);
 
   return (
     <div className="grid grid-cols-1 gap-5">
@@ -159,7 +163,8 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
         })}
       </div>
 
-      <HealthPanel {...vanguardHealth} />
+      <HealthPanel unitId="sma_cross" code="HGR-02" {...vanguardHealth} />
+      <HealthPanel unitId="rsi_revert" code="HGR-03" {...recoilHealth} />
 
       <Card
         title="Tune units"
@@ -281,13 +286,18 @@ const VERDICT: Record<HealthStatus, string> = {
   thin: "Not enough live trades yet to compare against the backtest.",
 };
 
-/** Vanguard's live record against the newest simulation on its live tuning. */
-function HealthPanel({ baseline, health }: Awaited<ReturnType<typeof getUnitHealth>>) {
-  const unit = UNITS.sma_cross;
+/** A unit's live record against the newest simulation on its live tuning. */
+function HealthPanel({
+  unitId,
+  code,
+  baseline,
+  health,
+}: Awaited<ReturnType<typeof getUnitHealth>> & { unitId: UnitId; code: string }) {
+  const unit = UNITS[unitId];
   const title = `${unit.callsign} health`;
   if (!baseline || !health) {
     return (
-      <Card title={title} code="HGR-02" brief={briefAttrs("unit-health", { unit: "sma_cross", status: "—", run: "—" })}>
+      <Card title={title} code={code} brief={briefAttrs("unit-health", { unit: unitId, status: "—", run: "—" })}>
         <Empty art={ART.awaitingLarge} cover position="45% 10%">
           No baseline yet.{" "}
           <Link href="/simulator" className="text-amber underline underline-offset-4">
@@ -336,10 +346,10 @@ function HealthPanel({ baseline, health }: Awaited<ReturnType<typeof getUnitHeal
     <Card
       title={title}
       subtitle={`Live vs sim run #${baseline.id} · ${baseline.months} mo · ${shortDate(baseline.createdAt)}`}
-      code="HGR-02"
+      code={code}
       tone={overall === "alert" ? "hot" : overall === "watch" ? "amber" : undefined}
       action={<StatusBadge status={overall} label={STATUS_LABEL[overall]} />}
-      brief={briefAttrs("unit-health", { unit: "sma_cross", status: STATUS_LABEL[overall], run: `#${baseline.id}` })}
+      brief={briefAttrs("unit-health", { unit: unitId, status: STATUS_LABEL[overall], run: `#${baseline.id}` })}
     >
       <div className="-mx-5 -mt-5 grid grid-cols-1 gap-px border-b border-line bg-line sm:grid-cols-3">
         {checks.map((c) => (
@@ -348,7 +358,7 @@ function HealthPanel({ baseline, health }: Awaited<ReturnType<typeof getUnitHeal
             className="bg-surface px-5 py-4"
             {...briefAttrs(c.id, {
               scope: unit.callsign,
-              unit: "sma_cross",
+              unit: unitId,
               value: c.value,
               baseline: c.baseline,
               status: STATUS_LABEL[c.status],

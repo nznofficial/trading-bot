@@ -12,9 +12,12 @@ import {
   tradeStats,
   type RoundTrip,
 } from "./analytics";
-import { assetClassOf, BENCHMARKS, CRYPTO_FEES, UNIVERSE, type AssetClass } from "./config";
+import { assetClassOf, BENCHMARKS, CRYPTO_FEES, MAX_STORED_SIM_TRADES, UNIVERSE, type AssetClass, type StrategyId } from "./config";
 import { db, schema } from "./db";
+import { matchesLive, unitHealth, type HealthTrade } from "./health";
 import type { Quote } from "./quotes";
+import type { SimTrade } from "./backtest";
+import type { SimParams } from "./simulator";
 import { buildUnits, getLiveParams } from "./live-params";
 import { UNITS as UNITS_BY_ID } from "./units";
 
@@ -429,6 +432,52 @@ export async function getSimulations(selectedId: number | null) {
           },
         }
       : null,
+  };
+}
+
+/**
+ * One unit's live record against the newest simulation run on its live tuning (Hangar health panel).
+ * The baseline only uses that run's trades for this unit and theater.
+ */
+export async function getUnitHealth(unit: StrategyId, filter: ClassFilter) {
+  "use cache";
+  botCache();
+  const d = db();
+  const [{ trades }, [first], live, simRows] = await Promise.all([
+    loadTrades(),
+    d.select().from(schema.equitySnapshots).orderBy(asc(schema.equitySnapshots.ts)).limit(1),
+    getLiveParams(),
+    d
+      .select({ id: schema.simulations.id, createdAt: schema.simulations.createdAt, params: schema.simulations.params })
+      .from(schema.simulations)
+      .orderBy(desc(schema.simulations.id))
+      .limit(50),
+  ]);
+  const match = simRows.find((r) => matchesLive(r.params as SimParams, live, unit, filter));
+  if (!match) return { baseline: null, health: null };
+  const [sim] = await d.select({ result: schema.simulations.result }).from(schema.simulations).where(eq(schema.simulations.id, match.id));
+  const result = sim.result as { equity: { date: string }[]; trades: (Omit<SimTrade, "entryTs" | "exitTs"> & { entryTs: string; exitTs: string })[] };
+  const params = match.params as SimParams;
+
+  const mine = <T extends { strategy: string; assetClass: string }>(t: T) => t.strategy === unit && matches(filter, t.assetClass);
+  const baseTrades: HealthTrade[] = result.trades.filter(mine).map((t) => ({ ...t, entryTs: Date.parse(t.entryTs), exitTs: Date.parse(t.exitTs) }));
+  // Stored runs keep only the most recent trades; if any were dropped, start the window at the first one kept.
+  const from = Math.max(
+    Date.parse(`${result.equity[0]?.date ?? "1970-01-01"}T12:00:00Z`),
+    result.trades.length >= MAX_STORED_SIM_TRADES ? Date.parse(result.trades[0].entryTs) : 0,
+  );
+  const to = Date.parse(`${result.equity.at(-1)?.date ?? "1970-01-01"}T12:00:00Z`);
+
+  const now = Date.now();
+  const health = first
+    ? unitHealth({
+        live: { trades: trades.filter(mine).map(serializeTrade), base: first.equity, since: first.ts.getTime(), now },
+        baseline: { trades: baseTrades, base: params.startEquity, from, to },
+      })
+    : null;
+  return {
+    baseline: { id: match.id, createdAt: match.createdAt.getTime(), months: params.months, theater: params.theater, trades: baseTrades.length },
+    health,
   };
 }
 

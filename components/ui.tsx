@@ -189,6 +189,10 @@ const STATUS: Record<string, { cls: string; label: string }> = {
   running: { cls: "text-amber border-amber/50 bg-amber/10", label: "Active" },
   error: { cls: "text-alert border-alert/60 bg-alert/10", label: "Abort" },
   config: { cls: "text-cyan border-cyan/50 bg-cyan/10", label: "Retuned" },
+  // Unit health readings
+  watch: { cls: "text-amber border-amber/50 bg-amber/10", label: "Watch" },
+  alert: { cls: "text-alert border-alert/60 bg-alert/10", label: "Breach" },
+  thin: { cls: "text-ink-2 border-line-2 bg-surface-2", label: "Too early" },
 };
 
 export function StatusBadge({ status, label }: { status: string; label?: string }) {

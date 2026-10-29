@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ART, unitBust } from "@/components/art";
 import { UNITS, unitFor, type UnitId } from "@/components/emblems";
 import { TuneConsole } from "@/components/tune-console";
-import { ActionBadge, Card, ClassTabs, Delta, Empty, Gauge, Metric, PageHeader, Skeleton, Table, Tag } from "@/components/ui";
-import { dateTime, duration, pct, ratio, signedUsd } from "@/lib/format";
+import { ActionBadge, Card, ClassTabs, Delta, Empty, Gauge, Metric, PageHeader, Skeleton, StatusBadge, Table, Tag } from "@/components/ui";
+import { dateTime, duration, pct, ratio, shortDate, signedPct, signedUsd } from "@/lib/format";
 import { briefAttrs } from "@/lib/briefings";
-import { getStrategies, parseClassFilter } from "@/lib/queries";
+import { HEALTH, type HealthStatus } from "@/lib/health";
+import { getStrategies, getUnitHealth, parseClassFilter } from "@/lib/queries";
 
 export const metadata: Metadata = { title: "Hangar" };
 
@@ -39,7 +41,7 @@ const fmtIndicators = (ind: Record<string, number | null>) =>
 async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">["searchParams"] }) {
   await connection(); // DB-backed: render at request time, never at build
   const filter = parseClassFilter((await searchParams).class);
-  const { live, strategies, latest, recent } = await getStrategies(filter);
+  const [{ live, strategies, latest, recent }, vanguardHealth] = await Promise.all([getStrategies(filter), getUnitHealth("sma_cross", filter)]);
 
   return (
     <div className="grid grid-cols-1 gap-5">
@@ -157,6 +159,8 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
         })}
       </div>
 
+      <HealthPanel {...vanguardHealth} />
+
       <Card
         title="Tune units"
         subtitle={`Live now · stop ${(live.stopLossPct * 100).toFixed(1)}% · equities ${live.stocksEnabled ? "armed" : "safed"} · crypto ${live.cryptoEnabled ? "armed" : "safed"}`}
@@ -266,5 +270,110 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
         )}
       </Card>
     </div>
+  );
+}
+
+const STATUS_LABEL: Record<HealthStatus, string> = { ok: "Nominal", watch: "Watch", alert: "Breach", thin: "Too early" };
+const VERDICT: Record<HealthStatus, string> = {
+  ok: "Behaving like its backtest. Leave the tuning alone.",
+  watch: "Drifting from its backtest. Keep watching; no change yet.",
+  alert: "Outside its backtest. Re-validate in the Simulator (tune on older months, judge on the latest) before changing anything.",
+  thin: "Not enough live trades yet to compare against the backtest.",
+};
+
+/** Vanguard's live record against the newest simulation on its live tuning. */
+function HealthPanel({ baseline, health }: Awaited<ReturnType<typeof getUnitHealth>>) {
+  const unit = UNITS.sma_cross;
+  const title = `${unit.callsign} health`;
+  if (!baseline || !health) {
+    return (
+      <Card title={title} code="HGR-02" brief={briefAttrs("unit-health", { unit: "sma_cross", status: "—", run: "—" })}>
+        <Empty art={ART.awaitingLarge} cover position="45% 10%">
+          No baseline yet.{" "}
+          <Link href="/simulator" className="text-amber underline underline-offset-4">
+            Run a simulation
+          </Link>{" "}
+          on the live tuning and this panel compares against it.
+        </Empty>
+      </Card>
+    );
+  }
+  const { drawdown, sharpe, expectancy, overall } = health;
+  const fmt = (x: number | null, f: (n: number) => string) => (x === null ? "—" : f(x));
+  // Drawdowns at one decimal: round first so a sliver of a loss reads 0.0%, not −0.0%.
+  const ddPct = (x: number) => signedPct(Math.round(x * 1000) / 1000, 1);
+  const checks = [
+    {
+      id: "health-drawdown",
+      label: "Drawdown",
+      status: drawdown.status,
+      value: fmt(drawdown.live, ddPct),
+      baseline: fmt(drawdown.baseline, ddPct),
+      caption: `Worst live ${ddPct(drawdown.liveMax)} · amber at half the backtest's worst, red past it`,
+      ctx: { max: ddPct(drawdown.liveMax) },
+    },
+    {
+      id: "health-sharpe",
+      label: `Sharpe · ${HEALTH.sharpeDays}d`,
+      status: sharpe.status,
+      value: ratio(sharpe.live),
+      baseline: ratio(sharpe.baseline),
+      caption: `${sharpe.days} days, ${sharpe.sample} trades closed · needs ${HEALTH.minSharpeDays} days`,
+      ctx: { days: sharpe.days },
+    },
+    {
+      id: "health-expectancy",
+      label: `Expectancy · last ${HEALTH.expectancyTrades}`,
+      status: expectancy.status,
+      value: fmt(expectancy.live, (x) => signedPct(x, 2)),
+      baseline: fmt(expectancy.baseline, (x) => signedPct(x, 2)),
+      caption: `Avg return per trade over ${expectancy.sample} trades · needs ${HEALTH.minExpectancyTrades}`,
+      ctx: {},
+    },
+  ] as const;
+
+  return (
+    <Card
+      title={title}
+      subtitle={`Live vs sim run #${baseline.id} · ${baseline.months} mo · ${shortDate(baseline.createdAt)}`}
+      code="HGR-02"
+      tone={overall === "alert" ? "hot" : overall === "watch" ? "amber" : undefined}
+      action={<StatusBadge status={overall} label={STATUS_LABEL[overall]} />}
+      brief={briefAttrs("unit-health", { unit: "sma_cross", status: STATUS_LABEL[overall], run: `#${baseline.id}` })}
+    >
+      <div className="-mx-5 -mt-5 grid grid-cols-1 gap-px border-b border-line bg-line sm:grid-cols-3">
+        {checks.map((c) => (
+          <div
+            key={c.id}
+            className="bg-surface px-5 py-4"
+            {...briefAttrs(c.id, {
+              scope: unit.callsign,
+              unit: "sma_cross",
+              value: c.value,
+              baseline: c.baseline,
+              status: STATUS_LABEL[c.status],
+              sample: c.id === "health-expectancy" ? expectancy.sample : sharpe.sample,
+              ...c.ctx,
+            })}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="hud text-[12px] text-ink-2">{c.label}</span>
+              <StatusBadge status={c.status} label={STATUS_LABEL[c.status]} />
+            </div>
+            <div className="mt-2 flex items-baseline gap-3">
+              <span className="num text-[24px] text-ink">{c.value}</span>
+              <span className="num text-[13px] text-muted">backtest {c.baseline}</span>
+            </div>
+            <div className="mt-1 text-[12px] text-muted">{c.caption}</div>
+          </div>
+        ))}
+      </div>
+      <p className="pt-4 text-[14px] text-ink-2">
+        {VERDICT[overall]}{" "}
+        <Link href={`/simulator?run=${baseline.id}`} className="text-amber underline underline-offset-4">
+          Open baseline run
+        </Link>
+      </p>
+    </Card>
   );
 }

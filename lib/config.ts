@@ -99,6 +99,9 @@ export const CRYPTO_RISK = {
  */
 export const CRYPTO_FEES = { cryptoSellFeeRate: 0.0025, dustFraction: 0.01 };
 
+/** Saved simulator runs keep every daily point but only this many of the most recent trades. */
+export const MAX_STORED_SIM_TRADES = 400;
+
 export const ALPACA_PAPER_URL = "https://paper-api.alpaca.markets";
 export const ALPACA_DATA_URL = "https://data.alpaca.markets";
 export const DATA_FEED = "iex";

@@ -7,6 +7,7 @@ import {
   CRYPTO_FEES,
   CRYPTO_RISK,
   CRYPTO_SYMBOLS,
+  MAX_STORED_SIM_TRADES,
   PORTFOLIO_RISK,
   RISK,
   STOCK_SYMBOLS,
@@ -42,9 +43,6 @@ export const SimParams = z.object({
   startEquity: z.number().min(1000).max(10_000_000).default(100_000),
 });
 export type SimParams = z.infer<typeof SimParams>;
-
-/** Keep stored results small: every daily point, but only the most recent trades. */
-const MAX_STORED_TRADES = 400;
 
 export async function runSimulation(params: SimParams): Promise<{ id: number; result: BacktestResult; bars: number }> {
   const started = Date.now();
@@ -91,7 +89,7 @@ export async function runSimulation(params: SimParams): Promise<{ id: number; re
   );
 
   const barCount = Object.values(bars).reduce((a, b) => a + b.length, 0);
-  const stored = { ...result, trades: result.trades.slice(-MAX_STORED_TRADES) };
+  const stored = { ...result, trades: result.trades.slice(-MAX_STORED_SIM_TRADES) };
   const [row] = await db()
     .insert(schema.simulations)
     .values({

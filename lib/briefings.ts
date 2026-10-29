@@ -523,6 +523,30 @@ export const BRIEFS = {
         : "Lost to SPY buy-and-hold over this window. Simply holding the index would have done better.";
     },
   },
+  "unit-health": {
+    title: (c) => `${callsign(c)} health`,
+    what: "Live results against the newest simulation run on the same tuning: drawdown, rolling Sharpe and rolling expectancy. It tells you when to re-test a unit, not what to change.",
+    now: (c) => `Overall ${v(c, "status")}. Baseline is simulation run ${v(c, "run")}.`,
+    note: "One amber reading is a reason to watch. A red one means re-run the Simulator, tuning on older history and judging on the latest months, before changing anything. A losing streak alone is not a reason to retune.",
+  },
+  "health-drawdown": {
+    title: "Health · drawdown",
+    what: "How far the unit's realized P&L sits below its own peak, against the deepest drop the backtest went through on the same tuning.",
+    now: (c) => `${scope(c)}${v(c, "value")} now, ${v(c, "max")} worst live, ${v(c, "baseline")} worst in the backtest. ${v(c, "status")}.`,
+    note: "Amber at half the backtest's worst drop, red past it. A drawdown deeper than anything in the backtest means the market is doing something the backtest never saw.",
+  },
+  "health-sharpe": {
+    title: "Health · rolling Sharpe",
+    what: "Sharpe of the unit's daily realized P&L over the last 90 days, with days that closed nothing counted as zero, against the same measure over the backtest.",
+    now: (c) => `${scope(c)}${v(c, "value")} over ${v(c, "days")} days (${v(c, "sample")} trades closed), backtest ${v(c, "baseline")}. ${v(c, "status")}.`,
+    note: "Red at zero or below, amber under half the backtest's. It needs 30 days before it counts. Trend units have long flat stretches, so judge it over months, not weeks.",
+  },
+  "health-expectancy": {
+    title: "Health · rolling expectancy",
+    what: "Average return per trade over the unit's last 25 closed trades, against its average across the backtest.",
+    now: (c) => `${scope(c)}${v(c, "value")} per trade over ${v(c, "sample")} trades, backtest ${v(c, "baseline")}. ${v(c, "status")}.`,
+    note: "Red when the recent average turns negative, amber under half the backtest's. It needs 10 trades. This matters more than win rate: a trend unit can lose most trades and still pay.",
+  },
   "sim-units": {
     title: "Unit performance",
     what: "Each unit's result within this simulation run.",
@@ -593,6 +617,10 @@ export const VOICE: Record<UnitId, (id: BriefId, c: BriefCtx) => string> = {
           : `Nothing worth chasing on ${sym} yet. I wait for a fresh cross.`;
     if (id === "order") return c.side === "buy" ? `Going in on ${sym}.` : `Out of ${sym}.`;
     if (id === "unit") return "Unit-01 Vanguard. I hunt trends, and I don't flinch at a few scratches.";
+    if (id === "unit-health" || id.startsWith("health-"))
+      return c.status === "Breach"
+        ? "Something's off out there. Run me through the Simulator before you touch my settings."
+        : "Systems check. Scratches are expected; I'll tell you when it's more than that.";
     if (id === "sim-unit") return "Run me through any year you like. Give me trends and I'll deliver.";
     return "Vanguard on the line. Here's my read.";
   },

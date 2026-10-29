@@ -1,5 +1,5 @@
 import { VOICE, type BriefId, type Speaker } from "./briefings";
-import { UNIVERSE } from "./config";
+import { OWNERS } from "./config";
 import type { UnitId } from "./units";
 
 /**
@@ -63,8 +63,8 @@ export const JC_LINES = {
 export function wingmanLines(): { who: UnitId; text: string }[] {
   const out = new Map<string, { who: UnitId; text: string }>();
   const add = (who: UnitId, text: string) => out.set(`${who}:${text}`, { who, text });
-  for (const who of ["sma_cross", "rsi_revert"] as UnitId[]) {
-    const symbols = Object.entries(UNIVERSE)
+  for (const who of ["spy_core", "sma_cross", "rsi_revert"] as UnitId[]) {
+    const symbols = Object.entries(OWNERS)
       .filter(([, u]) => u === who)
       .map(([s]) => s);
     const v = (id: BriefId, c: Record<string, unknown>) => add(who, VOICE[who](id, { unit: who, ...c } as never));

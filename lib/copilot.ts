@@ -92,7 +92,7 @@ const LINES: Record<CopilotState, ((i: CopilotInput) => string)[]> = {
     },
     (i) => `${i.positions.length} engagement${i.positions.length === 1 ? "" : "s"} open. Day at ${signedUsd(i.dayPnl)}.`,
     (i) => (i.streak > 1 ? `Combo at ${i.streak}. Don't get greedy; the rules don't.` : `Eyes on the board. No signal, no shot.`),
-    () => `Vanguard hunts trends, Recoil catches dips. I keep them honest.`,
+    () => `Bastion holds the line, Vanguard hunts trends, Recoil catches dips. I keep them honest.`,
   ],
   greeting: [
     () => `JC-316 online. Welcome to the Corps, pilot.`,

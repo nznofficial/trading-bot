@@ -4,6 +4,7 @@ import { runBacktest, type BacktestResult } from "./backtest";
 import {
   BAR_TIMEFRAME,
   BENCHMARKS,
+  CORE,
   CRYPTO_FEES,
   CRYPTO_RISK,
   CRYPTO_SYMBOLS,
@@ -14,6 +15,8 @@ import {
   STRATEGY_PARAMS,
   UNIVERSE,
 } from "./config";
+import { tradingDay } from "./analytics";
+import { regimeByDate } from "./core";
 import { db, schema } from "./db";
 import { isRegularSessionBar } from "./engine";
 import { makeRsiRevert } from "./strategies/rsi-revert";
@@ -40,6 +43,8 @@ export const SimParams = z.object({
     .refine((p) => p.entry < p.exit, "entry must be < exit")
     .default({ ...STRATEGY_PARAMS.rsi_revert }),
   stopLossPct: z.number().min(0.005).max(0.5).default(RISK.stopLossPct),
+  /** UNIT-00 Bastion. Off = units only (still gated by the 200-day market filter, like live). */
+  core: z.object({ enabled: z.boolean(), pct: z.number().min(0.1).max(0.9) }).default({ enabled: true, pct: CORE.pct }),
   startEquity: z.number().min(1000).max(10_000_000).default(100_000),
 });
 export type SimParams = z.infer<typeof SimParams>;
@@ -52,16 +57,21 @@ export async function runSimulation(params: SimParams): Promise<{ id: number; re
   const stocks = params.theater === "crypto" ? [] : STOCK_SYMBOLS;
   const coins = params.theater === "us_equity" ? [] : CRYPTO_SYMBOLS;
 
-  const [stockBars, cryptoBars, spyDaily, btcDaily] = await Promise.all([
-    stocks.length ? alpaca.getBars(stocks, BAR_TIMEFRAME, start, end) : {},
+  const withCore = params.core.enabled && params.theater !== "crypto";
+  const intraday = withCore ? [...stocks, CORE.symbol] : stocks;
+  const [stockBars, cryptoBars, spyHistory, btcDaily] = await Promise.all([
+    intraday.length ? alpaca.getBars(intraday, BAR_TIMEFRAME, start, end) : {},
     coins.length ? alpaca.getCryptoBars(coins, BAR_TIMEFRAME, start) : {},
-    alpaca.getBars([BENCHMARKS.us_equity], "1Day", start, end),
+    // Extra history so the 200-day market filter is ready on the first simulated day.
+    alpaca.getBars([BENCHMARKS.us_equity], "1Day", new Date(start.getTime() - CORE.lookbackDays * 86_400_000), end),
     alpaca.getCryptoBars([BENCHMARKS.crypto], "1Day", start),
   ]);
+  const spyDaily = { [BENCHMARKS.us_equity]: spyHistory[BENCHMARKS.us_equity]?.filter((b) => Date.parse(b.t) >= start.getTime()) ?? [] };
+  const regime = regimeByDate((spyHistory[BENCHMARKS.us_equity] ?? []).map((b) => ({ date: tradingDay(new Date(b.t)), close: b.c })));
 
   // Same inputs the live bot sees: regular-session bars for stocks, all hours for crypto.
   const bars: Record<string, alpaca.Bar[]> = {};
-  for (const s of stocks) bars[s] = (stockBars as Record<string, alpaca.Bar[]>)[s]?.filter((b) => isRegularSessionBar(b.t)) ?? [];
+  for (const s of intraday) bars[s] = (stockBars as Record<string, alpaca.Bar[]>)[s]?.filter((b) => isRegularSessionBar(b.t)) ?? [];
   for (const s of coins) bars[s] = (cryptoBars as Record<string, alpaca.Bar[]>)[s] ?? [];
 
   const sma = makeSmaCross(params.sma);
@@ -84,6 +94,8 @@ export async function runSimulation(params: SimParams): Promise<{ id: number; re
       maxOpenPositions: PORTFOLIO_RISK.maxOpenPositions,
       dailyLossHaltPct: PORTFOLIO_RISK.dailyLossHaltPct,
       cooldownHours: PORTFOLIO_RISK.reentryCooldownHours,
+      regime,
+      ...(withCore ? { unitsMaxPct: 1 - params.core.pct, core: { id: CORE.id, symbol: CORE.symbol, pct: params.core.pct } } : {}),
     },
     { spy: spyDaily[BENCHMARKS.us_equity], btc: btcDaily[BENCHMARKS.crypto] },
   );

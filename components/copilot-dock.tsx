@@ -220,6 +220,14 @@ const SPEAKERS: Record<Speaker, { name: string; code: string; role: string; art:
     frame: UNITS.sma_cross.primary,
     accent: UNITS.sma_cross.secondary,
   },
+  spy_core: {
+    name: UNITS.spy_core.callsign,
+    code: UNITS.spy_core.code,
+    role: UNITS.spy_core.role,
+    art: ART.bastionKeyart,
+    frame: UNITS.spy_core.primary,
+    accent: UNITS.spy_core.secondary,
+  },
   rsi_revert: {
     name: UNITS.rsi_revert.callsign,
     code: UNITS.rsi_revert.code,

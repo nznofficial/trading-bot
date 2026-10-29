@@ -1,5 +1,12 @@
 /** Strategy → mech unit identity, shared by the UI (emblems) and server alerts. */
 export const UNITS = {
+  spy_core: {
+    code: "UNIT-00",
+    callsign: "Bastion",
+    role: "Core defense",
+    primary: "#38bdf8",
+    secondary: "#3ce4ff",
+  },
   sma_cross: {
     code: "UNIT-01",
     callsign: "Vanguard",

@@ -28,6 +28,7 @@ export const ASSETS: Asset[] = [
   { id: "jc316-sheet", phase: "A", size: "1536x1024", characters: ["jc316"], scene: SHEET("JC-316"), usedIn: "anchor" },
   { id: "vanguard-sheet", phase: "A", size: "1536x1024", characters: ["vanguard"], scene: SHEET("UNIT-01 Vanguard"), usedIn: "anchor" },
   { id: "recoil-sheet", phase: "A", size: "1536x1024", characters: ["recoil"], scene: SHEET("UNIT-02 Recoil"), usedIn: "anchor" },
+  { id: "bastion-sheet", phase: "A", size: "1536x1024", characters: ["bastion"], scene: SHEET("UNIT-00 Bastion"), usedIn: "anchor" },
 
   // ---- Phase B: characters ------------------------------------------------------------------
   {
@@ -97,6 +98,26 @@ flash, arm dampers compressed, dust kicked up, hangar haze behind.`,
     characters: ["recoil"],
     scene: `Head-and-shoulders portrait of Recoil in three-quarter view facing right, quad optics glowing amber-green, head \
 fins swept back. Isolated character, no background scenery.`,
+    usedIn: "Hangar unit card",
+  },
+  {
+    id: "bastion-keyart",
+    phase: "B",
+    size: "1024x1536",
+    characters: ["bastion"],
+    scene: `Full-body key art of Bastion planted in a defensive stance at the hangar mouth, shoulder shields folded forward \
+into a tower shield, heel anchor spikes driven into the deck, rotary cannon held low, steady green visor bar, cool blue rim \
+light and drifting haze behind.`,
+    usedIn: "Hangar, briefing panel",
+  },
+  {
+    id: "bastion-bust",
+    phase: "B",
+    size: "1024x1024",
+    transparent: true,
+    characters: ["bastion"],
+    scene: `Head-and-shoulders portrait of Bastion in three-quarter view facing right, squared helmet and single green visor \
+bar, massive shoulder armor framing the head. Isolated character, no background scenery.`,
     usedIn: "Hangar unit card",
   },
 

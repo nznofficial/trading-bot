@@ -9,6 +9,8 @@ export type RiskState = {
   nonMarginableBuyingPower?: number;
   /** Current market value of crypto positions, for the class cap. */
   cryptoExposure?: number;
+  /** Current market value of every unit (non-core) position, for the units cap. */
+  unitsExposure?: number;
   heldSymbols: Set<string>;
   symbolsWithOpenOrders: Set<string>;
   /** Symbols stopped out recently → when re-entry is allowed again. */
@@ -23,9 +25,11 @@ export type RiskLimits = {
   portfolio: typeof PORTFOLIO_RISK;
   stocks: typeof RISK;
   crypto: typeof CRYPTO_RISK;
+  /** Cap on all unit positions together as a fraction of equity (the core holds the rest). 1 = no cap. */
+  unitsMaxPct?: number;
 };
 
-export const DEFAULT_LIMITS: RiskLimits = { portfolio: PORTFOLIO_RISK, stocks: RISK, crypto: CRYPTO_RISK };
+export const DEFAULT_LIMITS: RiskLimits = { portfolio: PORTFOLIO_RISK, stocks: RISK, crypto: CRYPTO_RISK, unitsMaxPct: 1 };
 
 export const round2 = (n: number) => Math.round(n * 100) / 100;
 /** Round down to Alpaca's crypto quantity increment (1e-9) so we never exceed the budget. */
@@ -44,6 +48,8 @@ export function createRiskGate(initial: RiskState, limits: RiskLimits = DEFAULT_
   let buyingPower = initial.buyingPower;
   let cash = initial.nonMarginableBuyingPower ?? initial.buyingPower;
   let cryptoExposure = initial.cryptoExposure ?? 0;
+  let unitsExposure = initial.unitsExposure ?? 0;
+  const unitsRoom = () => initial.equity * (limits.unitsMaxPct ?? 1) - unitsExposure;
   let openCount = initial.heldSymbols.size;
   const pnl = dailyPnlPct(initial.equity, initial.lastEquity);
 
@@ -61,13 +67,15 @@ export function createRiskGate(initial: RiskState, limits: RiskLimits = DEFAULT_
         return { ok: false, reason: `max ${portfolio.maxOpenPositions} positions` };
       }
       if (!(price > 0)) return { ok: false, reason: "no valid price" };
+      const capReason = `units cap ${((limits.unitsMaxPct ?? 1) * 100).toFixed(0)}% reached`;
 
       if (assetClassOf(symbol) === "crypto") {
         const classRoom = initial.equity * crypto.maxClassPct - cryptoExposure;
         if (classRoom < crypto.minNotional) {
           return { ok: false, reason: `crypto cap ${(crypto.maxClassPct * 100).toFixed(0)}% reached` };
         }
-        const budget = Math.min(initial.equity * crypto.maxPositionPct, classRoom, cash * portfolio.buyingPowerBuffer);
+        if (unitsRoom() < crypto.minNotional) return { ok: false, reason: capReason };
+        const budget = Math.min(initial.equity * crypto.maxPositionPct, classRoom, unitsRoom(), cash * portfolio.buyingPowerBuffer);
         const qty = floorQty(budget / price);
         if (qty * price < crypto.minNotional) return { ok: false, reason: "insufficient buying power" };
 
@@ -75,15 +83,18 @@ export function createRiskGate(initial: RiskState, limits: RiskLimits = DEFAULT_
         cash -= cost;
         buyingPower -= cost;
         cryptoExposure += cost;
+        unitsExposure += cost;
         openCount++;
         const stopLoss = round2(price * (1 - crypto.stopLossPct));
         return { ok: true, qty, stopLoss, stopLimit: round2(stopLoss * (1 - crypto.stopLimitSlippagePct)) };
       }
 
-      const budget = Math.min(initial.equity * stocks.maxPositionPct, buyingPower * portfolio.buyingPowerBuffer);
+      if (unitsRoom() < price) return { ok: false, reason: capReason };
+      const budget = Math.min(initial.equity * stocks.maxPositionPct, unitsRoom(), buyingPower * portfolio.buyingPowerBuffer);
       // Whole shares only: Alpaca rejects fractional qty on OTO/bracket orders.
       const qty = Math.floor(budget / price);
       if (qty < 1) return { ok: false, reason: "insufficient buying power" };
+      unitsExposure += qty * price;
 
       buyingPower -= qty * price;
       // Stock purchases also draw down cash, which crypto needs.

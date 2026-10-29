@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { RISK, STRATEGY_PARAMS, type StrategyId } from "./config";
+import { CORE, RISK, STRATEGY_PARAMS, type StrategyId } from "./config";
 import { db, schema } from "./db";
 import { makeRsiRevert } from "./strategies/rsi-revert";
 import { makeSmaCross } from "./strategies/sma-cross";
@@ -22,6 +22,11 @@ export const LiveParams = z.object({
       exit: z.number().min(1).max(99),
     })
     .refine((p) => p.entry < p.exit, "entry must be < exit"),
+  /** UNIT-00 Bastion: SPY share of equity while SPY is above its 200-day average. Units trade in the rest. */
+  core: z.object({
+    enabled: z.boolean(),
+    pct: z.number().min(0.1).max(0.9),
+  }),
   /** Protective stop for both classes, as a fraction (0.05 = 5%). */
   stopLossPct: z.number().min(0.005).max(0.5),
   /** New entries per theater. Disabling never blocks exits or stop management. */
@@ -33,6 +38,7 @@ export type LiveParams = z.infer<typeof LiveParams>;
 export const DEFAULT_LIVE_PARAMS: LiveParams = {
   sma: { ...STRATEGY_PARAMS.sma_cross },
   rsi: { ...STRATEGY_PARAMS.rsi_revert },
+  core: { enabled: true, pct: CORE.pct },
   stopLossPct: RISK.stopLossPct,
   stocksEnabled: true,
   cryptoEnabled: true,
@@ -53,6 +59,9 @@ export async function saveLiveParams(p: LiveParams) {
     .onConflictDoUpdate({ target: schema.settings.key, set: { value: p } });
 }
 
+/** Share of equity Vanguard and Recoil may hold together: what the core leaves, or everything if it's off. */
+export const unitsMaxPct = (p: LiveParams) => (p.core.enabled ? 1 - p.core.pct : 1);
+
 export function buildUnits(p: LiveParams): Record<StrategyId, Strategy> {
   return { sma_cross: makeSmaCross(p.sma), rsi_revert: makeRsiRevert(p.rsi) };
 }
@@ -66,6 +75,8 @@ export function describeChanges(before: LiveParams, after: LiveParams): string[]
   cmp("SMA fast", before.sma.fast, after.sma.fast);
   cmp("SMA slow", before.sma.slow, after.sma.slow);
   cmp("SMA cross window", before.sma.crossLookback, after.sma.crossLookback);
+  cmp("core", before.core.enabled ? "armed" : "safed", after.core.enabled ? "armed" : "safed");
+  cmp("core share %", Math.round(before.core.pct * 100), Math.round(after.core.pct * 100));
   cmp("RSI period", before.rsi.period, after.rsi.period);
   cmp("RSI buy below", before.rsi.entry, after.rsi.entry);
   cmp("RSI sell above", before.rsi.exit, after.rsi.exit);

@@ -41,4 +41,4 @@ export function duration(ms: number | null) {
 export const classLabel = (c: string) => (c === "crypto" ? "Crypto" : "Stocks");
 
 export const strategyLabel = (id: string | null) =>
-  id === "sma_cross" ? "SMA Cross" : id === "rsi_revert" ? "RSI Revert" : (id ?? "manual");
+  id === "sma_cross" ? "SMA Cross" : id === "rsi_revert" ? "RSI Revert" : id === "spy_core" ? "SPY Core" : (id ?? "manual");

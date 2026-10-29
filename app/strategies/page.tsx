@@ -7,10 +7,10 @@ import { ART, unitBust } from "@/components/art";
 import { UNITS, unitFor, type UnitId } from "@/components/emblems";
 import { TuneConsole } from "@/components/tune-console";
 import { ActionBadge, Card, ClassTabs, Delta, Empty, Gauge, Metric, PageHeader, Skeleton, StatusBadge, Table, Tag } from "@/components/ui";
-import { dateTime, duration, pct, ratio, shortDate, signedPct, signedUsd } from "@/lib/format";
+import { dateTime, duration, pct, ratio, shortDate, signedPct, signedUsd, usd } from "@/lib/format";
 import { briefAttrs } from "@/lib/briefings";
 import { HEALTH, type HealthStatus } from "@/lib/health";
-import { getStrategies, getUnitHealth, parseClassFilter } from "@/lib/queries";
+import { getCore, getStrategies, getUnitHealth, parseClassFilter } from "@/lib/queries";
 
 export const metadata: Metadata = { title: "Hangar" };
 
@@ -41,8 +41,9 @@ const fmtIndicators = (ind: Record<string, number | null>) =>
 async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">["searchParams"] }) {
   await connection(); // DB-backed: render at request time, never at build
   const filter = parseClassFilter((await searchParams).class);
-  const [{ live, strategies, latest, recent }, vanguardHealth, recoilHealth] = await Promise.all([
+  const [{ live, strategies, latest, recent }, core, vanguardHealth, recoilHealth] = await Promise.all([
     getStrategies(filter),
+    getCore(),
     getUnitHealth("sma_cross", filter),
     getUnitHealth("rsi_revert", filter),
   ]);
@@ -50,6 +51,8 @@ async function Hangar({ searchParams }: { searchParams: PageProps<"/strategies">
   return (
     <div className="grid grid-cols-1 gap-5">
       <ClassTabs path="/strategies" active={filter} />
+
+      {filter !== "crypto" && <BastionCard {...core} />}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {strategies.map((st) => {
@@ -385,5 +388,96 @@ function HealthPanel({
         </Link>
       </p>
     </Card>
+  );
+}
+
+/** UNIT-00 Bastion: where SPY sits against its 200-day line, and what the core holds. */
+function BastionCard({ live, signal, position, weight, stats }: Awaited<ReturnType<typeof getCore>>) {
+  const unit = UNITS.spy_core;
+  const above = signal?.gapPct == null ? null : signal.gapPct > 0;
+  const state = !live.enabled
+    ? { label: "Safed", tone: "closed" }
+    : position
+      ? { label: "In market", tone: "ok" }
+      : above === false
+        ? { label: "In cover", tone: "paused" }
+        : above
+          ? { label: "Advancing", tone: "running" }
+          : { label: "Standby", tone: "closed" };
+  const gap = signal?.gapPct == null ? "—" : signedPct(signal.gapPct / 100, 2);
+  return (
+    <section
+      className="frame frame-hot boot"
+      tabIndex={0}
+      {...briefAttrs("core", {
+        unit: "spy_core",
+        status: state.label,
+        close: signal?.close == null ? "—" : usd(signal.close),
+        sma: signal?.sma == null ? "—" : usd(signal.sma),
+        gap,
+        share: pct(live.pct, 0),
+        held: position ? `${position.qty} SPY (${pct(weight, 0)} of equity)` : "no SPY",
+      })}
+    >
+      <div className="frame-body relative overflow-hidden">
+        {/* Unit key art, faded behind the stats */}
+        <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-1/2">
+          <Image src={ART.bastionKeyart} alt="" fill sizes="(max-width: 1024px) 50vw, 40vw" className="object-cover object-[center_20%] opacity-20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0e0d14] to-transparent" />
+        </div>
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-1"
+          style={{ background: `linear-gradient(90deg, ${unit.primary}, ${unit.secondary})` }}
+        />
+        <div className="relative grid grid-cols-1 gap-5 p-5 md:grid-cols-[auto_1fr_auto] md:items-center">
+          <div className="flex items-center gap-5">
+            <div className="relative size-32 shrink-0" style={{ filter: `drop-shadow(0 0 16px ${unit.primary}88)` }}>
+              <Image src={unitBust("spy_core")} alt={`${unit.code} ${unit.callsign}`} fill sizes="128px" className="object-contain" />
+            </div>
+            <div className="min-w-0">
+              <div className="hud text-[12px]" style={{ color: unit.secondary }}>
+                {unit.code} · {unit.role}
+              </div>
+              <h2 className="mt-1 font-title text-[32px] leading-none font-extrabold text-ink">{unit.callsign}</h2>
+              <div className="hud mt-1.5 text-[13px] text-ink-2">SPY core · 200-day line</div>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <StatusBadge status={state.tone} label={state.label} />
+              <span className="text-[14px] text-ink-2">{signal?.reason ?? "Awaiting the first market-hours sortie."}</span>
+            </div>
+            <Gauge
+              label="SPY vs 200-day average"
+              value={signal?.gapPct == null ? 0 : Math.min(1, Math.max(0, 0.5 + signal.gapPct / 20))}
+              readout={gap}
+              color={above === false ? "var(--alert)" : unit.primary}
+              caption={
+                signal?.close == null || signal.sma == null
+                  ? "Needs 200 days of daily closes"
+                  : `Last close ${usd(signal.close)} · average ${usd(signal.sma)} · centre = on the line`
+              }
+            />
+          </div>
+
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 md:grid-cols-1">
+            <Metric label="Core share">{live.enabled ? pct(live.pct, 0) : "Safed"}</Metric>
+            <Metric label="Holding">{position ? `${position.qty} SPY · ${pct(weight, 0)}` : "Cash"}</Metric>
+            <Metric label="Unrealized">
+              {position ? <Delta value={position.unrealizedPl}>{signedUsd(position.unrealizedPl)}</Delta> : "—"}
+            </Metric>
+            <Metric label="Realized">
+              <Delta value={stats.totalPnl}>{signedUsd(stats.totalPnl)}</Delta>
+            </Metric>
+          </dl>
+        </div>
+        <p className="relative border-t border-line px-5 py-3 text-[13px] text-muted">
+          Holds SPY with {pct(live.pct, 0)} of the account while SPY closes above its 200-day average; sells it all when SPY
+          closes below. Vanguard and Recoil trade in the rest and stand down while SPY is below the line.
+        </p>
+      </div>
+    </section>
   );
 }

@@ -12,7 +12,7 @@ import {
   tradeStats,
   type RoundTrip,
 } from "./analytics";
-import { assetClassOf, BENCHMARKS, CRYPTO_FEES, MAX_STORED_SIM_TRADES, UNIVERSE, type AssetClass, type StrategyId } from "./config";
+import { assetClassOf, BENCHMARKS, CORE, CRYPTO_FEES, MAX_STORED_SIM_TRADES, OWNERS, UNIVERSE, type AssetClass, type StrategyId } from "./config";
 import { db, schema } from "./db";
 import { matchesLive, unitHealth, type HealthTrade } from "./health";
 import type { Quote } from "./quotes";
@@ -89,7 +89,7 @@ async function loadPositions() {
       marketValue: p.marketValue,
       unrealizedPl: p.unrealizedPl,
       unrealizedPlpc: p.unrealizedPlpc,
-      strategy: UNIVERSE[p.symbol] ?? "manual",
+      strategy: OWNERS[p.symbol] ?? "manual",
     })),
   };
 }
@@ -382,8 +382,8 @@ export async function getMarketStrip() {
   const get = <T>(key: string) => settingsRows.find((r) => r.key === key)?.value as T | undefined;
   const quotes = get<Record<string, Quote>>("quotes") ?? {};
   return {
-    // Universe order: stocks first, then crypto.
-    quotes: Object.keys(UNIVERSE)
+    // Core first, then the units' stocks, then crypto.
+    quotes: Object.keys(OWNERS)
       .map((s) => quotes[s])
       .filter((q): q is Quote => !!q),
     clock: get<ClockState>("clock") ?? null,
@@ -478,6 +478,40 @@ export async function getUnitHealth(unit: StrategyId, filter: ClassFilter) {
   return {
     baseline: { id: match.id, createdAt: match.createdAt.getTime(), months: params.months, theater: params.theater, trades: baseTrades.length },
     health,
+  };
+}
+
+/** UNIT-00 Bastion: the market filter's latest reading, the SPY holding and the core's closed trades. */
+export async function getCore() {
+  "use cache";
+  botCache();
+  const d = db();
+  const [{ trades }, { positions }, [latest], [snap], live] = await Promise.all([
+    loadTrades(),
+    loadPositions(),
+    d.select().from(schema.signals).where(eq(schema.signals.strategy, CORE.id)).orderBy(desc(schema.signals.id)).limit(1),
+    d.select({ equity: schema.equitySnapshots.equity }).from(schema.equitySnapshots).orderBy(desc(schema.equitySnapshots.id)).limit(1),
+    getLiveParams(),
+  ]);
+  const position = positions.find((p) => p.symbol === CORE.symbol) ?? null;
+  const ind = (latest?.indicators ?? {}) as Record<string, number | null>;
+  return {
+    live: live.core,
+    signal: latest
+      ? {
+          ts: latest.ts.getTime(),
+          action: latest.action,
+          reason: latest.reason,
+          note: latest.note,
+          close: ind.close ?? null,
+          sma: ind.sma200 ?? null,
+          gapPct: ind.gapPct ?? null,
+        }
+      : null,
+    position,
+    /** Share of equity the SPY holding is worth now. */
+    weight: position && snap?.equity ? position.marketValue / snap.equity : 0,
+    stats: tradeStats(trades.filter((t) => t.strategy === CORE.id)),
   };
 }
 

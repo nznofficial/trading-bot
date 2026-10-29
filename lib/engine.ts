@@ -7,6 +7,7 @@ import {
   BAR_MINUTES,
   BAR_TIMEFRAME,
   BENCHMARKS,
+  CORE,
   CRYPTO_BAR_LOOKBACK_DAYS,
   CRYPTO_FEES,
   CRYPTO_RISK,
@@ -20,7 +21,8 @@ import {
 import { db, schema } from "./db";
 import { dateTime, signedPct, signedUsd, usd } from "./format";
 import { COLORS, notify, type Embed } from "./notify";
-import { buildUnits, getLiveParams } from "./live-params";
+import { coreRegime, planCore, type CoreRegime } from "./core";
+import { buildUnits, getLiveParams, unitsMaxPct, type LiveParams } from "./live-params";
 import { computeQuote, type Quote } from "./quotes";
 import { createRiskGate, DEFAULT_LIMITS, planCryptoStop } from "./risk";
 import { STRATEGIES, strategyFor, type Signal } from "./strategies";
@@ -65,7 +67,7 @@ export function makeClientOrderId(strategy: string, side: string, symbol: string
 
 export function strategyFromClientOrderId(id: string): string | null {
   const prefix = id.split(".")[0];
-  return prefix in STRATEGIES ? prefix : null;
+  return prefix in STRATEGIES || prefix === CORE.id ? prefix : null;
 }
 
 const nyTime = new Intl.DateTimeFormat("en-US", {
@@ -211,27 +213,55 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     const now = new Date(clock.timestamp);
     const daysAgo = (n: number) => new Date(now.getTime() - n * 86_400_000);
     const [stockBars, cryptoBars] = await Promise.all([
-      stocksActive ? alpaca.getBars(STOCK_SYMBOLS, BAR_TIMEFRAME, daysAgo(BAR_LOOKBACK_DAYS)) : {},
+      stocksActive ? alpaca.getBars([...STOCK_SYMBOLS, CORE.symbol], BAR_TIMEFRAME, daysAgo(BAR_LOOKBACK_DAYS)) : {},
       CRYPTO_SYMBOLS.length
         ? alpaca.getCryptoBars(CRYPTO_SYMBOLS, BAR_TIMEFRAME, daysAgo(CRYPTO_BAR_LOOKBACK_DAYS))
         : {},
     ]);
     const allBars: Record<string, alpaca.Bar[]> = { ...stockBars, ...cryptoBars };
     const barMs = BAR_MINUTES * 60_000;
-    await updateQuotes(symbols, allBars, now).catch((e) => console.warn("quote update failed", e));
+    await updateQuotes(stocksActive ? [...symbols, CORE.symbol] : symbols, allBars, now).catch((e) =>
+      console.warn("quote update failed", e),
+    );
 
     // --- Signals + execution -----------------------------------------------------------------
     const held = new Map(positions.map((p) => [p.symbol, Number(p.qty)]));
+    const signalRows: (typeof schema.signals.$inferInsert)[] = [];
+    const submitted: alpaca.Order[] = [];
+    /** Symbols whose orders this tick already handled; the stop check skips them. */
+    const touched = new Set<string>();
+
+    // Market filter: SPY's last completed daily close vs its 200-day average. It drives the core and
+    // gates every unit entry (no new unit buys while SPY is below; exits and stops are unaffected).
+    const spyDaily = ((await alpaca.getBars([CORE.symbol], "1Day", daysAgo(CORE.lookbackDays)))[CORE.symbol] ?? []).map((b) => ({
+      date: tradingDay(new Date(b.t)),
+      close: b.c,
+    }));
+    const regime = coreRegime(spyDaily, tradingDay(now));
+
+    // Core first, so its purchase comes out of the buying power the units see.
+    let coreSpend = 0;
+    if (stocksActive) {
+      const core = await runCore({ live, account, held, openOrders, allBars, now, barMs, regime, runId: run.id, dryRun: !!opts.dryRun });
+      signalRows.push(core.signal);
+      if (core.order) {
+        submitted.push(core.order);
+        touched.add(CORE.symbol);
+      }
+      coreSpend = core.spend;
+    }
+
     const cooldownUntil = await stopOutCooldowns(now);
     const gate = createRiskGate(
       {
         equity: Number(account.equity),
         lastEquity: Number(account.last_equity),
-        buyingPower: Number(account.buying_power),
-        nonMarginableBuyingPower: Number(account.non_marginable_buying_power),
+        buyingPower: Number(account.buying_power) - coreSpend,
+        nonMarginableBuyingPower: Number(account.non_marginable_buying_power) - coreSpend,
         cryptoExposure: positions
           .filter((p) => assetClassOf(p.symbol) === "crypto")
           .reduce((a, p) => a + Number(p.market_value), 0),
+        unitsExposure: positions.filter((p) => p.symbol !== CORE.symbol).reduce((a, p) => a + Number(p.market_value), 0),
         heldSymbols: new Set(held.keys()),
         symbolsWithOpenOrders: new Set(openOrders.map((o) => o.symbol)),
         cooldownUntil,
@@ -240,15 +270,11 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
         ...DEFAULT_LIMITS,
         stocks: { ...DEFAULT_LIMITS.stocks, stopLossPct: live.stopLossPct },
         crypto: { ...DEFAULT_LIMITS.crypto, stopLossPct: live.stopLossPct },
+        unitsMaxPct: unitsMaxPct(live),
       },
     );
     // Units built from the Hangar's live tuning (falls back to config defaults).
     const units = buildUnits(live);
-
-    const signalRows: (typeof schema.signals.$inferInsert)[] = [];
-    const submitted: alpaca.Order[] = [];
-    /** Symbols whose orders this tick already handled; the stop check skips them. */
-    const touched = new Set<string>();
 
     for (const symbol of symbols) {
       const strategy = units[UNIVERSE[symbol]];
@@ -280,6 +306,8 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
       const entriesOn = cls === "crypto" ? live.cryptoEnabled : live.stocksEnabled;
       if (signal.action === "buy" && !entriesOn) {
         note = `skipped: ${cls === "crypto" ? "crypto" : "stock"} entries disabled in Hangar`;
+      } else if (signal.action === "buy" && regime.above === false) {
+        note = "skipped: market filter (SPY below its 200-day average)";
       } else if (signal.action === "buy") {
         const decision = gate.approveEntry(symbol, lastBar.c);
         if (!decision.ok) {
@@ -413,6 +441,91 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     ]);
     return finish({ status: "error", marketOpen: null, signals: 0, ordersPlaced: 0, error: errMsg(e) });
   }
+}
+
+/**
+ * UNIT-00 Bastion: hold SPY with the core's share of equity while SPY's last daily close is above its
+ * 200-day average; sell it all when it closes below. No protective stop: the average is the exit.
+ */
+async function runCore(ctx: {
+  live: LiveParams;
+  account: alpaca.Account;
+  held: Map<string, number>;
+  openOrders: alpaca.Order[];
+  allBars: Record<string, alpaca.Bar[]>;
+  now: Date;
+  barMs: number;
+  regime: CoreRegime;
+  runId: number;
+  dryRun: boolean;
+}): Promise<{ signal: typeof schema.signals.$inferInsert; order: alpaca.Order | null; spend: number }> {
+  const { live, account, held, openOrders, allBars, now, barMs, regime, runId, dryRun } = ctx;
+  const symbol = CORE.symbol;
+  const intraday = (allBars[symbol] ?? []).filter((b) => isRegularSessionBar(b.t) && Date.parse(b.t) + barMs <= now.getTime());
+  const lastBar = intraday.at(-1);
+  const stale = !dryRun && (!lastBar || now.getTime() - Date.parse(lastBar.t) > 3 * barMs);
+  const heldQty = held.get(symbol) ?? 0;
+
+  const plan = stale
+    ? ({ action: "hold", reason: "stale data" } as const)
+    : planCore({
+        enabled: live.core.enabled,
+        pct: live.core.pct,
+        above: regime.above,
+        heldQty,
+        price: lastBar?.c ?? null,
+        equity: Number(account.equity),
+        spendable: Math.max(0, Number(account.non_marginable_buying_power)) * PORTFOLIO_RISK.buyingPowerBuffer,
+        orderPending: openOrders.some((o) => o.symbol === symbol),
+      });
+
+  const gap = regime.close !== null && regime.sma ? regime.close / regime.sma - 1 : null;
+  const indicators = {
+    close: regime.close,
+    sma200: regime.sma === null ? null : Math.round(regime.sma * 100) / 100,
+    gapPct: gap === null ? null : Math.round(gap * 10_000) / 100,
+  };
+  let order: alpaca.Order | null = null;
+  let note: string | null = null;
+  let spend = 0;
+  // One order per regime day: the daily date makes a re-submit on a later tick a duplicate.
+  const barTs = regime.asOf ? `${regime.asOf}T21:00:00Z` : now.toISOString();
+  if (plan.action !== "hold") {
+    if (dryRun) {
+      note = `dry run: would ${plan.action} ${plan.qty}`;
+    } else {
+      try {
+        if (plan.action === "sell") await cancelOpenOrdersFor(symbol, openOrders);
+        order = await alpaca.submitOrder({
+          symbol,
+          qty: plan.qty,
+          side: plan.action,
+          time_in_force: "day",
+          client_order_id: makeClientOrderId(CORE.id, plan.action, symbol, barTs),
+        });
+        if (plan.action === "buy") spend = plan.qty * (lastBar?.c ?? 0);
+        note = `${plan.action} ${plan.qty} order ${order.id}`;
+      } catch (e) {
+        note = duplicateOrder(e) ? "already submitted for this day" : `order error: ${errMsg(e)}`;
+      }
+    }
+  }
+  return {
+    signal: {
+      runId,
+      barTs: new Date(barTs),
+      symbol,
+      assetClass: "us_equity",
+      strategy: CORE.id,
+      action: plan.action,
+      reason: plan.reason,
+      indicators,
+      acted: !!order,
+      note,
+    },
+    order,
+    spend,
+  };
 }
 
 /** Ticker-tape quotes. Stocks keep their last values while the market is closed. */

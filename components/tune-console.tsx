@@ -48,6 +48,36 @@ export function TuneConsole({ current }: { current: LiveParams }) {
 
   return (
     <div className="grid grid-cols-1 gap-5">
+      <fieldset className="flex flex-wrap items-end gap-x-8 gap-y-3 border border-cyan/40 p-3">
+        <legend className="hud px-1 text-[12px] text-cyan">Unit-00 Bastion · SPY core</legend>
+        <label className="flex cursor-pointer items-center gap-2.5 pb-1.5">
+          <input
+            type="checkbox"
+            checked={p.core.enabled}
+            onChange={(e) => setP({ ...p, core: { ...p.core, enabled: e.target.checked } })}
+            className="size-4 accent-[var(--cyan)]"
+          />
+          <span className="hud text-[13px] text-ink-2">Core</span>
+          <span className={`hud text-[11px] ${p.core.enabled ? "text-sync" : "text-alert"}`}>{p.core.enabled ? "armed" : "safed"}</span>
+        </label>
+        <label className="grid w-40 gap-1">
+          <span className="hud text-[11px] text-muted">Core share %</span>
+          <input
+            className={field}
+            type="number"
+            step="5"
+            min="10"
+            max="90"
+            value={Math.round(p.core.pct * 100)}
+            onChange={n((v) => ({ ...p, core: { ...p.core, pct: v / 100 } }))}
+          />
+        </label>
+        <p className="max-w-md pb-1 text-[12px] text-muted">
+          Holds SPY while it closes above its 200-day average. Vanguard and Recoil share the remaining{" "}
+          {p.core.enabled ? Math.round((1 - p.core.pct) * 100) : 100}%, and neither opens trades while SPY is below the line.
+        </p>
+      </fieldset>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <fieldset className="grid grid-cols-3 gap-3 border border-unit/40 p-3">
           <legend className="hud px-1 text-[12px] text-unit">Unit-01 Vanguard · SMA cross</legend>

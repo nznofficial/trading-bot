@@ -28,7 +28,8 @@ export type Cue =
   | "brief-close"
   | "voice-jc316"
   | "voice-sma_cross"
-  | "voice-rsi_revert";
+  | "voice-rsi_revert"
+  | "voice-spy_core";
 
 const KEY = "pt-sound";
 
@@ -357,7 +358,8 @@ const CUES: Record<Cue, (b: Bus, t: number) => void> = {
     tone(b, { at: t + 0.08, dur: 0.09, gain: 0.06, freq: 1800, slideTo: 700, type: "square" });
     noise(b, { at: t + 0.16, dur: 0.03, gain: 0.15, freq: 2000, q: 2 });
   },
-  // Comms voices: JC-316 steady and mid-range; Vanguard quick and rising; Recoil low and gritty.
+  // Comms voices: JC-316 steady and mid-range; Vanguard quick and rising; Recoil low and gritty;
+  // Bastion the lowest and slowest, flat and immovable.
   "voice-jc316": (b, t) => {
     CUES.squelch(b, t);
     phrase(b, t + 0.12, [220, 260, 240, 300, 250], { formant: 900, type: "sawtooth", gain: 0.13, step: 0.07 });
@@ -369,6 +371,10 @@ const CUES: Record<Cue, (b: Bus, t: number) => void> = {
   "voice-rsi_revert": (b, t) => {
     CUES.squelch(b, t);
     phrase(b, t + 0.12, [110, 95, 120, 100, 85], { formant: 500, type: "sawtooth", gain: 0.08, step: 0.09, grit: true });
+  },
+  "voice-spy_core": (b, t) => {
+    CUES.squelch(b, t);
+    phrase(b, t + 0.12, [90, 90, 82, 90], { formant: 420, type: "sawtooth", gain: 0.1, step: 0.14 });
   },
 };
 

@@ -5,9 +5,25 @@ export const APP_SHORT = "MMC";
 export type StrategyId = "sma_cross" | "rsi_revert";
 export type AssetClass = "us_equity" | "crypto";
 
+/**
+ * UNIT-00 Bastion, the core: holds SPY with a fixed share of equity while SPY's last daily close is above
+ * its 200-day average, and sits in cash when it isn't. Vanguard and Recoil trade in what's left.
+ * Defaults only; the share and on/off switch are live-tunable (Hangar → Tune units).
+ */
+export const CORE = {
+  id: "spy_core",
+  symbol: "SPY",
+  smaDays: 200,
+  /** Calendar days of daily bars to request: ~275 trading days, comfortably over the 200 needed. */
+  lookbackDays: 400,
+  pct: 0.7,
+} as const;
+export type CoreId = typeof CORE.id;
+/** Anything that can own a position or an order. */
+export type OwnerId = StrategyId | CoreId;
+
 /** Each symbol is owned by exactly one strategy, so positions are never contested. */
 export const STOCKS: Record<string, StrategyId> = {
-  SPY: "rsi_revert",
   QQQ: "rsi_revert",
   AAPL: "rsi_revert",
   MSFT: "rsi_revert",
@@ -26,6 +42,8 @@ export const CRYPTO: Record<string, StrategyId> = {
 };
 
 export const UNIVERSE: Record<string, StrategyId> = { ...STOCKS, ...CRYPTO };
+/** Every symbol the bot trades and who owns it: the strategy universe plus the core's SPY. */
+export const OWNERS: Record<string, OwnerId> = { [CORE.symbol]: CORE.id, ...UNIVERSE };
 export const STOCK_SYMBOLS = Object.keys(STOCKS);
 export const CRYPTO_SYMBOLS = Object.keys(CRYPTO);
 

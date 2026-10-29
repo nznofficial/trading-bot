@@ -143,8 +143,12 @@ export function matchesLive(params: SimParams, live: LiveParams, unit: StrategyI
     unit === "sma_cross"
       ? params.sma.fast === live.sma.fast && params.sma.slow === live.sma.slow && params.sma.crossLookback === live.sma.crossLookback
       : params.rsi.period === live.rsi.period && params.rsi.entry === live.rsi.entry && params.rsi.exit === live.rsi.exit;
+  // Runs from before the core existed have no `core`; they only match a live setup with the core off.
+  const core = params.core ?? { enabled: false, pct: 0 };
+  const sameCore = core.enabled === live.core.enabled && (!core.enabled || Math.abs(core.pct - live.core.pct) < 1e-9);
   return (
     same &&
+    sameCore &&
     Math.abs(params.stopLossPct - live.stopLossPct) < 1e-9 &&
     (filter === "all" || params.theater === "all" || params.theater === filter)
   );

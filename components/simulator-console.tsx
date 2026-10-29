@@ -14,6 +14,8 @@ type Form = {
   entry: number;
   exit: number;
   stopLossPct: number;
+  coreEnabled: boolean;
+  corePct: number;
 };
 
 const field = "num w-full border border-line-2 bg-page px-2.5 py-1.5 text-[14px] text-ink focus:border-amber";
@@ -52,6 +54,7 @@ export function SimulatorConsole({ defaults }: { defaults: Form }) {
             sma: { fast: form.fast, slow: form.slow, crossLookback: form.crossLookback },
             rsi: { period: form.period, entry: form.entry, exit: form.exit },
             stopLossPct: form.stopLossPct / 100,
+            core: { enabled: form.coreEnabled, pct: form.corePct / 100 },
           }),
         });
         const body = await res.json().catch(() => ({}));
@@ -92,6 +95,21 @@ export function SimulatorConsole({ defaults }: { defaults: Form }) {
           <input className={field} type="number" step="0.5" min="0.5" max="50" value={form.stopLossPct} onChange={num("stopLossPct")} />
         </label>
       </div>
+
+      <fieldset className="grid grid-cols-2 gap-3 border border-cyan/40 p-3 md:grid-cols-4">
+        <legend className="hud px-1 text-[12px] text-cyan">Unit-00 Bastion · SPY core</legend>
+        <label className="flex items-center gap-2 self-end pb-2">
+          <input type="checkbox" className="accent-cyan" checked={form.coreEnabled} onChange={(e) => set("coreEnabled", e.target.checked)} />
+          <span className="hud text-[12px] text-ink-2">Armed</span>
+        </label>
+        <label className="grid gap-1">
+          <span className="hud text-[11px] text-muted">Core share %</span>
+          <input className={field} type="number" min="10" max="90" step="5" value={form.corePct} onChange={num("corePct")} disabled={!form.coreEnabled} />
+        </label>
+        <p className="col-span-2 self-end pb-1 text-[12px] text-muted">
+          Holds SPY while it closes above its 200-day average. Units trade in the rest, and no unit buys while SPY is below.
+        </p>
+      </fieldset>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <fieldset className="grid grid-cols-3 gap-3 border border-unit/40 p-3">

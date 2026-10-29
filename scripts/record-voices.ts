@@ -20,11 +20,12 @@ const MANIFEST = "lib/voice-manifest.json";
 const MODEL = "eleven_v3";
 const FORMAT = "mp3_44100_64";
 
-const saved = JSON.parse(readFileSync("art/voices/voices.json", "utf8")) as Record<string, { voiceId: string }>;
-const VOICE_IDS: Record<string, string> = {
-  jc316: saved.jc316.voiceId,
-  sma_cross: saved.vanguard.voiceId,
-  rsi_revert: saved.recoil.voiceId,
+const saved = JSON.parse(readFileSync("art/voices/voices.json", "utf8")) as Record<string, { voiceId: string } | undefined>;
+const VOICE_IDS: Record<string, string | undefined> = {
+  jc316: saved.jc316?.voiceId,
+  sma_cross: saved.vanguard?.voiceId,
+  rsi_revert: saved.recoil?.voiceId,
+  spy_core: saved.bastion?.voiceId,
 };
 
 async function tts(voiceId: string, text: string) {
@@ -50,7 +51,10 @@ async function main() {
   mkdirSync(OUT, { recursive: true });
   const clips = allClips();
   const limit = Number(process.argv[process.argv.indexOf("--limit") + 1]) || Infinity;
-  const todo = clips.filter((c) => !existsSync(join(OUT, `${clipKey(c.who, c.text)}.mp3`)));
+  // Speakers without a picked voice yet (scripts/design-voices.ts) are skipped; their lines use the synth cue.
+  const unvoiced = [...new Set(clips.filter((c) => !VOICE_IDS[c.who]).map((c) => c.who))];
+  if (unvoiced.length) console.log(`no voice picked yet for: ${unvoiced.join(", ")} (skipping their lines)`);
+  const todo = clips.filter((c) => VOICE_IDS[c.who] && !existsSync(join(OUT, `${clipKey(c.who, c.text)}.mp3`)));
   todo.splice(limit);
   const chars = todo.reduce((a, c) => a + c.text.length, 0);
   console.log(`${clips.length} clips, ${todo.length} to record (${chars} characters)`);
@@ -62,7 +66,7 @@ async function main() {
   for (let i = 0; i < todo.length; i += 3) {
     await Promise.all(
       todo.slice(i, i + 3).map(async (c) => {
-        writeFileSync(join(OUT, `${clipKey(c.who, c.text)}.mp3`), await tts(VOICE_IDS[c.who], spoken(c.text)));
+        writeFileSync(join(OUT, `${clipKey(c.who, c.text)}.mp3`), await tts(VOICE_IDS[c.who]!, spoken(c.text)));
       }),
     );
     process.stdout.write(`\r  ${Math.min(i + 3, todo.length)}/${todo.length}`);

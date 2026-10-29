@@ -80,7 +80,7 @@ export const BRIEFS = {
   "page-hangar": {
     title: "Hangar",
     what: "The strategy units: their rules, combat record, live tuning, and the targeting computer's latest calls.",
-    now: "Two units on the line: Vanguard (trend) and Recoil (dip-buying).",
+    now: "Three units: Bastion holds the SPY core; Vanguard (trend) and Recoil (dip-buying) trade around it.",
     note: "Retune here, but simulate first. Changes go live on the next sortie.",
   },
   "page-sorties": {
@@ -523,6 +523,13 @@ export const BRIEFS = {
         : "Lost to SPY buy-and-hold over this window. Simply holding the index would have done better.";
     },
   },
+  core: {
+    title: "Bastion · core",
+    what: "UNIT-00 Bastion holds SPY with a fixed share of the account while SPY's last daily close is above its 200-day average, and sells it all when SPY closes below. There's no protective stop: the average is the exit. The same line gates Vanguard and Recoil, which can't open new trades while SPY is below it.",
+    now: (c) =>
+      `${v(c, "status")}. SPY closed at ${v(c, "close")} against a 200-day average of ${v(c, "sma")} (${v(c, "gap")}). Core share ${v(c, "share")}; holding ${v(c, "held")}.`,
+    note: "In backtests from 2021 to 2026 this rule, with the units trading in the remaining share, beat holding SPY on worst drop and risk-adjusted return, at the cost of some return in strong years. It switches rarely, about 16 times in six years.",
+  },
   "unit-health": {
     title: (c) => `${callsign(c)} health`,
     what: "Live results against the newest simulation run on the same tuning: drawdown, rolling Sharpe and rolling expectancy. It tells you when to re-test a unit, not what to change.",
@@ -597,10 +604,27 @@ export const isBriefId = (id: string): id is BriefId => Object.hasOwn(BRIEFS, id
 const resolve = (t: Text, c: BriefCtx) => (typeof t === "function" ? t(c) : t);
 
 /**
- * Wingman voice lines. Vanguard is the brash trend-rider; Recoil the patient counter-puncher. Like the
+ * Wingman voice lines. Bastion is the immovable core; Vanguard the brash trend-rider; Recoil the patient
+ * counter-puncher. Like the
  * templates, they only reuse values from the context (symbol, win/loss), never new numbers.
  */
 export const VOICE: Record<UnitId, (id: BriefId, c: BriefCtx) => string> = {
+  spy_core: (id, c) => {
+    const pnl = n(c, "pnlRaw");
+    if (id === "position") return "Holding the line on SPY. I move when the 200-day average says so, not before.";
+    if (id === "trade" || id === "debrief-hero" || id === "sim-trade")
+      return pnl !== null && pnl > 0 ? "The market carried us. I held until the line broke." : "The line broke, so I fell back. Cash is a position too.";
+    if (id === "signal" || id === "call")
+      return c.action === "buy"
+        ? "SPY is back above its 200-day line. Advancing."
+        : c.action === "sell"
+          ? "SPY closed below its 200-day line. Falling back to cover."
+          : "No change in the line. Holding position.";
+    if (id === "order") return c.side === "buy" ? "Taking the field." : "Falling back.";
+    if (id === "unit" || id === "core") return "Unit-00 Bastion. I hold the market while it's healthy, and I take cover when it isn't.";
+    if (id === "sim-unit") return "I don't chase. I hold, or I wait.";
+    return "Bastion. Position holding.";
+  },
   sma_cross: (id, c) => {
     const sym = c.symbol ? String(c.symbol) : "the target";
     const pnl = n(c, "pnlRaw");

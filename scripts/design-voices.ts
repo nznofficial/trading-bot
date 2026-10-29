@@ -1,12 +1,13 @@
 /**
- * Design the three mech voices with ElevenLabs Voice Design, and save the one the pilot picks.
+ * Design the mech voices with ElevenLabs Voice Design, and save the one the pilot picks.
  *
  *   npx tsx --env-file=.env.local scripts/design-voices.ts            # generate previews + preview page
  *   npx tsx --env-file=.env.local scripts/design-voices.ts --only recoil
  *   npx tsx --env-file=.env.local scripts/design-voices.ts --pick jc316=2,vanguard=1,recoil=3
  *   npx tsx --env-file=.env.local scripts/design-voices.ts --page       # rebuild the page only (no API calls)
  *
- * Previews land in art/voices/raw/ (gitignored) with art/voices/preview.html to listen to them,
+ * Previews land in art/voices/raw/ (gitignored) with art/voices/preview.html to listen to them
+ * (serve it, e.g. `python3 -m http.server 8765 -d art/voices`; opened as a file it can't load audio),
  * raw and through the in-app comms effects. Picking saves the voice to the ElevenLabs account and
  * records its id in art/voices/voices.json. The key is read from the environment, never written.
  */
@@ -23,7 +24,7 @@ const RAW = join(DIR, "raw");
 const LOG = join(DIR, "previews.json");
 const VOICES = join(DIR, "voices.json");
 
-type Speaker = "jc316" | "vanguard" | "recoil";
+type Speaker = "jc316" | "vanguard" | "recoil" | "bastion";
 
 /** Original characters: described by sound, never by reference to existing franchises or actors. */
 const SPEAKERS: Record<Speaker, { name: string; description: string; text: string }> = {
@@ -44,6 +45,12 @@ const SPEAKERS: Record<Speaker, { name: string; description: string; text: strin
     description:
       "A deep, slow, gravelly voice of a heavy-artillery soldier. Patient and unflappable with a quiet menace, low resonant bass, few words and deliberate pauses, weathered and calm under fire.",
     text: "Recoil reporting. When the market panics, I wait. MSFT is oversold. I'm moving in slow and steady, and when the bounce comes, I sell.",
+  },
+  bastion: {
+    name: "Bastion",
+    description:
+      "A very deep, warm, resonant older male voice for the fortress commander of a giant defensive robot. Slow, unhurried and completely composed, smooth rather than gravelly, with quiet authority and certainty. Speaks in few words, like a last line of defense who never raises his voice. Neutral American accent.",
+    text: "Bastion, holding the line. The market is above its two-hundred-day average, so I stand my ground. When the line breaks, I fall back, and I wait.",
   },
 };
 
@@ -153,7 +160,8 @@ document.addEventListener("click", async (e) => {
 });
 </script>`,
   );
-  console.log(`preview page: ${join(DIR, "preview.html")}`);
+  // Browsers block fetch() from file:// pages, so the buttons only work when the folder is served.
+  console.log(`preview page: python3 -m http.server 8765 -d ${DIR} → http://localhost:8765/preview.html`);
 }
 
 async function main() {

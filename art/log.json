@@ -788,5 +788,233 @@
       },
       "total_tokens": 3751
     }
+  },
+  {
+    "id": "bastion-sheet",
+    "file": "art/raw/bastion-sheet-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nCharacter model turnaround sheet of UNIT-00 Bastion: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-29T05:31:22.942Z",
+    "usage": {
+      "input_tokens": 1341,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1341
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5457
+    }
+  },
+  {
+    "id": "bastion-sheet",
+    "file": "art/raw/bastion-sheet-2.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nCharacter model turnaround sheet of UNIT-00 Bastion: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-29T05:31:22.944Z",
+    "usage": {
+      "input_tokens": 1341,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1341
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5457
+    }
+  },
+  {
+    "id": "bastion-sheet",
+    "file": "art/raw/bastion-sheet-3.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nCharacter model turnaround sheet of UNIT-00 Bastion: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-29T05:31:22.946Z",
+    "usage": {
+      "input_tokens": 1341,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1341
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5457
+    }
+  },
+  {
+    "id": "bastion-keyart",
+    "file": "art/raw/bastion-keyart-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1536",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/bastion-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nFull-body key art of Bastion planted in a defensive stance at the hangar mouth, shoulder shields folded forward into a tower shield, heel anchor spikes driven into the deck, rotary cannon held low, steady green visor bar, cool blue rim light and drifting haze behind.",
+    "at": "2026-10-29T05:34:31.217Z",
+    "usage": {
+      "input_tokens": 3954,
+      "input_tokens_details": {
+        "image_tokens": 3072,
+        "text_tokens": 882
+      },
+      "output_tokens": 2744,
+      "output_tokens_details": {
+        "image_tokens": 2744,
+        "text_tokens": 0
+      },
+      "total_tokens": 6698
+    }
+  },
+  {
+    "id": "bastion-keyart",
+    "file": "art/raw/bastion-keyart-2.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1536",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/bastion-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nFull-body key art of Bastion planted in a defensive stance at the hangar mouth, shoulder shields folded forward into a tower shield, heel anchor spikes driven into the deck, rotary cannon held low, steady green visor bar, cool blue rim light and drifting haze behind.",
+    "at": "2026-10-29T05:34:31.221Z",
+    "usage": {
+      "input_tokens": 3954,
+      "input_tokens_details": {
+        "image_tokens": 3072,
+        "text_tokens": 882
+      },
+      "output_tokens": 2744,
+      "output_tokens_details": {
+        "image_tokens": 2744,
+        "text_tokens": 0
+      },
+      "total_tokens": 6698
+    }
+  },
+  {
+    "id": "bastion-bust",
+    "file": "art/raw/bastion-bust-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "art/anchors/bastion-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nHead-and-shoulders portrait of Bastion in three-quarter view facing right, squared helmet and single green visor bar, massive shoulder armor framing the head. Isolated character, no background scenery.",
+    "at": "2026-10-29T05:35:20.582Z",
+    "usage": {
+      "input_tokens": 3924,
+      "input_tokens_details": {
+        "image_tokens": 3072,
+        "text_tokens": 852
+      },
+      "output_tokens": 3512,
+      "output_tokens_details": {
+        "image_tokens": 3512,
+        "text_tokens": 0
+      },
+      "total_tokens": 7436
+    }
+  },
+  {
+    "id": "bastion-bust",
+    "file": "art/raw/bastion-bust-2.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "art/anchors/bastion-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nHead-and-shoulders portrait of Bastion in three-quarter view facing right, squared helmet and single green visor bar, massive shoulder armor framing the head. Isolated character, no background scenery.",
+    "at": "2026-10-29T05:35:20.585Z",
+    "usage": {
+      "input_tokens": 3924,
+      "input_tokens_details": {
+        "image_tokens": 3072,
+        "text_tokens": 852
+      },
+      "output_tokens": 3512,
+      "output_tokens_details": {
+        "image_tokens": 3512,
+        "text_tokens": 0
+      },
+      "total_tokens": 7436
+    }
+  },
+  {
+    "id": "bastion-bust",
+    "file": "art/raw/bastion-bust-3.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "art/anchors/bastion-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nHead-and-shoulders portrait of Bastion in three-quarter view facing right, squared helmet and single green visor bar, massive shoulder armor framing the head. Isolated character, no background scenery.",
+    "at": "2026-10-29T05:36:32.020Z",
+    "usage": {
+      "input_tokens": 3924,
+      "input_tokens_details": {
+        "image_tokens": 3072,
+        "text_tokens": 852
+      },
+      "output_tokens": 3512,
+      "output_tokens_details": {
+        "image_tokens": 3512,
+        "text_tokens": 0
+      },
+      "total_tokens": 7436
+    }
+  },
+  {
+    "id": "bastion-bust",
+    "file": "art/raw/bastion-bust-4.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "art/anchors/bastion-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nHead-and-shoulders portrait of Bastion in three-quarter view facing right, squared helmet and single green visor bar, massive shoulder armor framing the head. Isolated character, no background scenery.",
+    "at": "2026-10-29T05:36:32.024Z",
+    "usage": {
+      "input_tokens": 3924,
+      "input_tokens_details": {
+        "image_tokens": 3072,
+        "text_tokens": 852
+      },
+      "output_tokens": 3512,
+      "output_tokens_details": {
+        "image_tokens": 3512,
+        "text_tokens": 0
+      },
+      "total_tokens": 7436
+    }
   }
 ]

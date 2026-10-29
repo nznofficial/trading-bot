@@ -51,13 +51,21 @@ async function Console() {
   const live = await getLiveSettings();
   return (
     <SimulatorConsole
-      defaults={{ months: 3, theater: "all", ...live.sma, ...live.rsi, stopLossPct: live.stopLossPct * 100 }}
+      defaults={{
+        months: 3,
+        theater: "all",
+        ...live.sma,
+        ...live.rsi,
+        stopLossPct: live.stopLossPct * 100,
+        coreEnabled: live.core.enabled,
+        corePct: Math.round(live.core.pct * 100),
+      }}
     />
   );
 }
 
 const paramLine = (p: SimulationRow["params"]) =>
-  `SMA ${p.sma.fast}/${p.sma.slow} ×${p.sma.crossLookback} · RSI ${p.rsi.period} <${p.rsi.entry}/>${p.rsi.exit} · stop ${(p.stopLossPct * 100).toFixed(1)}%`;
+  `${p.core?.enabled ? `Core ${Math.round(p.core.pct * 100)}% · ` : ""}SMA ${p.sma.fast}/${p.sma.slow} ×${p.sma.crossLookback} · RSI ${p.rsi.period} <${p.rsi.entry}/>${p.rsi.exit} · stop ${(p.stopLossPct * 100).toFixed(1)}%`;
 const theaterLabel = (t: string) => (t === "us_equity" ? "Equities" : t === "crypto" ? "Crypto" : "All");
 
 async function Results({ searchParams }: { searchParams: PageProps<"/simulator">["searchParams"] }) {

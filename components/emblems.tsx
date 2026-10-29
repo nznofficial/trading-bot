@@ -1,13 +1,34 @@
 /**
  * Original unit emblems (geometric mech heads), one per strategy.
- * UNIT-01 VANGUARD rides trends (SMA crossover); UNIT-02 RECOIL strikes on rebounds (RSI reversion).
+ * UNIT-00 BASTION holds the SPY core; UNIT-01 VANGUARD rides trends (SMA crossover); UNIT-02 RECOIL
+ * strikes on rebounds (RSI reversion).
  */
 import { UNITS, type UnitId } from "@/lib/units";
 
 export { UNITS, unitFor, type UnitId } from "@/lib/units";
 
 export function UnitEmblem({ unit, size = 64 }: { unit: UnitId; size?: number }) {
-  return unit === "sma_cross" ? <Vanguard size={size} /> : <Recoil size={size} />;
+  return unit === "sma_cross" ? <Vanguard size={size} /> : unit === "spy_core" ? <Bastion size={size} /> : <Recoil size={size} />;
+}
+
+function Bastion({ size }: { size: number }) {
+  const { primary, secondary } = UNITS.spy_core;
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Unit-00 Bastion emblem">
+      <polygon points="32,2 60,18 60,46 32,62 4,46 4,18" fill="#0e0d14" stroke={primary} strokeWidth="1.5" />
+      {/* Fortress pauldrons */}
+      <path d="M8 22h12v18H10Z M56 22H44v18h10Z" fill={primary} opacity="0.7" />
+      {/* Squared helmet */}
+      <path d="M19 18h26v24l-6 7H25l-6-7Z" fill={primary} />
+      {/* Single visor bar */}
+      <path d="M22 28h20v5H22Z" fill="#0b0a10" />
+      <path d="M24 29.5h16v2H24Z" fill={secondary} />
+      {/* Amber crown band */}
+      <path d="M22 20h20v3H22Z" fill="#ffa41b" />
+      {/* Grille */}
+      <path d="M27 39h10M27 42h10" stroke="#0b0a10" strokeWidth="1.5" />
+    </svg>
+  );
 }
 
 function Vanguard({ size }: { size: number }) {

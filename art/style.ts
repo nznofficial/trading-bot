@@ -27,6 +27,11 @@ leg-mounted boosters. Weapon: a long beam lance. Stencil "U-01" on the shoulder.
   recoil: `UNIT-02 "Recoil", a counter-strike heavy-artillery mech: stocky and armored, with quad round optics in a recessed \
 visor, twin swept head fins, thick recoil-damper pistons on the arms, and shoulder-mounted twin counter-cannons. Crimson \
 #FF3B4E armor with amber #FFA41B accents over a gunmetal frame. Stencil "U-02" on the shoulder.`,
+  bastion: `UNIT-00 "Bastion", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the \
+other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs \
+with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. \
+Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held \
+low. Stencil "U-00" on the shoulder. Patient, immovable, guardian bearing.`,
 } as const;
 
 export type CharacterId = keyof typeof CHARACTERS;

@@ -1,6 +1,6 @@
 import type { Bar } from "./alpaca";
 import { drawdowns, pctReturns, sharpe, sortino, tradeStats, tradingDay, type RoundTrip, type TradeStats } from "./analytics";
-import { assetClassOf, type AssetClass, type StrategyId } from "./config";
+import { assetClassOf, type AssetClass, type OwnerId } from "./config";
 import type { Evaluator, Strategy } from "./strategies/types";
 
 /**
@@ -11,6 +11,10 @@ import type { Evaluator, Strategy } from "./strategies/types";
  * - Protective stops trigger when a bar's low reaches the stop; a gap below fills at the open.
  * - Same sizing and limits as live: per-position %, crypto class cap, max positions, daily loss halt,
  *   re-entry cooldown after a stop, whole shares for stocks, 0.25% crypto fees each side.
+ * - With a market filter (`regime`), units don't open new positions on days it's false.
+ * - With a core: it holds its symbol at `pct` of equity while `regime(day)` is true (decided on a bar's
+ *   close, filled at the next open, like the units), sells when false, has no stop, and ignores the daily
+ *   loss halt and cooldown. The units share whatever `unitsMaxPct` allows.
  */
 
 export type BacktestConfig = {
@@ -20,6 +24,12 @@ export type BacktestConfig = {
   maxOpenPositions: number;
   dailyLossHaltPct: number;
   cooldownHours: number;
+  /** Cap on all unit (non-core) positions together, as a fraction of equity. Omitted = no cap. */
+  unitsMaxPct?: number;
+  /** Market filter: false on days SPY's last close is below its 200-day average. Gates unit buys and drives the core. */
+  regime?: (day: string) => boolean | null;
+  /** Requires `regime`. */
+  core?: { id: OwnerId; symbol: string; pct: number };
 };
 
 export type SimTrade = RoundTrip & { exitReason: "signal" | "stop" | "end" };
@@ -50,11 +60,12 @@ type Position = {
   cost: number;
   entryFee: number;
   entryTs: Date;
+  /** 0 = no protective stop (the core). */
   stop: number;
-  strategy: StrategyId;
+  strategy: OwnerId;
 };
 
-type Pending = { action: "buy" | "sell"; strategy: StrategyId };
+type Pending = { action: "buy" | "sell"; strategy: OwnerId };
 
 export function runBacktest(
   bars: Record<string, Bar[]>,
@@ -62,8 +73,11 @@ export function runBacktest(
   cfg: BacktestConfig,
   benchmarks: { spy?: Bar[]; btc?: Bar[] } = {},
 ): BacktestResult {
-  const symbols = Object.keys(strategies).filter((s) => (bars[s]?.length ?? 0) > 0);
-  const evaluators = new Map<string, Evaluator>(symbols.map((s) => [s, strategies[s].prepare(bars[s])]));
+  const core = cfg.core && cfg.regime && (bars[cfg.core.symbol]?.length ?? 0) > 0 ? cfg.core : null;
+  const regime = cfg.regime ?? (() => null);
+  const unitSymbols = Object.keys(strategies).filter((s) => (bars[s]?.length ?? 0) > 0 && s !== core?.symbol);
+  const symbols = core ? [...unitSymbols, core.symbol] : unitSymbols;
+  const evaluators = new Map<string, Evaluator>(unitSymbols.map((s) => [s, strategies[s].prepare(bars[s])]));
   // Merge every bar timestamp into one clock.
   const steps = new Map<number, { symbol: string; i: number }[]>();
   for (const s of symbols) {
@@ -120,15 +134,25 @@ export function runBacktest(
     if (reason === "stop") cooldownUntil.set(symbol, ts.getTime() + cfg.cooldownHours * 3_600_000);
   };
 
-  const open = (symbol: string, price: number, ts: Date, strategy: StrategyId, equity: number) => {
+  const openCore = (symbol: string, price: number, ts: Date, equity: number) => {
+    const qty = Math.floor(Math.min(equity * core!.pct, cash * 0.95) / price);
+    if (qty < 1) return;
+    cash -= qty * price;
+    positions.set(symbol, { qty, entryPrice: price, cost: qty * price, entryFee: 0, entryTs: ts, stop: 0, strategy: core!.id });
+  };
+
+  const open = (symbol: string, price: number, ts: Date, strategy: OwnerId, equity: number) => {
     if (positions.size >= cfg.maxOpenPositions) return;
     if ((cooldownUntil.get(symbol) ?? 0) > ts.getTime()) return;
     if (equity / dayStartEquity - 1 <= cfg.dailyLossHaltPct) return;
+    let unitsExposure = 0;
+    for (const [s, p] of positions) if (s !== core?.symbol) unitsExposure += p.qty * (lastClose.get(s) ?? p.entryPrice);
+    const unitsRoom = equity * (cfg.unitsMaxPct ?? Infinity) - unitsExposure;
     const cls: AssetClass = assetClassOf(symbol);
     if (cls === "crypto") {
       let cryptoExposure = 0;
       for (const [s, p] of positions) if (assetClassOf(s) === "crypto") cryptoExposure += p.qty * (lastClose.get(s) ?? p.entryPrice);
-      const budget = Math.min(equity * cfg.crypto.maxPositionPct, equity * cfg.crypto.maxClassPct - cryptoExposure, cash * 0.95);
+      const budget = Math.min(equity * cfg.crypto.maxPositionPct, equity * cfg.crypto.maxClassPct - cryptoExposure, unitsRoom, cash * 0.95);
       if (budget < 10) return;
       const fill = Math.floor((budget / price) * 1e9) / 1e9;
       const received = fill * (1 - cfg.crypto.feeRate); // fee taken in-kind
@@ -143,7 +167,7 @@ export function runBacktest(
         strategy,
       });
     } else {
-      const budget = Math.min(equity * cfg.stocks.maxPositionPct, cash * 0.95);
+      const budget = Math.min(equity * cfg.stocks.maxPositionPct, unitsRoom, cash * 0.95);
       const qty = Math.floor(budget / price);
       if (qty < 1) return;
       cash -= qty * price;
@@ -173,14 +197,25 @@ export function runBacktest(
       if (order) {
         pending.delete(symbol);
         if (order.action === "sell" && positions.has(symbol)) close(symbol, bar.o, ts, "signal");
-        if (order.action === "buy" && !positions.has(symbol)) open(symbol, bar.o, ts, order.strategy, markEquity().equity);
+        if (order.action === "buy" && !positions.has(symbol)) {
+          if (symbol === core?.symbol) openCore(symbol, bar.o, ts, markEquity().equity);
+          else open(symbol, bar.o, ts, order.strategy, markEquity().equity);
+        }
       }
       // 2) Protective stop: triggered by the bar's low; a gap through the stop fills at the open.
       const pos = positions.get(symbol);
-      if (pos && bar.l <= pos.stop) close(symbol, Math.min(bar.o, pos.stop), ts, "stop");
+      if (pos && pos.stop > 0 && bar.l <= pos.stop) close(symbol, Math.min(bar.o, pos.stop), ts, "stop");
       lastClose.set(symbol, bar.c);
       // 3) Evaluate on the close; act on the next bar.
+      if (symbol === core?.symbol) {
+        const above = regime(today);
+        const holding = positions.has(symbol);
+        if (above === true && !holding) pending.set(symbol, { action: "buy", strategy: core.id });
+        else if (above === false && holding) pending.set(symbol, { action: "sell", strategy: core.id });
+        continue;
+      }
       const sig = evaluators.get(symbol)!(i, positions.get(symbol)?.qty ?? 0);
+      if (sig.action === "buy" && regime(today) === false) continue;
       if (sig.action !== "hold") pending.set(symbol, { action: sig.action, strategy: strategies[symbol].id });
     }
     const m = markEquity();
@@ -230,7 +265,7 @@ export function runBacktest(
     x.count++;
     bySymbolMap.set(t.symbol, x);
   }
-  const unitIds = [...new Set(Object.values(strategies).map((s) => s.id))];
+  const unitIds: OwnerId[] = [...(core ? [core.id] : []), ...new Set(unitSymbols.map((s) => strategies[s].id))];
 
   return {
     summary: {

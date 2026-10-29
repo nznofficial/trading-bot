@@ -169,9 +169,9 @@ pose, guide rails glowing amber, deck crew silhouettes with signal wands, steam 
     id: "event-victory",
     phase: "D",
     size: "1536x1024",
-    characters: ["jc316", "vanguard", "recoil"],
-    scene: `JC-316 in the center flanked by Vanguard and Recoil, silhouetted against a dawn horizon with smoke trails and \
-drifting embers, triumphant and calm.`,
+    characters: ["jc316", "bastion", "vanguard", "recoil"],
+    scene: `JC-316 in the center with Bastion towering just behind its right shoulder, Vanguard on the far left and Recoil \
+on the far right, all four silhouetted against a dawn horizon with smoke trails and drifting embers, triumphant and calm.`,
     usedIn: "Target neutralized banner",
   },
   {

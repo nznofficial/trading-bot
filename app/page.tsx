@@ -463,7 +463,7 @@ function KoBanner({ trade }: { trade: { symbol: string; pnl: number; returnPct: 
     >
       <CueOnce id={`${trade.symbol}-${trade.exitTs}`} cue="win" />
       <div className="frame-body relative overflow-hidden px-6 py-4">
-        <Image src={ART.victory} alt="" fill sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover object-[center_35%] opacity-60" />
+        <Image src={ART.victory} alt="" fill sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover object-[center_17%] opacity-60" />
         <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-[#08070c] via-[#08070c]/75 to-transparent" />
         <div className="hazard hazard-live absolute inset-y-0 left-0 w-3" aria-hidden />
         <div className="relative flex flex-wrap items-center gap-x-6 gap-y-2 py-4 pl-4">

@@ -1130,5 +1130,63 @@
       },
       "total_tokens": 13336
     }
+  },
+  {
+    "id": "event-victory",
+    "file": "art/raw/event-victory-2.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/jc316-sheet.webp",
+      "art/anchors/bastion-sheet.webp",
+      "art/anchors/vanguard-sheet.webp",
+      "art/anchors/recoil-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nUNIT-01 \"Vanguard\", a trend-assault mech: tall, fast and sleek, with a single swept-forward horn crest and long forearm blades. Deep violet #8B5CF6 and dark plum armor over a gunmetal frame, sync-green optics in a narrow visor. Large leg-mounted boosters. Weapon: a long beam lance. Stencil \"U-01\" on the shoulder.\n\nUNIT-02 \"Recoil\", a counter-strike heavy-artillery mech: stocky and armored, with quad round optics in a recessed visor, twin swept head fins, thick recoil-damper pistons on the arms, and shoulder-mounted twin counter-cannons. Crimson #FF3B4E armor with amber #FFA41B accents over a gunmetal frame. Stencil \"U-02\" on the shoulder.\n\nJC-316 in the center with Bastion towering just behind its right shoulder, Vanguard on the far left and Recoil on the far right, all four silhouetted against a dawn horizon with smoke trails and drifting embers, triumphant and calm.",
+    "at": "2026-10-29T05:56:39.660Z",
+    "usage": {
+      "input_tokens": 13896,
+      "input_tokens_details": {
+        "image_tokens": 12288,
+        "text_tokens": 1608
+      },
+      "output_tokens": 2744,
+      "output_tokens_details": {
+        "image_tokens": 2744,
+        "text_tokens": 0
+      },
+      "total_tokens": 16640
+    }
+  },
+  {
+    "id": "event-victory",
+    "file": "art/raw/event-victory-3.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/jc316-sheet.webp",
+      "art/anchors/bastion-sheet.webp",
+      "art/anchors/vanguard-sheet.webp",
+      "art/anchors/recoil-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nJC-316, an AI copilot mech and the main character: a medium-heavy command frame with a broad chest and angular layered shoulder armor bearing amber hazard stripes. Head: a narrow slit faceplate over a twin-optic visor glowing sync green, a chin intake grille, a single forward blade antenna offset to the left, and twin rear sensor fins. Twin thruster binders on articulated arms on its back. Gunmetal frame, off-white armor plates, amber trim. Stencil \"JC-316\" on the left shoulder and \"316\" on the chest plate. Carries a long-barrel railgun rifle and a slim kite shield with a hazard band. Calm, protective, veteran bearing. It shows emotion only through optic color and shape, head tilt, antenna and vent flare, sparks and damage; it has no human face.\n\nUNIT-00 \"Bastion\", the core defense mech: a towering, broad fortress frame noticeably taller and heavier than the other units. Massive layered pauldrons that can fold forward and lock into a full-body tower shield, thick armored legs with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held low. Stencil \"U-00\" on the shoulder. Patient, immovable, guardian bearing.\n\nUNIT-01 \"Vanguard\", a trend-assault mech: tall, fast and sleek, with a single swept-forward horn crest and long forearm blades. Deep violet #8B5CF6 and dark plum armor over a gunmetal frame, sync-green optics in a narrow visor. Large leg-mounted boosters. Weapon: a long beam lance. Stencil \"U-01\" on the shoulder.\n\nUNIT-02 \"Recoil\", a counter-strike heavy-artillery mech: stocky and armored, with quad round optics in a recessed visor, twin swept head fins, thick recoil-damper pistons on the arms, and shoulder-mounted twin counter-cannons. Crimson #FF3B4E armor with amber #FFA41B accents over a gunmetal frame. Stencil \"U-02\" on the shoulder.\n\nJC-316 in the center with Bastion towering just behind its right shoulder, Vanguard on the far left and Recoil on the far right, all four silhouetted against a dawn horizon with smoke trails and drifting embers, triumphant and calm.",
+    "at": "2026-10-29T05:56:39.663Z",
+    "usage": {
+      "input_tokens": 13896,
+      "input_tokens_details": {
+        "image_tokens": 12288,
+        "text_tokens": 1608
+      },
+      "output_tokens": 2744,
+      "output_tokens_details": {
+        "image_tokens": 2744,
+        "text_tokens": 0
+      },
+      "total_tokens": 16640
+    }
   }
 ]

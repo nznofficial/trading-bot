@@ -11,7 +11,6 @@ export const STOCKS: Record<string, StrategyId> = {
   QQQ: "rsi_revert",
   AAPL: "rsi_revert",
   MSFT: "rsi_revert",
-  GOOGL: "rsi_revert",
   NVDA: "sma_cross",
   AMZN: "sma_cross",
   META: "sma_cross",

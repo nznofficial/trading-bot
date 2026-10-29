@@ -23,7 +23,7 @@ A rule-based trading bot that paper-trades US stocks and crypto on **Alpaca's pa
 
 | Strategy | Symbols | Entry | Exit |
 |---|---|---|---|
-| `rsi_revert` | SPY QQQ AAPL MSFT GOOGL | RSI(14) < 30 | RSI > 55, or the 5% stop |
+| `rsi_revert` | SPY QQQ AAPL MSFT | RSI(14) < 30 | RSI > 55, or the 5% stop |
 | `sma_cross` | NVDA AMZN META TSLA AMD | SMA20 crosses above SMA50 (within 3 bars) | SMA20 < SMA50, or the 5% stop |
 | `sma_cross` | BTC/USD ETH/USD | same | same |
 | `rsi_revert` | SOL/USD | same | same |

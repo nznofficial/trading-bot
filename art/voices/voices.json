@@ -14,5 +14,9 @@
   "bastion": {
     "voiceId": "1GcNfdXXxoyecQ5redOY",
     "preview": 2
+  },
+  "herald": {
+    "voiceId": "z7BDSoSHFfRlXItNqlKa",
+    "preview": 3
   }
 }

@@ -17,6 +17,7 @@ export function playVoice(
     vanguard: { hp: 280, lp: 5400, ring: 92, ringMix: 0.12, drive: 1.3, comb: 0.006, combFb: 0.25, combMix: 0.2 },
     recoil: { hp: 110, lp: 3300, ring: 38, ringMix: 0.3, drive: 3, comb: 0.012, combFb: 0.42, combMix: 0.34 },
     bastion: { hp: 90, lp: 3600, ring: 30, ringMix: 0.16, drive: 1.4, comb: 0.016, combFb: 0.38, combMix: 0.3 },
+    herald: { hp: 320, lp: 5800, ring: 110, ringMix: 0.1, drive: 1.2, comb: 0.005, combFb: 0.22, combMix: 0.18 },
   };
   const p = presets[who] ?? presets.jc316;
   const src = ctx.createBufferSource();

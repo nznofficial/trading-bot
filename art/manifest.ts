@@ -148,13 +148,14 @@ scenery.`,
     id: "scene-hangar",
     phase: "C",
     size: "1920x1088",
-    characters: ["bastion", "vanguard", "recoil"],
-    scene: `Dramatic low-angle wide shot inside a mech hangar bay, camera near the floor looking up so the three mechs \
-loom over the viewer, framed from mid-thigh up: Bastion in the center bay under a large stenciled bay number "00", towering \
-and slightly closer to camera with its shoulder shields folded; Vanguard in the left bay under bay number "01"; Recoil in the \
-right bay under bay number "02". No other bay numbers and no other mechs. Gantry walkways crossing in front of their chests, \
-overhead crane rails, welding sparks, amber hazard stripes, warm sodium lights cutting through cool haze. All three heads and \
-the bay numbers sit in the upper half of the frame; leave the lower third darker and calmer so UI can sit on top.`,
+    characters: ["bastion", "vanguard", "recoil", "herald"],
+    scene: `Dramatic low-angle wide shot inside a mech hangar bay, camera near the floor looking up so the four mechs \
+loom over the viewer, framed from mid-thigh up, in four side-by-side bays from left to right: Vanguard under a large \
+stenciled bay number "01"; Bastion under "00", towering and slightly closer to camera with its shoulder shields folded; \
+Recoil under "02"; and Herald, the leanest of the four, under "03" with its antenna masts raised. No other bay numbers and \
+no other mechs. Gantry walkways crossing in front of their chests, overhead crane rails, welding sparks, amber hazard \
+stripes, warm sodium lights cutting through cool haze. All four heads and the bay numbers sit in the upper half of the frame; \
+leave the lower third darker and calmer so UI can sit on top.`,
     usedIn: "Hangar backdrop",
   },
   {
@@ -191,9 +192,9 @@ pose, guide rails glowing amber, deck crew silhouettes with signal wands, steam 
     id: "event-victory",
     phase: "D",
     size: "1536x1024",
-    characters: ["jc316", "bastion", "vanguard", "recoil"],
-    scene: `JC-316 in the center with Bastion towering just behind its right shoulder, Vanguard on the far left and Recoil \
-on the far right, all four silhouetted against a dawn horizon with smoke trails and drifting embers, triumphant and calm.`,
+    characters: ["jc316", "bastion", "vanguard", "recoil", "herald"],
+    scene: `JC-316 in the center with Bastion towering just behind its right shoulder, Vanguard on the far left, Recoil \
+on the far right, and Herald, lean with its antenna masts raised, between JC-316 and Recoil, all five silhouetted against a dawn horizon with smoke trails and drifting embers, triumphant and calm.`,
     usedIn: "Target neutralized banner",
   },
   {

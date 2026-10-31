@@ -236,6 +236,14 @@ const SPEAKERS: Record<Speaker, { name: string; code: string; role: string; art:
     frame: UNITS.rsi_revert.primary,
     accent: UNITS.rsi_revert.secondary,
   },
+  news_drift: {
+    name: UNITS.news_drift.callsign,
+    code: UNITS.news_drift.code,
+    role: UNITS.news_drift.role,
+    art: ART.heraldKeyart,
+    frame: UNITS.news_drift.primary,
+    accent: UNITS.news_drift.secondary,
+  },
 };
 
 /**

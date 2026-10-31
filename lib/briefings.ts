@@ -13,8 +13,8 @@ import { unitFor, type UnitId } from "./units";
 export type BriefCtx = Record<string, string | number | boolean | null | undefined>;
 /** Who delivers a briefing: JC-316, or the wingman unit the component belongs to. */
 export type Speaker = "jc316" | VoicedUnit;
-/** Units with art and a recorded voice. Herald (UNIT-03) is briefed by JC-316 until it has both. */
-export type VoicedUnit = Exclude<UnitId, "news_drift">;
+/** Units with art and a recorded voice (all of them). */
+export type VoicedUnit = UnitId;
 export type Briefing = {
   title: string;
   what: string;
@@ -747,12 +747,28 @@ export const VOICE: Record<VoicedUnit, (id: BriefId, c: BriefCtx) => string> = {
     if (id === "sim-unit") return "Calm markets are my hunting ground. Show me the dips.";
     return "Recoil reporting. Here's the situation.";
   },
+  // Herald's lines never name the symbol: it watches forty targets, and each distinct line is a recorded clip.
+  news_drift: (id, c) => {
+    const pnl = n(c, "pnlRaw");
+    if (id === "position") return "News trade open. I ride the drift, then I'm out on schedule.";
+    if (id === "trade" || id === "debrief-hero" || id === "sim-trade")
+      return pnl !== null && pnl > 0 ? "The headline paid. Drift captured, out on schedule." : "That headline didn't carry. Closed on schedule. Next intercept.";
+    if (id === "signal" || id === "call")
+      return c.action === "buy"
+        ? "Strong headline intercepted. Moving in."
+        : c.action === "sell"
+          ? "Hold window's up. Pulling out."
+          : "Listening. Nothing material on the wire.";
+    if (id === "order") return c.side === "buy" ? "Going in on the headline." : "Out on schedule.";
+    if (id === "unit" || id === "intel-herald" || id === "intel-herald-sorties")
+      return "Unit-03 Herald. I listen to the wire, and when the news is strong, I move first.";
+    if (id === "unit-health" || id.startsWith("health-")) return "Signal check. News trades are noisy. Judge me on a few dozen, not a few.";
+    if (id === "sim-unit") return "Replay the wire as long as you like. I only trade what was published by the close.";
+    return "Herald on the wire. Here's what I'm hearing.";
+  },
 };
 
-const speakerOf = (c: BriefCtx): Speaker => {
-  const unit = (c.unit as string) ?? null;
-  return unitFor(unit) && Object.hasOwn(VOICE, unit!) ? (unit as VoicedUnit) : "jc316";
-};
+const speakerOf = (c: BriefCtx): Speaker => (unitFor((c.unit as string) ?? null) ? (c.unit as UnitId) : "jc316");
 
 /** Build the briefing for a component; null for unknown ids. Unit-owned components are briefed by that unit. */
 export function briefing(id: string, ctx: BriefCtx = {}): Briefing | null {

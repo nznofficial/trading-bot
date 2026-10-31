@@ -24,7 +24,7 @@ const RAW = join(DIR, "raw");
 const LOG = join(DIR, "previews.json");
 const VOICES = join(DIR, "voices.json");
 
-type Speaker = "jc316" | "vanguard" | "recoil" | "bastion";
+type Speaker = "jc316" | "vanguard" | "recoil" | "bastion" | "herald";
 
 /** Original characters: described by sound, never by reference to existing franchises or actors. */
 const SPEAKERS: Record<Speaker, { name: string; description: string; text: string }> = {
@@ -51,6 +51,12 @@ const SPEAKERS: Record<Speaker, { name: string; description: string; text: strin
     description:
       "A very deep, warm, resonant older male voice for the fortress commander of a giant defensive robot. Slow, unhurried and completely composed, smooth rather than gravelly, with quiet authority and certainty. Speaks in few words, like a last line of defense who never raises his voice. Neutral American accent.",
     text: "Bastion, holding the line. The market is above its two-hundred-day average, so I stand my ground. When the line breaks, I fall back, and I wait.",
+  },
+  herald: {
+    name: "Herald",
+    description:
+      "A crisp, alert female voice for the signals officer of a fast reconnaissance robot. Mid-thirties, clear and precise with a quick, clipped tempo, focused and slightly urgent like someone relaying an intercepted transmission over a field radio. Calm under pressure, never breathless. Neutral American accent.",
+    text: "Herald on the wire. Intercepted a strong headline on JPM: earnings beat, guidance raised. Moving in now, and I'm out in three days.",
   },
 };
 

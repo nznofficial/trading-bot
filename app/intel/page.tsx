@@ -91,6 +91,7 @@ async function Intel({ searchParams }: { searchParams: PageProps<"/intel">["sear
             value: <span className={live.herald.enabled ? "text-sync" : "text-amber"}>{herald}</span>,
             sub: live.herald.enabled ? `${pct(live.herald.pct, 0)} slice` : "awaiting backtest clearance",
             brief: briefAttrs("intel-herald", {
+              unit: "news_drift",
               status: herald,
               share: pct(live.herald.pct, 0),
               sentiment: fmtSent(live.herald.entrySentiment),
@@ -182,7 +183,7 @@ async function Intel({ searchParams }: { searchParams: PageProps<"/intel">["sear
           <section
             className={`frame boot ${live.herald.enabled ? "" : "frame-amber"}`}
             tabIndex={0}
-            {...briefAttrs("intel-herald-sorties", { status: herald, count: intel.heraldPositions.length, days: live.herald.holdDays })}
+            {...briefAttrs("intel-herald-sorties", { unit: "news_drift", status: herald, count: intel.heraldPositions.length, days: live.herald.holdDays })}
           >
             <div className="frame-body relative overflow-hidden">
               {/* Unit key art, faded behind the roster */}

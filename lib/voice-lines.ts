@@ -62,7 +62,7 @@ export const JC_LINES = {
 export function wingmanLines(): { who: VoicedUnit; text: string }[] {
   const out = new Map<string, { who: VoicedUnit; text: string }>();
   const add = (who: VoicedUnit, text: string) => out.set(`${who}:${text}`, { who, text });
-  for (const who of ["spy_core", "sma_cross", "rsi_revert"] as VoicedUnit[]) {
+  for (const who of ["spy_core", "sma_cross", "rsi_revert", "news_drift"] as VoicedUnit[]) {
     const symbols = Object.entries(OWNERS)
       .filter(([, u]) => u === who)
       .map(([s]) => s);

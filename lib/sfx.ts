@@ -29,7 +29,8 @@ export type Cue =
   | "voice-jc316"
   | "voice-sma_cross"
   | "voice-rsi_revert"
-  | "voice-spy_core";
+  | "voice-spy_core"
+  | "voice-news_drift";
 
 const KEY = "pt-sound";
 
@@ -359,7 +360,7 @@ const CUES: Record<Cue, (b: Bus, t: number) => void> = {
     noise(b, { at: t + 0.16, dur: 0.03, gain: 0.15, freq: 2000, q: 2 });
   },
   // Comms voices: JC-316 steady and mid-range; Vanguard quick and rising; Recoil low and gritty;
-  // Bastion the lowest and slowest, flat and immovable.
+  // Bastion the lowest and slowest, flat and immovable; Herald a fast, high burst.
   "voice-jc316": (b, t) => {
     CUES.squelch(b, t);
     phrase(b, t + 0.12, [220, 260, 240, 300, 250], { formant: 900, type: "sawtooth", gain: 0.13, step: 0.07 });
@@ -375,6 +376,11 @@ const CUES: Record<Cue, (b: Bus, t: number) => void> = {
   "voice-spy_core": (b, t) => {
     CUES.squelch(b, t);
     phrase(b, t + 0.12, [90, 90, 82, 90], { formant: 420, type: "sawtooth", gain: 0.1, step: 0.14 });
+  },
+  // Herald: quick, clipped, high, like a burst transmission.
+  "voice-news_drift": (b, t) => {
+    CUES.squelch(b, t);
+    phrase(b, t + 0.12, [520, 600, 520, 680, 600, 720, 640], { formant: 1800, type: "square", gain: 0.08, step: 0.04 });
   },
 };
 

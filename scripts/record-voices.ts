@@ -26,6 +26,7 @@ const VOICE_IDS: Record<string, string | undefined> = {
   sma_cross: saved.vanguard?.voiceId,
   rsi_revert: saved.recoil?.voiceId,
   spy_core: saved.bastion?.voiceId,
+  news_drift: saved.herald?.voiceId,
 };
 
 async function tts(voiceId: string, text: string) {

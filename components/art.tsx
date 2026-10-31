@@ -11,6 +11,8 @@ export const ART = {
   recoilKeyart: "/art/recoil-keyart.webp",
   bastionBust: "/art/bastion-bust.webp",
   bastionKeyart: "/art/bastion-keyart.webp",
+  heraldBust: "/art/herald-bust.webp",
+  heraldKeyart: "/art/herald-keyart.webp",
   hangar: "/art/scene-hangar.webp",
   bridge: "/art/scene-bridge.webp",
   simdeck: "/art/scene-simdeck.webp",
@@ -27,7 +29,13 @@ export const ART = {
 } as const;
 
 export const unitBust = (strategy: string) =>
-  strategy === "sma_cross" ? ART.vanguardBust : strategy === "spy_core" ? ART.bastionBust : ART.recoilBust;
+  strategy === "sma_cross"
+    ? ART.vanguardBust
+    : strategy === "spy_core"
+      ? ART.bastionBust
+      : strategy === "news_drift"
+        ? ART.heraldBust
+        : ART.recoilBust;
 
 /**
  * Painted scene behind a page header. The image is decorative (empty alt); a gradient keeps

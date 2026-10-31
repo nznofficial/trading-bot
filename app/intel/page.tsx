@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { ART } from "@/components/art";
-import { unitFor } from "@/components/emblems";
+import { UNITS, unitFor } from "@/components/emblems";
 import { Pager, PAGE_SIZES, readPaging, SizePicker, type PageHref } from "@/components/pager";
 import { Card, Delta, Empty, PageHeader, Skeleton, StatStrip } from "@/components/ui";
 import { briefAttrs } from "@/lib/briefings";
@@ -40,6 +41,7 @@ const CATEGORY: Record<string, string> = {
   macro: "Macro",
   other: "Other",
 };
+const HERALD_UNIT = UNITS.news_drift;
 const unitCode = (unit: string | null) => unitFor(unit)?.code ?? "—";
 
 async function Intel({ searchParams }: { searchParams: PageProps<"/intel">["searchParams"] }) {
@@ -177,32 +179,55 @@ async function Intel({ searchParams }: { searchParams: PageProps<"/intel">["sear
             )}
           </Card>
 
-          <Card
-            title="UNIT-03 sorties"
-            code="INT-03"
-            tone={live.herald.enabled ? undefined : "amber"}
-            brief={briefAttrs("intel-herald-sorties", { status: herald, count: intel.heraldPositions.length, days: live.herald.holdDays })}
+          <section
+            className={`frame boot ${live.herald.enabled ? "" : "frame-amber"}`}
+            tabIndex={0}
+            {...briefAttrs("intel-herald-sorties", { status: herald, count: intel.heraldPositions.length, days: live.herald.holdDays })}
           >
-            {intel.heraldPositions.length ? (
-              <ul className="-mx-5 -my-5 divide-y divide-line">
-                {intel.heraldPositions.map((p) => (
-                  <li key={p.symbol} className="flex items-baseline justify-between gap-3 px-5 py-3">
-                    <span className="num text-[15px] font-medium text-ink">{p.symbol}</span>
-                    <span className="num text-[13px] text-ink-2">{qty(p.qty)} sh</span>
-                    <Delta value={p.unrealizedPl}>
-                      {signedUsd(p.unrealizedPl)} <span className="text-xs">({signedPct(p.unrealizedPlpc)})</span>
-                    </Delta>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-[14px] text-muted">
-                {live.herald.enabled
-                  ? "No news trades open. Herald engages on the next strongly positive, material headline."
-                  : "Herald is safed until a train/test backtest shows it beats holding cash. Its headlines are still scored here."}
-              </p>
-            )}
-          </Card>
+            <div className="frame-body relative overflow-hidden">
+              {/* Unit key art, faded behind the roster */}
+              <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-2/3">
+                <Image src={ART.heraldKeyart} alt="" fill sizes="260px" className="object-cover object-[center_15%] opacity-20" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0e0d14] to-transparent" />
+              </div>
+              <div aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: `linear-gradient(90deg, ${HERALD_UNIT.primary}, ${HERALD_UNIT.secondary})` }} />
+              <div className="relative p-5">
+                <div className="flex items-center gap-4">
+                  <div className="relative size-20 shrink-0" style={{ filter: `drop-shadow(0 0 12px ${HERALD_UNIT.primary}88)` }}>
+                    <Image src={ART.heraldBust} alt={`${HERALD_UNIT.code} ${HERALD_UNIT.callsign}`} fill sizes="80px" className="object-contain" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="hud text-[11px]" style={{ color: HERALD_UNIT.primary }}>
+                      {HERALD_UNIT.code} · {HERALD_UNIT.role}
+                    </div>
+                    <h2 className="mt-0.5 font-title text-[26px] leading-none font-extrabold text-ink">{HERALD_UNIT.callsign}</h2>
+                    <div className="hud mt-1 text-[12px] text-ink-2">
+                      {live.herald.enabled ? `${pct(live.herald.pct, 0)} slice · hold ${live.herald.holdDays}d` : "Safed"}
+                    </div>
+                  </div>
+                </div>
+                {intel.heraldPositions.length ? (
+                  <ul className="mt-4 divide-y divide-line border-t border-line">
+                    {intel.heraldPositions.map((p) => (
+                      <li key={p.symbol} className="flex items-baseline justify-between gap-3 py-2.5">
+                        <span className="num text-[15px] font-medium text-ink">{p.symbol}</span>
+                        <span className="num text-[13px] text-ink-2">{qty(p.qty)} sh</span>
+                        <Delta value={p.unrealizedPl}>
+                          {signedUsd(p.unrealizedPl)} <span className="text-xs">({signedPct(p.unrealizedPlpc)})</span>
+                        </Delta>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-4 max-w-[30ch] text-[14px] text-muted">
+                    {live.herald.enabled
+                      ? "No news trades open. Herald engages on the next strongly positive, material headline."
+                      : "Herald is safed until a train/test backtest shows it beats holding cash. Its headlines are still scored here."}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
 
           <Card title="Gate log" code="INT-04" brief={briefAttrs("intel-log", { count: intel.log.length })}>
             {intel.log.length ? (

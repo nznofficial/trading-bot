@@ -32,6 +32,12 @@ other units. Massive layered pauldrons that can fold forward and lock into a ful
 with deployable anchor spikes at the heels, a squared helmet with a single steady horizontal visor bar glowing sync green. \
 Steel blue #38BDF8 and slate armor with amber #FFA41B accents over a gunmetal frame. Weapon: a heavy rotary cannon held \
 low. Stencil "U-00" on the shoulder. Patient, immovable, guardian bearing.`,
+  herald: `UNIT-03 "Herald", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the \
+other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact \
+dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor \
+glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white \
+#F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil "U-03" on the shoulder. \
+Alert, listening, quick-reaction scout bearing.`,
 } as const;
 
 export type CharacterId = keyof typeof CHARACTERS;

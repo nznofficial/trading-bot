@@ -29,6 +29,7 @@ export const ASSETS: Asset[] = [
   { id: "vanguard-sheet", phase: "A", size: "1536x1024", characters: ["vanguard"], scene: SHEET("UNIT-01 Vanguard"), usedIn: "anchor" },
   { id: "recoil-sheet", phase: "A", size: "1536x1024", characters: ["recoil"], scene: SHEET("UNIT-02 Recoil"), usedIn: "anchor" },
   { id: "bastion-sheet", phase: "A", size: "1536x1024", characters: ["bastion"], scene: SHEET("UNIT-00 Bastion"), usedIn: "anchor" },
+  { id: "herald-sheet", phase: "A", size: "1536x1024", characters: ["herald"], scene: SHEET("UNIT-03 Herald"), usedIn: "anchor" },
 
   // ---- Phase B: characters ------------------------------------------------------------------
   {
@@ -119,6 +120,27 @@ light and drifting haze behind.`,
     scene: `Head-and-shoulders portrait of Bastion in three-quarter view facing right, squared helmet and single green visor \
 bar, massive shoulder armor framing the head. Isolated character, no background scenery.`,
     usedIn: "Hangar unit card",
+  },
+  {
+    id: "herald-keyart",
+    phase: "B",
+    size: "1024x1536",
+    characters: ["herald"],
+    scene: `Full-body key art of Herald crouched on a gantry ledge high above the hangar floor, antenna masts fully extended \
+and ear dishes angled as if catching a transmission, marksman rifle held low, green visor glowing, faint signal-wave \
+shimmer in the haze around the masts, warm amber work lights below and cool blue rim light behind.`,
+    usedIn: "Intel page, briefing panel",
+  },
+  {
+    id: "herald-bust",
+    phase: "B",
+    size: "1024x1024",
+    transparent: true,
+    characters: ["herald"],
+    scene: `Head-and-shoulders portrait of Herald in three-quarter view facing right, rounded helmet with the wide green \
+visor and dish ear sensors, the base of both antenna masts rising behind the shoulders. Isolated character, no background \
+scenery.`,
+    usedIn: "Intel page, briefings",
   },
 
   // ---- Phase C: scenes ----------------------------------------------------------------------

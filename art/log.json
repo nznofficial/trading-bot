@@ -1188,5 +1188,305 @@
       },
       "total_tokens": 16640
     }
+  },
+  {
+    "id": "herald-sheet",
+    "file": "art/raw/herald-sheet-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nCharacter model turnaround sheet of UNIT-03 Herald: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-31T07:58:37.411Z",
+    "usage": {
+      "input_tokens": 1419,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1419
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5535
+    }
+  },
+  {
+    "id": "herald-sheet",
+    "file": "art/raw/herald-sheet-2.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nCharacter model turnaround sheet of UNIT-03 Herald: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-31T07:58:37.414Z",
+    "usage": {
+      "input_tokens": 1419,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1419
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5535
+    }
+  },
+  {
+    "id": "herald-sheet",
+    "file": "art/raw/herald-sheet-3.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nCharacter model turnaround sheet of UNIT-03 Herald: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-31T07:58:37.415Z",
+    "usage": {
+      "input_tokens": 1419,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1419
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5535
+    }
+  },
+  {
+    "id": "herald-sheet",
+    "file": "art/raw/herald-sheet-4.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nCharacter model turnaround sheet of UNIT-03 Herald: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-31T08:02:33.271Z",
+    "usage": {
+      "input_tokens": 1419,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1419
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5535
+    }
+  },
+  {
+    "id": "herald-sheet",
+    "file": "art/raw/herald-sheet-5.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nCharacter model turnaround sheet of UNIT-03 Herald: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-31T08:02:33.273Z",
+    "usage": {
+      "input_tokens": 1419,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1419
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5535
+    }
+  },
+  {
+    "id": "herald-sheet",
+    "file": "art/raw/herald-sheet-6.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1536x1024",
+    "quality": "high",
+    "background": "auto",
+    "refs": [],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nCharacter model turnaround sheet of UNIT-03 Herald: four views side by side (front, three-quarter, side, back) in a neutral standing pose, evenly spaced on warm gray paper with thin ink callout lines and small blank label boxes. Flat even studio lighting so armor colors read accurately. Full body visible in every view, nothing cropped.",
+    "at": "2026-10-31T08:02:33.275Z",
+    "usage": {
+      "input_tokens": 1419,
+      "input_tokens_details": {
+        "image_tokens": 0,
+        "text_tokens": 1419
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 5535
+    }
+  },
+  {
+    "id": "herald-keyart",
+    "file": "art/raw/herald-keyart-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1536",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/herald-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nFull-body key art of Herald crouched on a gantry ledge high above the hangar floor, antenna masts fully extended and ear dishes angled as if catching a transmission, marksman rifle held low, green visor glowing, faint signal-wave shimmer in the haze around the masts, warm amber work lights below and cool blue rim light behind.",
+    "at": "2026-10-31T08:04:42.964Z",
+    "usage": {
+      "input_tokens": 6060,
+      "input_tokens_details": {
+        "image_tokens": 4608,
+        "text_tokens": 1452
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 10176
+    }
+  },
+  {
+    "id": "herald-keyart",
+    "file": "art/raw/herald-keyart-2.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1536",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/herald-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nFull-body key art of Herald crouched on a gantry ledge high above the hangar floor, antenna masts fully extended and ear dishes angled as if catching a transmission, marksman rifle held low, green visor glowing, faint signal-wave shimmer in the haze around the masts, warm amber work lights below and cool blue rim light behind.",
+    "at": "2026-10-31T08:04:42.966Z",
+    "usage": {
+      "input_tokens": 6060,
+      "input_tokens_details": {
+        "image_tokens": 4608,
+        "text_tokens": 1452
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 10176
+    }
+  },
+  {
+    "id": "herald-keyart",
+    "file": "art/raw/herald-keyart-3.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1536",
+    "quality": "high",
+    "background": "auto",
+    "refs": [
+      "art/anchors/herald-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nFull-body key art of Herald crouched on a gantry ledge high above the hangar floor, antenna masts fully extended and ear dishes angled as if catching a transmission, marksman rifle held low, green visor glowing, faint signal-wave shimmer in the haze around the masts, warm amber work lights below and cool blue rim light behind.",
+    "at": "2026-10-31T08:04:42.967Z",
+    "usage": {
+      "input_tokens": 6060,
+      "input_tokens_details": {
+        "image_tokens": 4608,
+        "text_tokens": 1452
+      },
+      "output_tokens": 4116,
+      "output_tokens_details": {
+        "image_tokens": 4116,
+        "text_tokens": 0
+      },
+      "total_tokens": 10176
+    }
+  },
+  {
+    "id": "herald-bust",
+    "file": "art/raw/herald-bust-1.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "art/anchors/herald-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nHead-and-shoulders portrait of Herald in three-quarter view facing right, rounded helmet with the wide green visor and dish ear sensors, the base of both antenna masts rising behind the shoulders. Isolated character, no background scenery.",
+    "at": "2026-10-31T08:05:28.114Z",
+    "usage": {
+      "input_tokens": 5991,
+      "input_tokens_details": {
+        "image_tokens": 4608,
+        "text_tokens": 1383
+      },
+      "output_tokens": 5268,
+      "output_tokens_details": {
+        "image_tokens": 5268,
+        "text_tokens": 0
+      },
+      "total_tokens": 11259
+    }
+  },
+  {
+    "id": "herald-bust",
+    "file": "art/raw/herald-bust-2.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "art/anchors/herald-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nHead-and-shoulders portrait of Herald in three-quarter view facing right, rounded helmet with the wide green visor and dish ear sensors, the base of both antenna masts rising behind the shoulders. Isolated character, no background scenery.",
+    "at": "2026-10-31T08:05:28.116Z",
+    "usage": {
+      "input_tokens": 5991,
+      "input_tokens_details": {
+        "image_tokens": 4608,
+        "text_tokens": 1383
+      },
+      "output_tokens": 5268,
+      "output_tokens_details": {
+        "image_tokens": 5268,
+        "text_tokens": 0
+      },
+      "total_tokens": 11259
+    }
+  },
+  {
+    "id": "herald-bust",
+    "file": "art/raw/herald-bust-3.webp",
+    "model": "gpt-image-2.5-sunburst",
+    "size": "1024x1024",
+    "quality": "high",
+    "background": "transparent",
+    "refs": [
+      "art/anchors/herald-sheet.webp"
+    ],
+    "prompt": "Original mecha character art in the style of a 1990s hand-painted cel-animated mecha TV series. Confident ink outlines with varied line weight, two-tone cel shading with hard-edged shadows, subtle film grain and slight chromatic softness. Realistic \"real robot\" military engineering: panel lines, maintenance hatches, rivets, hydraulic pistons, vent louvers, thruster nozzles, stenciled warning decals, light weathering and paint chips. Heroic but believable proportions of a 15-18 meter war machine. Not chibi, not a 3D render, not photorealistic, no lens-flare spam.\nPalette discipline: gunmetal #3A3F47, warm off-white armor #D9D6CC, caution amber #FFA41B, sync green #A3FF3C for optics and energy, deep shadow #0E0D14. Each unit adds only its own signature colors.\nDo not depict or imitate any existing anime franchise's mobile suits: no V-shaped forehead antenna, no white/blue/red/yellow tricolor scheme, no mono-eye rail, no logos or brand names, and no text other than the stencil markings described.\n\nUNIT-03 \"Herald\", a recon and signals-intercept mech: a light, slender, long-legged frame, visibly leaner than the other units. Two tall telescoping antenna masts rising from the back of the shoulders (not from the forehead), a compact dorsal radome pack, round dish-shaped ear sensor pods on both sides of a rounded helmet, and one wide horizontal sensor visor glowing sync green. Slim forearm data-link pods with folding receiver fins. Signal amber #F5C542 armor with warm off-white #F2EEE3 panels over a gunmetal frame. Weapon: a long-range marksman rifle carried low. Stencil \"U-03\" on the shoulder. Alert, listening, quick-reaction scout bearing.\n\nHead-and-shoulders portrait of Herald in three-quarter view facing right, rounded helmet with the wide green visor and dish ear sensors, the base of both antenna masts rising behind the shoulders. Isolated character, no background scenery.",
+    "at": "2026-10-31T08:05:28.118Z",
+    "usage": {
+      "input_tokens": 5991,
+      "input_tokens_details": {
+        "image_tokens": 4608,
+        "text_tokens": 1383
+      },
+      "output_tokens": 5268,
+      "output_tokens_details": {
+        "image_tokens": 5268,
+        "text_tokens": 0
+      },
+      "total_tokens": 11259
+    }
   }
 ]

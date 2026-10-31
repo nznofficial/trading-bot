@@ -12,7 +12,10 @@ import {
   CRYPTO_FEES,
   CRYPTO_RISK,
   CRYPTO_SYMBOLS,
+  HERALD,
+  HERALD_STOCKS,
   normalizeSymbol,
+  OWNERS,
   PORTFOLIO_RISK,
   STOCK_SYMBOLS,
   UNIVERSE,
@@ -24,7 +27,22 @@ import { COLORS, notify, type Embed } from "./notify";
 import { coreRegime, planCore, type CoreRegime } from "./core";
 import { buildUnits, getLiveParams, unitsMaxPct, type LiveParams } from "./live-params";
 import { computeQuote, type Quote } from "./quotes";
-import { createRiskGate, DEFAULT_LIMITS, planCryptoStop } from "./risk";
+import {
+  activeVetoes,
+  gateWatches,
+  heraldCall,
+  isHeraldTrigger,
+  recordNewsActions,
+  scoredHeadlines,
+  scoreNews,
+  syncNews,
+  tightenedStop,
+  vetoNote,
+  type NewsActionRow,
+  type ScoredHeadline,
+  type Veto,
+} from "./news";
+import { createRiskGate, DEFAULT_LIMITS, planCryptoStop, sizeHerald } from "./risk";
 import { STRATEGIES, strategyFor, type Signal } from "./strategies";
 import { unitName } from "./units";
 
@@ -67,7 +85,7 @@ export function makeClientOrderId(strategy: string, side: string, symbol: string
 
 export function strategyFromClientOrderId(id: string): string | null {
   const prefix = id.split(".")[0];
-  return prefix in STRATEGIES || prefix === CORE.id ? prefix : null;
+  return prefix in STRATEGIES || prefix === CORE.id || prefix === HERALD.id ? prefix : null;
 }
 
 const nyTime = new Intl.DateTimeFormat("en-US", {
@@ -186,6 +204,8 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     await alertFills(newFills).catch((e) => console.warn("fill alert failed", e));
     await maybeSendDebrief(account, new Date(clock.timestamp)).catch((e) => console.warn("debrief failed", e));
     await maybePrune(new Date(clock.timestamp)).catch((e) => console.warn("prune failed", e));
+    // News runs every tick (pre-market headlines matter at the open) and never fails the tick.
+    const newsNote = await runNews(new Date(clock.timestamp), started + NEWS_BUDGET_MS);
 
     if (paused)
       return finish({
@@ -193,7 +213,7 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
         marketOpen: clock.is_open,
         signals: 0,
         ordersPlaced: 0,
-        message: "bot is paused",
+        message: ["bot is paused", newsNote].filter(Boolean).join(" · "),
       });
 
     // Stocks only trade in the regular session; crypto trades every tick.
@@ -205,7 +225,7 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
         marketOpen: false,
         signals: 0,
         ordersPlaced: 0,
-        message: `next open ${dateTime(Date.parse(clock.next_open))}`,
+        message: [`next open ${dateTime(Date.parse(clock.next_open))}`, newsNote].filter(Boolean).join(" · "),
       });
     }
 
@@ -261,8 +281,11 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
         cryptoExposure: positions
           .filter((p) => assetClassOf(p.symbol) === "crypto")
           .reduce((a, p) => a + Number(p.market_value), 0),
-        unitsExposure: positions.filter((p) => p.symbol !== CORE.symbol).reduce((a, p) => a + Number(p.market_value), 0),
+        unitsExposure: positions
+          .filter((p) => p.symbol !== CORE.symbol && OWNERS[p.symbol] !== HERALD.id)
+          .reduce((a, p) => a + Number(p.market_value), 0),
         heldSymbols: new Set(held.keys()),
+        otherSleeve: new Set(positions.filter((p) => OWNERS[p.symbol] === HERALD.id).map((p) => p.symbol)),
         symbolsWithOpenOrders: new Set(openOrders.map((o) => o.symbol)),
         cooldownUntil,
       },
@@ -275,6 +298,15 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     );
     // Units built from the Hangar's live tuning (falls back to config defaults).
     const units = buildUnits(live);
+
+    // News gate: symbols with a live veto take no new unit buys. Bastion's SPY is exempt.
+    const vetoes: Map<string, Veto> = live.news.gateEnabled
+      ? await activeVetoes(now, live.news).catch((e) => {
+          console.warn("veto lookup failed", e);
+          return new Map<string, Veto>();
+        })
+      : new Map();
+    vetoes.delete(CORE.symbol);
 
     for (const symbol of symbols) {
       const strategy = units[UNIVERSE[symbol]];
@@ -308,6 +340,8 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
         note = `skipped: ${cls === "crypto" ? "crypto" : "stock"} entries disabled in Hangar`;
       } else if (signal.action === "buy" && regime.above === false) {
         note = "skipped: market filter (SPY below its 200-day average)";
+      } else if (signal.action === "buy" && vetoes.has(symbol)) {
+        note = `skipped: ${vetoNote(vetoes.get(symbol)!)}`;
       } else if (signal.action === "buy") {
         const decision = gate.approveEntry(symbol, lastBar.c);
         if (!decision.ok) {
@@ -385,9 +419,27 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
       });
     }
 
+    // UNIT-03 Herald: news-drift entries and timed exits in its own slice (only while armed).
+    let heraldNote: string | null = null;
+    if (stocksActive && live.herald.enabled) {
+      try {
+        const h = await runHerald({ live, account, positions, held, openOrders, vetoes, regime, cooldownUntil, now, barMs, daysAgo, spyDaily, runId: run.id, dryRun: !!opts.dryRun });
+        signalRows.push(...h.signals);
+        for (const o of h.orders) {
+          submitted.push(o);
+          touched.add(o.symbol);
+        }
+      } catch (e) {
+        heraldNote = `Herald error: ${errMsg(e).slice(0, 160)}`;
+      }
+    }
+
     const stopNotes = opts.dryRun
       ? []
       : await maintainCryptoStops(positions, openOrders, touched, submitted, now, live.stopLossPct);
+    const gateNotes = await applyNewsGate({ vetoes, positions, openOrders, touched, live, runId: run.id, dryRun: !!opts.dryRun }).catch(
+      (e) => [`news gate error: ${errMsg(e)}`],
+    );
 
     if (signalRows.length) await d.insert(schema.signals).values(signalRows);
     if (submitted.length) await upsertOrders(submitted);
@@ -416,7 +468,10 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
         opts.dryRun ? "dry run" : null,
         stocksActive ? null : "stocks closed",
         `day P&L ${(gate.dailyPnlPct * 100).toFixed(2)}%`,
+        newsNote,
+        heraldNote,
         ...stopNotes,
+        ...gateNotes,
       ]
         .filter(Boolean)
         .join(" · "),
@@ -441,6 +496,260 @@ export async function runTick(opts: TickOptions = {}): Promise<TickResult> {
     ]);
     return finish({ status: "error", marketOpen: null, signals: 0, ordersPlaced: 0, error: errMsg(e) });
   }
+}
+
+/** Time the news step may use, from the start of the tick (the GitHub trigger gives up at 90s). */
+const NEWS_BUDGET_MS = 30_000;
+
+/** Pull and score new headlines. Returns a short note for the run message, or null when there was nothing to do. */
+async function runNews(now: Date, deadline: number): Promise<string | null> {
+  try {
+    const added = await syncNews(now);
+    const s = await scoreNews(now, deadline);
+    const parts = [
+      added ? `news +${added}` : null,
+      s.scored ? `scored ${s.scored}` : null,
+      s.pending ? `${s.pending} unscored` : null,
+      s.error ? `scoring: ${s.error.slice(0, 120)}` : null,
+    ].filter(Boolean);
+    return parts.length ? parts.join(", ") : null;
+  } catch (e) {
+    console.warn("news sync failed", e);
+    return `news error: ${errMsg(e).slice(0, 160)}`;
+  }
+}
+
+/**
+ * Log each new veto once, and lift the protective stop of any position the veto hits to
+ * `tightenPct` below the price (never lowering it). Returns notes for the run message.
+ */
+async function applyNewsGate(ctx: {
+  vetoes: Map<string, Veto>;
+  positions: alpaca.Position[];
+  openOrders: alpaca.Order[];
+  touched: Set<string>;
+  live: LiveParams;
+  runId: number;
+  dryRun: boolean;
+}): Promise<string[]> {
+  const { vetoes, live } = ctx;
+  if (!vetoes.size) return [];
+  const notes: string[] = [];
+  const rows: NewsActionRow[] = [];
+  for (const [symbol, v] of vetoes) {
+    if (!gateWatches(symbol, live.herald.enabled)) continue;
+    rows.push({
+      runId: ctx.runId,
+      newsId: v.newsId,
+      symbol,
+      kind: "veto",
+      unit: OWNERS[symbol],
+      detail: `buys blocked: ${vetoNote(v)}`,
+      expiresAt: v.expiresAt,
+    });
+  }
+  // Dry runs report what they'd do but never write the audit trail or touch orders.
+  const newVetoes = ctx.dryRun ? rows : await recordNewsActions(rows);
+
+  for (const p of ctx.positions) {
+    const v = vetoes.get(p.symbol);
+    // Positions this tick already sold or re-protected are left alone.
+    if (!v || !gateWatches(p.symbol, live.herald.enabled) || ctx.touched.has(p.symbol)) continue;
+    const stop = ctx.openOrders.find(
+      (o) => o.symbol === p.symbol && o.side === "sell" && (o.type === "stop" || o.type === "stop_limit") && o.stop_price,
+    );
+    if (!stop) continue;
+    const price = Number(p.current_price);
+    const target = tightenedStop(Number(stop.stop_price), price, live.news.tightenPct);
+    if (target === null) continue;
+    const label = `${p.symbol} stop ${stop.stop_price} → ${target}`;
+    if (ctx.dryRun) {
+      notes.push(`dry run: would tighten ${label}`);
+      continue;
+    }
+    try {
+      const limit = stop.type === "stop_limit" ? Math.round(target * (1 - CRYPTO_RISK.stopLimitSlippagePct) * 100) / 100 : undefined;
+      await alpaca.replaceOrder(stop.id, { stop_price: target, limit_price: limit });
+      notes.push(`news: tightened ${label}`);
+      newVetoes.push(
+        ...(await recordNewsActions([
+          {
+            runId: ctx.runId,
+            newsId: v.newsId,
+            symbol: p.symbol,
+            kind: "tighten",
+            unit: OWNERS[p.symbol],
+            detail: `stop ${stop.stop_price} → ${target} (${(live.news.tightenPct * 100).toFixed(1)}% under ${price}) after "${v.headline.slice(0, 80)}"`,
+            expiresAt: null,
+          },
+        ])),
+      );
+    } catch (e) {
+      notes.push(`news: tighten ${p.symbol} stop error: ${errMsg(e).slice(0, 120)}`);
+    }
+  }
+
+  if (!ctx.dryRun && newVetoes.length) {
+    await notify(
+      newVetoes.map((a) => ({
+        title: a.kind === "veto" ? `⛔ News veto · ${a.symbol}` : `🛡 Stop tightened · ${a.symbol}`,
+        description: `${unitName(a.unit ?? null)}\n${a.detail}`.slice(0, 1000),
+        color: COLORS.error,
+      })),
+    ).catch((e) => console.warn("news alert failed", e));
+  }
+  if (newVetoes.some((a) => a.kind === "veto")) notes.push(`news: ${newVetoes.filter((a) => a.kind === "veto").length} new veto(es)`);
+  return notes;
+}
+
+/**
+ * UNIT-03 Herald: buys a target after a fresh, strongly positive, material headline and sells it
+ * `holdDays` trading days after the latest one. Same rule as the backtest (lib/news.ts `heraldCall`).
+ * Only buy/sell calls are written to signals; Herald's 40 quiet targets would otherwise flood the log.
+ */
+async function runHerald(ctx: {
+  live: LiveParams;
+  account: alpaca.Account;
+  positions: alpaca.Position[];
+  held: Map<string, number>;
+  openOrders: alpaca.Order[];
+  vetoes: Map<string, Veto>;
+  regime: CoreRegime;
+  cooldownUntil: Map<string, Date>;
+  now: Date;
+  barMs: number;
+  daysAgo: (n: number) => Date;
+  spyDaily: { date: string; close: number }[];
+  runId: number;
+  dryRun: boolean;
+}): Promise<{ signals: (typeof schema.signals.$inferInsert)[]; orders: alpaca.Order[] }> {
+  const { live, account, held, openOrders, vetoes, now, barMs, runId, dryRun } = ctx;
+  const h = live.herald;
+  const symbols = [...HERALD_STOCKS] as string[];
+  const lookbackDays = Math.ceil(h.holdDays * 1.6) + 7;
+  const [bars, headlines] = await Promise.all([
+    alpaca.getBars(symbols, BAR_TIMEFRAME, ctx.daysAgo(5)),
+    scoredHeadlines(ctx.daysAgo(lookbackDays), now, symbols),
+  ]);
+  const triggers = new Map<string, ScoredHeadline[]>();
+  for (const x of headlines.filter((x) => isHeraldTrigger(x, h)).reverse()) (triggers.get(x.symbol) ?? triggers.set(x.symbol, []).get(x.symbol)!).push(x);
+  // Completed sessions plus today, for counting trading days since a headline.
+  const today = tradingDay(now);
+  const sessions = [...new Set([...ctx.spyDaily.map((d) => d.date), today])].sort();
+  const sessionIdx = (day: string) => {
+    const i = sessions.findIndex((d) => d >= day);
+    return i < 0 ? sessions.length : i;
+  };
+
+  const mine = ctx.positions.filter((p) => OWNERS[p.symbol] === HERALD.id);
+  let exposure = mine.reduce((a, p) => a + Number(p.market_value), 0);
+  let count = mine.length;
+  let buyingPower = Number(account.buying_power);
+  const signals: (typeof schema.signals.$inferInsert)[] = [];
+  const orders: alpaca.Order[] = [];
+  const actions: NewsActionRow[] = [];
+
+  for (const symbol of symbols) {
+    const done = (bars[symbol] ?? []).filter((b) => isRegularSessionBar(b.t) && Date.parse(b.t) + barMs <= now.getTime());
+    const lastBar = done.at(-1);
+    const prev = done.at(-2);
+    if (!lastBar || (!dryRun && now.getTime() - Date.parse(lastBar.t) > 3 * barMs)) continue;
+    const qty = held.get(symbol) ?? 0;
+    const call = heraldCall({
+      triggers: triggers.get(symbol) ?? [],
+      held: qty > 0,
+      prevClose: prev ? new Date(Date.parse(prev.t) + barMs) : null,
+      now: new Date(Date.parse(lastBar.t) + barMs),
+      holdDays: h.holdDays,
+      tradingDaysSince: (t) => sessionIdx(today) - sessionIdx(tradingDay(t)),
+    });
+    if (call.action === "hold") continue;
+    const t = call.trigger;
+    const reason = t
+      ? `${call.action === "buy" ? "fresh" : `${h.holdDays}-day hold done after`} headline ${t.sentiment >= 0 ? "+" : ""}${t.sentiment.toFixed(1)} "${t.headline.slice(0, 70)}"`
+      : "no qualifying headline in range";
+    let note: string | null = null;
+    let acted = false;
+    const barTs = lastBar.t;
+
+    if (call.action === "buy") {
+      const veto = vetoes.get(symbol);
+      if (ctx.regime.above === false) note = "skipped: market filter (SPY below its 200-day average)";
+      else if (veto) note = `skipped: ${vetoNote(veto)}`;
+      else {
+        const d = sizeHerald({
+          symbol,
+          price: lastBar.c,
+          equity: Number(account.equity),
+          lastEquity: Number(account.last_equity),
+          pct: h.pct,
+          maxPositions: h.maxPositions,
+          exposure,
+          count,
+          buyingPower,
+          stopLossPct: live.stopLossPct,
+          held: qty > 0,
+          orderPending: openOrders.some((o) => o.symbol === symbol),
+          cooldownUntil: ctx.cooldownUntil.get(symbol),
+        });
+        if (!d.ok) note = `skipped: ${d.reason}`;
+        else if (dryRun) note = `dry run: would buy ${d.qty} @ ~${lastBar.c} stop ${d.stopLoss}`;
+        else {
+          try {
+            const order = await alpaca.submitOrder({
+              symbol,
+              qty: d.qty,
+              side: "buy",
+              client_order_id: makeClientOrderId(HERALD.id, "buy", symbol, barTs),
+              stop_loss: d.stopLoss,
+            });
+            orders.push(order);
+            acted = true;
+            exposure += d.qty * lastBar.c;
+            buyingPower -= d.qty * lastBar.c;
+            count++;
+            note = `buy ${d.qty} (stop ${d.stopLoss}) order ${order.id}`;
+            if (t) actions.push({ runId, newsId: t.newsId, symbol, kind: "herald_entry", unit: HERALD.id, detail: `bought ${d.qty} @ ~${lastBar.c}: ${reason}`, expiresAt: null });
+          } catch (e) {
+            note = duplicateOrder(e) ? "already submitted for this bar" : `order error: ${errMsg(e)}`;
+          }
+        }
+      }
+    } else if (dryRun) {
+      note = `dry run: would sell ${qty}`;
+    } else {
+      try {
+        await cancelOpenOrdersFor(symbol, openOrders);
+        const order = await alpaca.submitOrder({
+          symbol,
+          qty,
+          side: "sell",
+          time_in_force: "day",
+          client_order_id: makeClientOrderId(HERALD.id, "sell", symbol, barTs),
+        });
+        orders.push(order);
+        acted = true;
+        note = `sell ${qty} order ${order.id}`;
+        if (t) actions.push({ runId, newsId: t.newsId, symbol, kind: "herald_exit", unit: HERALD.id, detail: `sold ${qty}: ${reason}`, expiresAt: null });
+      } catch (e) {
+        note = duplicateOrder(e) ? "already submitted for this bar" : `order error: ${errMsg(e)}`;
+      }
+    }
+    signals.push({
+      runId,
+      barTs: new Date(barTs),
+      symbol,
+      assetClass: "us_equity",
+      strategy: HERALD.id,
+      action: call.action,
+      reason,
+      indicators: t ? { sentiment: t.sentiment, materiality: t.materiality, newsId: t.newsId } : {},
+      acted,
+      note,
+    });
+  }
+  if (actions.length) await recordNewsActions(actions);
+  return { signals, orders };
 }
 
 /**
@@ -728,21 +1037,25 @@ async function syncFees() {
   if (!activities.length) return;
   await d
     .insert(schema.fees)
-    .values(
-      activities.map((a) => {
-        const symbol = normalizeSymbol(a.symbol, "crypto");
-        return {
-          id: a.id,
-          symbol,
-          assetClass: assetClassOf(symbol),
-          orderId: a.order_id ?? null,
-          amountUsd: feeUsd(a),
-          ts: new Date(a.transaction_time ?? a.date ?? Date.now()),
-          raw: a,
-        };
-      }),
-    )
+    .values(activities.map(feeRow))
     .onConflictDoNothing();
+}
+
+/**
+ * One CFEE activity as a fees row. Buy fees arrive in kind with the coin's symbol; sell fees ("Coin Pair
+ * Transaction Fee (USD)") arrive with no symbol or order id, so they're filed under "USD".
+ */
+export function feeRow(a: alpaca.FeeActivity): typeof schema.fees.$inferInsert {
+  const symbol = a.symbol ? normalizeSymbol(a.symbol, "crypto") : "USD";
+  return {
+    id: a.id,
+    symbol,
+    assetClass: "crypto",
+    orderId: a.order_id ?? null,
+    amountUsd: feeUsd(a),
+    ts: new Date(a.transaction_time ?? a.created_at ?? a.date ?? Date.now()),
+    raw: a,
+  };
 }
 
 /** Refresh status of the last week's orders, including bracket/OTO legs. */

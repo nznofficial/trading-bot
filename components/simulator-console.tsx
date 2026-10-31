@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import type { LiveParams } from "@/lib/live-params";
 import { play } from "@/lib/sfx";
 
 type Form = {
@@ -16,6 +17,10 @@ type Form = {
   stopLossPct: number;
   coreEnabled: boolean;
   corePct: number;
+  newsGate: boolean;
+  heraldEnabled: boolean;
+  /** Live news thresholds; the console only switches the gate and Herald on or off. */
+  news: LiveParams["news"] & { herald: LiveParams["herald"] };
 };
 
 const field = "num w-full border border-line-2 bg-page px-2.5 py-1.5 text-[14px] text-ink focus:border-amber";
@@ -55,6 +60,14 @@ export function SimulatorConsole({ defaults }: { defaults: Form }) {
             rsi: { period: form.period, entry: form.entry, exit: form.exit },
             stopLossPct: form.stopLossPct / 100,
             core: { enabled: form.coreEnabled, pct: form.corePct / 100 },
+            news: {
+              gate: form.newsGate,
+              vetoSentiment: form.news.vetoSentiment,
+              minMateriality: form.news.minMateriality,
+              vetoHours: form.news.vetoHours,
+              tightenPct: form.news.tightenPct,
+              herald: { ...form.news.herald, enabled: form.heraldEnabled },
+            },
           }),
         });
         const body = await res.json().catch(() => ({}));
@@ -109,6 +122,19 @@ export function SimulatorConsole({ defaults }: { defaults: Form }) {
         <p className="col-span-2 self-end pb-1 text-[12px] text-muted">
           Holds SPY while it closes above its 200-day average. Units trade in the rest, and no unit buys while SPY is below.
         </p>
+      </fieldset>
+
+      <fieldset className="flex flex-wrap items-center gap-x-8 gap-y-2 border border-amber/40 p-3">
+        <legend className="hud px-1 text-[12px] text-amber">News · replayed from scored headlines</legend>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" className="accent-alert" checked={form.newsGate} onChange={(e) => set("newsGate", e.target.checked)} />
+          <span className="hud text-[12px] text-ink-2">News gate</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" className="accent-amber" checked={form.heraldEnabled} onChange={(e) => set("heraldEnabled", e.target.checked)} />
+          <span className="hud text-[12px] text-ink-2">Unit-03 Herald ({Math.round(form.news.herald.pct * 100)}% slice)</span>
+        </label>
+        <p className="text-[12px] text-muted">Uses the Hangar&apos;s news thresholds. Equities only; history starts where the headline backfill does.</p>
       </fieldset>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

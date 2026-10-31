@@ -59,13 +59,16 @@ async function Console() {
         stopLossPct: live.stopLossPct * 100,
         coreEnabled: live.core.enabled,
         corePct: Math.round(live.core.pct * 100),
+        newsGate: false,
+        heraldEnabled: false,
+        news: { ...live.news, herald: live.herald },
       }}
     />
   );
 }
 
 const paramLine = (p: SimulationRow["params"]) =>
-  `${p.core?.enabled ? `Core ${Math.round(p.core.pct * 100)}% · ` : ""}SMA ${p.sma.fast}/${p.sma.slow} ×${p.sma.crossLookback} · RSI ${p.rsi.period} <${p.rsi.entry}/>${p.rsi.exit} · stop ${(p.stopLossPct * 100).toFixed(1)}%`;
+  `${p.core?.enabled ? `Core ${Math.round(p.core.pct * 100)}% · ` : ""}${p.news?.gate ? "News gate · " : ""}${p.news?.herald?.enabled ? `Herald ${Math.round(p.news.herald.pct * 100)}% · ` : ""}SMA ${p.sma.fast}/${p.sma.slow} ×${p.sma.crossLookback} · RSI ${p.rsi.period} <${p.rsi.entry}/>${p.rsi.exit} · stop ${(p.stopLossPct * 100).toFixed(1)}%`;
 const theaterLabel = (t: string) => (t === "us_equity" ? "Equities" : t === "crypto" ? "Crypto" : "All");
 
 async function Results({ searchParams }: { searchParams: PageProps<"/simulator">["searchParams"] }) {

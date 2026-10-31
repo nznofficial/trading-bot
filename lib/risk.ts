@@ -12,6 +12,8 @@ export type RiskState = {
   /** Current market value of every unit (non-core) position, for the units cap. */
   unitsExposure?: number;
   heldSymbols: Set<string>;
+  /** Held symbols that don't count toward the units' position limit (Herald's own sleeve). */
+  otherSleeve?: Set<string>;
   symbolsWithOpenOrders: Set<string>;
   /** Symbols stopped out recently → when re-entry is allowed again. */
   cooldownUntil?: Map<string, Date>;
@@ -50,7 +52,7 @@ export function createRiskGate(initial: RiskState, limits: RiskLimits = DEFAULT_
   let cryptoExposure = initial.cryptoExposure ?? 0;
   let unitsExposure = initial.unitsExposure ?? 0;
   const unitsRoom = () => initial.equity * (limits.unitsMaxPct ?? 1) - unitsExposure;
-  let openCount = initial.heldSymbols.size;
+  let openCount = [...initial.heldSymbols].filter((s) => !initial.otherSleeve?.has(s)).length;
   const pnl = dailyPnlPct(initial.equity, initial.lastEquity);
 
   return {
@@ -139,4 +141,38 @@ export function planCryptoStop(
     return { action: "replace", stopPrice, limitPrice, cancelIds: stops.map((o) => o.id) };
   }
   return { action: "keep" };
+}
+
+/**
+ * UNIT-03 Herald's entry size: an even share of its own slice (`pct / maxPositions` of equity), limited by
+ * the slice's room and buying power. Whole shares with the normal protective stop. Shares the daily loss
+ * halt and stop-out cooldown with the units, but not their position limit.
+ */
+export function sizeHerald(a: {
+  symbol: string;
+  price: number;
+  equity: number;
+  lastEquity: number;
+  pct: number;
+  maxPositions: number;
+  /** Market value and count of Herald's open positions. */
+  exposure: number;
+  count: number;
+  buyingPower: number;
+  stopLossPct: number;
+  held: boolean;
+  orderPending: boolean;
+  cooldownUntil?: Date;
+}): EntryDecision {
+  const pnl = dailyPnlPct(a.equity, a.lastEquity);
+  if (pnl <= PORTFOLIO_RISK.dailyLossHaltPct) return { ok: false, reason: `daily loss halt (${(pnl * 100).toFixed(2)}%)` };
+  if (a.held) return { ok: false, reason: "already holding" };
+  if (a.orderPending) return { ok: false, reason: "open order pending" };
+  if (a.cooldownUntil) return { ok: false, reason: `cooldown after stop-out until ${a.cooldownUntil.toISOString().slice(0, 16)}Z` };
+  if (a.count >= a.maxPositions) return { ok: false, reason: `Herald max ${a.maxPositions} positions` };
+  if (!(a.price > 0)) return { ok: false, reason: "no valid price" };
+  const budget = Math.min((a.equity * a.pct) / a.maxPositions, a.equity * a.pct - a.exposure, a.buyingPower * PORTFOLIO_RISK.buyingPowerBuffer);
+  const qty = Math.floor(budget / a.price);
+  if (qty < 1) return { ok: false, reason: `Herald slice ${(a.pct * 100).toFixed(0)}% full` };
+  return { ok: true, qty, stopLoss: round2(a.price * (1 - a.stopLossPct)) };
 }

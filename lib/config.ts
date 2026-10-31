@@ -19,8 +19,23 @@ export const CORE = {
   pct: 0.7,
 } as const;
 export type CoreId = typeof CORE.id;
+
+/**
+ * UNIT-03 Herald: trades on news, not indicators. Buys a large cap after a strongly positive, material
+ * headline and holds for a few trading days (post-news drift), in its own slice of equity. Defaults only;
+ * the thresholds and on/off switch are live-tunable (Hangar → Tune units). Ships disarmed.
+ */
+export const HERALD = {
+  id: "news_drift",
+  pct: 0.1,
+  entrySentiment: 0.6,
+  minMateriality: 0.7,
+  holdDays: 5,
+  maxPositions: 3,
+} as const;
+export type HeraldId = typeof HERALD.id;
 /** Anything that can own a position or an order. */
-export type OwnerId = StrategyId | CoreId;
+export type OwnerId = StrategyId | CoreId | HeraldId;
 
 /** Each symbol is owned by exactly one strategy, so positions are never contested. */
 export const STOCKS: Record<string, StrategyId> = {
@@ -41,11 +56,49 @@ export const CRYPTO: Record<string, StrategyId> = {
   "SOL/USD": "rsi_revert",
 };
 
+/**
+ * Herald's targets, picked by rule rather than by hand so backtests carry no hindsight: the 40 largest
+ * S&P 500 companies by market cap as of 2025-10-01 (the start of the 12-month backtest window), one share
+ * class each, minus anything another unit already owns. Ranks near the bottom of the list are approximate.
+ */
+export const HERALD_STOCKS = [
+  "GOOGL", "AVGO", "BRK.B", "ORCL", "JPM", "WMT", "LLY", "V", "MA", "NFLX",
+  "XOM", "JNJ", "PLTR", "COST", "ABBV", "HD", "BAC", "PG", "UNH", "GE",
+  "CVX", "KO", "CSCO", "IBM", "WFC", "TMUS", "MS", "PM", "GS", "CRM",
+  "ABT", "AXP", "MU", "LIN", "MCD", "CAT", "RTX", "MRK", "PEP", "T",
+] as const;
+
 export const UNIVERSE: Record<string, StrategyId> = { ...STOCKS, ...CRYPTO };
-/** Every symbol the bot trades and who owns it: the strategy universe plus the core's SPY. */
-export const OWNERS: Record<string, OwnerId> = { [CORE.symbol]: CORE.id, ...UNIVERSE };
+/** Every symbol the bot trades and who owns it: the core's SPY, the TA units' universe, then Herald's list. */
+export const OWNERS: Record<string, OwnerId> = {
+  [CORE.symbol]: CORE.id,
+  ...UNIVERSE,
+  ...Object.fromEntries(HERALD_STOCKS.map((s) => [s, HERALD.id])),
+};
 export const STOCK_SYMBOLS = Object.keys(STOCKS);
 export const CRYPTO_SYMBOLS = Object.keys(CRYPTO);
+
+/**
+ * News layer. Headlines come from Alpaca's news API; Claude scores each (article, tracked symbol) pair.
+ * Gate defaults (live-tunable): a headline at or below `vetoSentiment` with at least `minMateriality`
+ * blocks new unit buys in that symbol for `vetoHours` and lifts an open position's stop to
+ * `tightenPct` below the price. Bastion's SPY is exempt.
+ */
+export const NEWS = {
+  model: "claude-haiku-5-5",
+  vetoSentiment: -0.6,
+  minMateriality: 0.7,
+  vetoHours: 24,
+  tightenPct: 0.02,
+  /** Most (article, symbol) pairs scored per tick; leftovers wait for the next tick. */
+  scorePerTick: 120,
+  /** Headlines per scoring request. */
+  scoreBatch: 20,
+  /** Articles tagged with more tracked symbols than this are roundups: only the first few get scored. */
+  maxSymbolsPerArticle: 6,
+  /** First sync looks back this far. */
+  initialLookbackHours: 48,
+} as const;
 
 export const assetClassOf = (symbol: string): AssetClass => (symbol.includes("/") ? "crypto" : "us_equity");
 

@@ -1,6 +1,7 @@
 import type { Bar } from "./alpaca";
 import { drawdowns, pctReturns, sharpe, sortino, tradeStats, tradingDay, type RoundTrip, type TradeStats } from "./analytics";
-import { assetClassOf, type AssetClass, type OwnerId } from "./config";
+import { assetClassOf, BAR_MINUTES, HERALD, type AssetClass, type OwnerId } from "./config";
+import { heraldCall, isHeraldTrigger, isVeto, type GateParams, type HeraldParams, type ScoredHeadline } from "./news";
 import type { Evaluator, Strategy } from "./strategies/types";
 
 /**
@@ -15,6 +16,11 @@ import type { Evaluator, Strategy } from "./strategies/types";
  * - With a core: it holds its symbol at `pct` of equity while `regime(day)` is true (decided on a bar's
  *   close, filled at the next open, like the units), sells when false, has no stop, and ignores the daily
  *   loss halt and cooldown. The units share whatever `unitsMaxPct` allows.
+ * - With news (`news`): a headline counts at a bar only if it was published by that bar's close. The gate
+ *   blocks unit buys in a vetoed symbol and lifts an open position's stop to `tightenPct` under the close
+ *   (never lowering it). Herald buys its symbols on fresh qualifying headlines and sells `holdDays` trading
+ *   days after the latest one, inside its own `pct` slice, with the normal stop; it obeys the market filter,
+ *   the daily loss halt and cooldowns like the units, but not the units' position cap.
  */
 
 export type BacktestConfig = {
@@ -30,6 +36,12 @@ export type BacktestConfig = {
   regime?: (day: string) => boolean | null;
   /** Requires `regime`. */
   core?: { id: OwnerId; symbol: string; pct: number };
+  /** Scored headlines for the window, plus the gate and Herald settings (either may be off). */
+  news?: {
+    headlines: ScoredHeadline[];
+    gate: (GateParams & { enabled: boolean }) | null;
+    herald: (HeraldParams & { enabled: boolean; pct: number; maxPositions: number; symbols: string[] }) | null;
+  };
 };
 
 export type SimTrade = RoundTrip & { exitReason: "signal" | "stop" | "end" };
@@ -51,6 +63,8 @@ export type BacktestResult = {
   byUnit: { strategy: string; stats: TradeStats; feesPaid: number }[];
   bySymbol: { symbol: string; pnl: number; count: number }[];
   trades: SimTrade[];
+  /** What the news layer did (present when `news` was configured). */
+  news?: { buysBlocked: number; stopsLifted: number; heraldSignals: number };
 };
 
 type Position = {
@@ -76,7 +90,28 @@ export function runBacktest(
   const core = cfg.core && cfg.regime && (bars[cfg.core.symbol]?.length ?? 0) > 0 ? cfg.core : null;
   const regime = cfg.regime ?? (() => null);
   const unitSymbols = Object.keys(strategies).filter((s) => (bars[s]?.length ?? 0) > 0 && s !== core?.symbol);
-  const symbols = core ? [...unitSymbols, core.symbol] : unitSymbols;
+  const herald = cfg.news?.herald?.enabled ? cfg.news.herald : null;
+  const gate = cfg.news?.gate?.enabled ? cfg.news.gate : null;
+  const heraldSymbols = herald
+    ? herald.symbols.filter((s) => (bars[s]?.length ?? 0) > 0 && s !== core?.symbol && !unitSymbols.includes(s))
+    : [];
+  const heraldSet = new Set(heraldSymbols);
+  const symbols = [...unitSymbols, ...heraldSymbols, ...(core ? [core.symbol] : [])];
+  const barMs = BAR_MINUTES * 60_000;
+  // Per-symbol headline lists, oldest first: vetoes for the gate, qualifying ones for Herald.
+  const bySymbol = (keep: (h: ScoredHeadline) => boolean) => {
+    const m = new Map<string, ScoredHeadline[]>();
+    for (const h of cfg.news?.headlines ?? []) if (keep(h)) (m.get(h.symbol) ?? m.set(h.symbol, []).get(h.symbol)!).push(h);
+    for (const list of m.values()) list.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    return m;
+  };
+  const vetoList = gate ? bySymbol((h) => isVeto(h, gate)) : new Map<string, ScoredHeadline[]>();
+  const triggerList = herald ? bySymbol((h) => heraldSet.has(h.symbol) && isHeraldTrigger(h, herald)) : new Map<string, ScoredHeadline[]>();
+  /** The veto in force at `closeMs`, if any. */
+  const vetoAt = (symbol: string, closeMs: number) =>
+    vetoList.get(symbol)?.findLast((h) => h.createdAt.getTime() <= closeMs && h.createdAt.getTime() + gate!.vetoHours * 3_600_000 > closeMs);
+  const liftedFor = new Set<string>();
+  const newsStats = { buysBlocked: 0, stopsLifted: 0, heraldSignals: 0 };
   const evaluators = new Map<string, Evaluator>(unitSymbols.map((s) => [s, strategies[s].prepare(bars[s])]));
   // Merge every bar timestamp into one clock.
   const steps = new Map<number, { symbol: string; i: number }[]>();
@@ -89,6 +124,18 @@ export function runBacktest(
     });
   }
   const clock = [...steps.keys()].sort((a, b) => a - b);
+  // Trading-day index for Herald's hold count.
+  const sessions = [...new Set(clock.map((t) => tradingDay(new Date(t))))];
+  const sessionIdx = (day: string) => {
+    let lo = 0;
+    let hi = sessions.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (sessions[mid] < day) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo; // first session on or after `day`
+  };
 
   let cash = cfg.startEquity;
   const positions = new Map<string, Position>();
@@ -141,12 +188,40 @@ export function runBacktest(
     positions.set(symbol, { qty, entryPrice: price, cost: qty * price, entryFee: 0, entryTs: ts, stop: 0, strategy: core!.id });
   };
 
+  const openHerald = (symbol: string, price: number, ts: Date, equity: number) => {
+    if ((cooldownUntil.get(symbol) ?? 0) > ts.getTime()) return;
+    if (equity / dayStartEquity - 1 <= cfg.dailyLossHaltPct) return;
+    let exposure = 0;
+    let count = 0;
+    for (const [s, p] of positions)
+      if (heraldSet.has(s)) {
+        exposure += p.qty * (lastClose.get(s) ?? p.entryPrice);
+        count++;
+      }
+    if (count >= herald!.maxPositions) return;
+    const budget = Math.min((equity * herald!.pct) / herald!.maxPositions, equity * herald!.pct - exposure, cash * 0.95);
+    const qty = Math.floor(budget / price);
+    if (qty < 1) return;
+    cash -= qty * price;
+    positions.set(symbol, {
+      qty,
+      entryPrice: price,
+      cost: qty * price,
+      entryFee: 0,
+      entryTs: ts,
+      stop: price * (1 - cfg.stocks.stopLossPct),
+      strategy: HERALD.id,
+    });
+  };
+
   const open = (symbol: string, price: number, ts: Date, strategy: OwnerId, equity: number) => {
-    if (positions.size >= cfg.maxOpenPositions) return;
+    let unitCount = 0;
+    for (const s of positions.keys()) if (!heraldSet.has(s)) unitCount++;
+    if (unitCount >= cfg.maxOpenPositions) return;
     if ((cooldownUntil.get(symbol) ?? 0) > ts.getTime()) return;
     if (equity / dayStartEquity - 1 <= cfg.dailyLossHaltPct) return;
     let unitsExposure = 0;
-    for (const [s, p] of positions) if (s !== core?.symbol) unitsExposure += p.qty * (lastClose.get(s) ?? p.entryPrice);
+    for (const [s, p] of positions) if (s !== core?.symbol && !heraldSet.has(s)) unitsExposure += p.qty * (lastClose.get(s) ?? p.entryPrice);
     const unitsRoom = equity * (cfg.unitsMaxPct ?? Infinity) - unitsExposure;
     const cls: AssetClass = assetClassOf(symbol);
     if (cls === "crypto") {
@@ -199,6 +274,7 @@ export function runBacktest(
         if (order.action === "sell" && positions.has(symbol)) close(symbol, bar.o, ts, "signal");
         if (order.action === "buy" && !positions.has(symbol)) {
           if (symbol === core?.symbol) openCore(symbol, bar.o, ts, markEquity().equity);
+          else if (heraldSet.has(symbol)) openHerald(symbol, bar.o, ts, markEquity().equity);
           else open(symbol, bar.o, ts, order.strategy, markEquity().equity);
         }
       }
@@ -214,8 +290,47 @@ export function runBacktest(
         else if (above === false && holding) pending.set(symbol, { action: "sell", strategy: core.id });
         continue;
       }
+      const closeMs = t + barMs;
+      // News gate: a fresh veto lifts the stop of an open position (once per headline).
+      const veto = gate ? vetoAt(symbol, closeMs) : undefined;
+      const held = positions.get(symbol);
+      if (veto && held && held.stop > 0) {
+        const key = `${veto.newsId}:${symbol}`;
+        if (!liftedFor.has(key)) {
+          liftedFor.add(key);
+          const target = bar.c * (1 - gate!.tightenPct);
+          if (target > held.stop && target < bar.c) {
+            held.stop = target;
+            newsStats.stopsLifted++;
+          }
+        }
+      }
+      if (heraldSet.has(symbol)) {
+        const call = heraldCall({
+          triggers: triggerList.get(symbol) ?? [],
+          held: !!held,
+          prevClose: i > 0 ? new Date(Date.parse(bars[symbol][i - 1].t) + barMs) : null,
+          now: new Date(closeMs),
+          holdDays: herald!.holdDays,
+          tradingDaysSince: (h) => sessionIdx(today) - sessionIdx(tradingDay(h)),
+        });
+        if (call.action === "buy") {
+          newsStats.heraldSignals++;
+          if (regime(today) === false) continue;
+          if (veto) {
+            newsStats.buysBlocked++;
+            continue;
+          }
+        }
+        if (call.action !== "hold") pending.set(symbol, { action: call.action, strategy: HERALD.id });
+        continue;
+      }
       const sig = evaluators.get(symbol)!(i, positions.get(symbol)?.qty ?? 0);
       if (sig.action === "buy" && regime(today) === false) continue;
+      if (sig.action === "buy" && veto && !positions.has(symbol)) {
+        newsStats.buysBlocked++;
+        continue;
+      }
       if (sig.action !== "hold") pending.set(symbol, { action: sig.action, strategy: strategies[symbol].id });
     }
     const m = markEquity();
@@ -265,7 +380,11 @@ export function runBacktest(
     x.count++;
     bySymbolMap.set(t.symbol, x);
   }
-  const unitIds: OwnerId[] = [...(core ? [core.id] : []), ...new Set(unitSymbols.map((s) => strategies[s].id))];
+  const unitIds: OwnerId[] = [
+    ...(core ? [core.id] : []),
+    ...new Set(unitSymbols.map((s) => strategies[s].id)),
+    ...(herald ? [HERALD.id] : []),
+  ];
 
   return {
     summary: {
@@ -287,5 +406,6 @@ export function runBacktest(
     }),
     bySymbol: [...bySymbolMap.values()].sort((a, b) => b.pnl - a.pnl),
     trades,
+    ...(cfg.news ? { news: newsStats } : {}),
   };
 }

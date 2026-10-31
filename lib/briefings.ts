@@ -12,7 +12,9 @@ import { unitFor, type UnitId } from "./units";
 
 export type BriefCtx = Record<string, string | number | boolean | null | undefined>;
 /** Who delivers a briefing: JC-316, or the wingman unit the component belongs to. */
-export type Speaker = "jc316" | UnitId;
+export type Speaker = "jc316" | VoicedUnit;
+/** Units with art and a recorded voice. Herald (UNIT-03) is briefed by JC-316 until it has both. */
+export type VoicedUnit = Exclude<UnitId, "news_drift">;
 export type Briefing = {
   title: string;
   what: string;
@@ -102,6 +104,80 @@ export const BRIEFS = {
     note: "Losses are part of the plan. The question is whether the rules were followed.",
   },
 
+  "page-intel": {
+    title: "Intel",
+    what: "The news wire: every headline Alpaca's feed carries for the bot's targets, scored by Claude for each target it names.",
+    now: "Wire on the left; blocks, Herald's trades and the gate log on the right.",
+    note: "Sentiment says which way a headline points; materiality says whether it's news at all. The gate only acts when both are strong.",
+  },
+  "intel-headlines": {
+    title: "Headlines, last 24 hours",
+    what: "Articles pulled from Alpaca's news feed (Benzinga and partners) that tag at least one symbol the bot tracks.",
+    now: (c) => `${v(c, "count")} in the last day${c.newest ? `; the newest is from ${v(c, "newest")}` : ""}.`,
+    note: "Each sortie pulls what's new. Weekends and nights run thin.",
+  },
+  "intel-scored": {
+    title: "Scored pairs",
+    what: "One score per headline per target it names: sentiment from −1 to +1 for that stock, and materiality from 0 (noise) to 1 (moves the price).",
+    now: (c) => `${v(c, "count")} headline × target pairs scored in the last day.`,
+    note: "Roundups that tag many tickers only get their first few targets scored.",
+  },
+  "intel-gate": {
+    title: "News gate",
+    what: "The defensive layer. A headline at or below the veto sentiment, with enough materiality, blocks new buys in that target and lifts the stop on any open position. Bastion's SPY is exempt.",
+    now: (c) =>
+      `${v(c, "status")}. Veto at sentiment ${v(c, "sentiment")} or worse with materiality ${v(c, "materiality")}+, for ${v(c, "hours")} hours; stops lift to ${v(c, "tighten")} under the price. ${v(c, "blocks")} active.`,
+    note: "It never sells on a headline by itself. The tighter stop does that only if the price follows through.",
+  },
+  "intel-herald": {
+    title: "UNIT-03 Herald",
+    what: "The news unit. It buys a large cap after a strongly positive, material headline and holds it for a few trading days to ride the post-news drift, in its own slice of equity.",
+    now: (c) =>
+      `${v(c, "status")}. Buys at sentiment ${v(c, "sentiment")}+ with materiality ${v(c, "materiality")}+, holds ${v(c, "days")} trading days, ${v(c, "share")} of equity.`,
+    note: "Herald stays safed until a backtest on headlines it wasn't tuned on shows it beats holding cash.",
+  },
+  "intel-wire": {
+    title: "Incoming wire",
+    what: "Every headline for a tracked target, newest first, with a score chip for each target it names.",
+    now: (c) => `${v(c, "count")} headlines in this view (${v(c, "view")}).`,
+    note: "Switch to Material to hide the noise. Click a chip for Claude's one-line reasoning.",
+  },
+  "intel-headline": {
+    title: "Headline",
+    what: (c) => `${v(c, "headline")} (${v(c, "source")}, ${v(c, "time")}).`,
+    now: (c) => (c.targets ? `Scored for ${v(c, "targets")}. ${c.rationale ? v(c, "rationale") : ""}`.trim() : "Not scored yet. It's queued for the next sortie."),
+    note: (c) => (n(c, "actions") ? "This headline triggered a gate action; see the arrow under it." : "No action taken on this one."),
+  },
+  "intel-score": {
+    title: (c) => `Score · ${v(c, "symbol")}`,
+    what: (c) => `How "${v(c, "headline")}" reads for ${v(c, "symbol")}.`,
+    now: (c) => `Sentiment ${v(c, "sentiment")}, materiality ${v(c, "materiality")}, ${v(c, "category")}. ${v(c, "rationale")}`,
+    note: (c) => (c.material ? "Material: strong enough for the gate or Herald to act if the sentiment is too." : "Below the material line: noise as far as trading goes."),
+  },
+  "intel-blocks": {
+    title: "Active blocks",
+    what: "Targets with a live news veto: no unit may open a new position in them until it expires.",
+    now: (c) => (n(c, "count") ? `${v(c, "count")} blocked right now.` : "Nothing blocked."),
+    note: (c) => `Each block lasts ${v(c, "hours")} hours from the headline. Exits and stops still run normally.`,
+  },
+  "intel-block": {
+    title: (c) => `Blocked · ${v(c, "symbol")}`,
+    what: (c) => `${v(c, "unitCode")} can't buy ${v(c, "symbol")} after a strongly negative, material headline.`,
+    now: (c) => `"${v(c, "headline")}" scored ${v(c, "sentiment")}. Blocked until ${v(c, "until")}.`,
+    note: (c) => `If the bot holds ${v(c, "symbol")}, its stop was lifted to ${v(c, "tighten")} under the price.`,
+  },
+  "intel-herald-sorties": {
+    title: "Herald's trades",
+    what: "Open news-drift positions, each held a fixed number of trading days after the headline that triggered it.",
+    now: (c) => (c.status === "Armed" ? `${v(c, "count")} open; each held ${v(c, "days")} trading days.` : "Safed: no news trades."),
+    note: "Herald's P&L is judged on its own slice, separate from Vanguard and Recoil.",
+  },
+  "intel-log": {
+    title: "Gate log",
+    what: "The audit trail: every veto, lifted stop and skipped buy, with the headline that caused it.",
+    now: (c) => `${v(c, "count")} recent entries.`,
+    note: "Every news action is automatic, and every one lands here and in the Discord alerts.",
+  },
   // ── Account metrics (Bridge) ────────────────────────────────────────────────────────────────
   equity: {
     title: "Frame value",
@@ -608,7 +684,7 @@ const resolve = (t: Text, c: BriefCtx) => (typeof t === "function" ? t(c) : t);
  * counter-puncher. Like the
  * templates, they only reuse values from the context (symbol, win/loss), never new numbers.
  */
-export const VOICE: Record<UnitId, (id: BriefId, c: BriefCtx) => string> = {
+export const VOICE: Record<VoicedUnit, (id: BriefId, c: BriefCtx) => string> = {
   spy_core: (id, c) => {
     const pnl = n(c, "pnlRaw");
     if (id === "position") return "Holding the line on SPY. I move when the 200-day average says so, not before.";
@@ -673,7 +749,10 @@ export const VOICE: Record<UnitId, (id: BriefId, c: BriefCtx) => string> = {
   },
 };
 
-const speakerOf = (c: BriefCtx): Speaker => (unitFor((c.unit as string) ?? null) ? (c.unit as UnitId) : "jc316");
+const speakerOf = (c: BriefCtx): Speaker => {
+  const unit = (c.unit as string) ?? null;
+  return unitFor(unit) && Object.hasOwn(VOICE, unit!) ? (unit as VoicedUnit) : "jc316";
+};
 
 /** Build the briefing for a component; null for unknown ids. Unit-owned components are briefed by that unit. */
 export function briefing(id: string, ctx: BriefCtx = {}): Briefing | null {

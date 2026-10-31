@@ -78,6 +78,84 @@ export function TuneConsole({ current }: { current: LiveParams }) {
         </p>
       </fieldset>
 
+      <fieldset className="flex flex-wrap items-end gap-x-8 gap-y-3 border border-alert/40 p-3">
+        <legend className="hud px-1 text-[12px] text-alert">News gate · defensive</legend>
+        <label className="flex cursor-pointer items-center gap-2.5 pb-1.5">
+          <input
+            type="checkbox"
+            checked={p.news.gateEnabled}
+            onChange={(e) => setP({ ...p, news: { ...p.news, gateEnabled: e.target.checked } })}
+            className="size-4 accent-[var(--alert)]"
+          />
+          <span className="hud text-[13px] text-ink-2">Gate</span>
+          <span className={`hud text-[11px] ${p.news.gateEnabled ? "text-sync" : "text-alert"}`}>{p.news.gateEnabled ? "armed" : "safed"}</span>
+        </label>
+        <label className="grid w-32 gap-1">
+          <span className="hud text-[11px] text-muted">Veto at sentiment ≤</span>
+          <input className={field} type="number" step="0.1" min="-1" max="0" value={p.news.vetoSentiment} onChange={n((v) => ({ ...p, news: { ...p.news, vetoSentiment: v } }))} />
+        </label>
+        <label className="grid w-32 gap-1">
+          <span className="hud text-[11px] text-muted">Materiality ≥</span>
+          <input className={field} type="number" step="0.1" min="0" max="1" value={p.news.minMateriality} onChange={n((v) => ({ ...p, news: { ...p.news, minMateriality: v } }))} />
+        </label>
+        <label className="grid w-28 gap-1">
+          <span className="hud text-[11px] text-muted">Block hours</span>
+          <input className={field} type="number" step="1" min="1" max="168" value={p.news.vetoHours} onChange={n((v) => ({ ...p, news: { ...p.news, vetoHours: v } }))} />
+        </label>
+        <label className="grid w-28 gap-1">
+          <span className="hud text-[11px] text-muted">Lift stop to %</span>
+          <input
+            className={field}
+            type="number"
+            step="0.5"
+            min="0.5"
+            max="20"
+            value={+(p.news.tightenPct * 100).toFixed(1)}
+            onChange={n((v) => ({ ...p, news: { ...p.news, tightenPct: v / 100 } }))}
+          />
+        </label>
+        <p className="max-w-md pb-1 text-[12px] text-muted">
+          A headline this negative and material blocks new unit buys in that target and lifts an open position&apos;s stop. Bastion&apos;s SPY is exempt.
+        </p>
+      </fieldset>
+
+      <fieldset className="flex flex-wrap items-end gap-x-8 gap-y-3 border border-amber/40 p-3">
+        <legend className="hud px-1 text-[12px] text-amber">Unit-03 Herald · news drift</legend>
+        <label className="flex cursor-pointer items-center gap-2.5 pb-1.5">
+          <input
+            type="checkbox"
+            checked={p.herald.enabled}
+            onChange={(e) => setP({ ...p, herald: { ...p.herald, enabled: e.target.checked } })}
+            className="size-4 accent-[var(--amber)]"
+          />
+          <span className="hud text-[13px] text-ink-2">Herald</span>
+          <span className={`hud text-[11px] ${p.herald.enabled ? "text-sync" : "text-alert"}`}>{p.herald.enabled ? "armed" : "safed"}</span>
+        </label>
+        <label className="grid w-28 gap-1">
+          <span className="hud text-[11px] text-muted">Slice %</span>
+          <input className={field} type="number" step="1" min="2" max="30" value={Math.round(p.herald.pct * 100)} onChange={n((v) => ({ ...p, herald: { ...p.herald, pct: v / 100 } }))} />
+        </label>
+        <label className="grid w-32 gap-1">
+          <span className="hud text-[11px] text-muted">Buy at sentiment ≥</span>
+          <input className={field} type="number" step="0.1" min="0" max="1" value={p.herald.entrySentiment} onChange={n((v) => ({ ...p, herald: { ...p.herald, entrySentiment: v } }))} />
+        </label>
+        <label className="grid w-32 gap-1">
+          <span className="hud text-[11px] text-muted">Materiality ≥</span>
+          <input className={field} type="number" step="0.1" min="0" max="1" value={p.herald.minMateriality} onChange={n((v) => ({ ...p, herald: { ...p.herald, minMateriality: v } }))} />
+        </label>
+        <label className="grid w-28 gap-1">
+          <span className="hud text-[11px] text-muted">Hold days</span>
+          <input className={field} type="number" step="1" min="1" max="30" value={p.herald.holdDays} onChange={n((v) => ({ ...p, herald: { ...p.herald, holdDays: v } }))} />
+        </label>
+        <label className="grid w-28 gap-1">
+          <span className="hud text-[11px] text-muted">Max positions</span>
+          <input className={field} type="number" step="1" min="1" max="10" value={p.herald.maxPositions} onChange={n((v) => ({ ...p, herald: { ...p.herald, maxPositions: v } }))} />
+        </label>
+        <p className="max-w-md pb-1 text-[12px] text-muted">
+          Arm only after the news backtest clears it. When armed, its slice comes out of Vanguard and Recoil&apos;s share.
+        </p>
+      </fieldset>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <fieldset className="grid grid-cols-3 gap-3 border border-unit/40 p-3">
           <legend className="hud px-1 text-[12px] text-unit">Unit-01 Vanguard · SMA cross</legend>

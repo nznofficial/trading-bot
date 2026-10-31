@@ -1,6 +1,5 @@
-import { VOICE, type BriefId, type Speaker } from "./briefings";
+import { VOICE, type BriefId, type Speaker, type VoicedUnit } from "./briefings";
 import { OWNERS } from "./config";
-import type { UnitId } from "./units";
 
 /**
  * Spoken lines for the ElevenLabs voices. Fixed lines (JC-316's lock-on acks and every wingman
@@ -60,10 +59,10 @@ export const JC_LINES = {
 };
 
 /** Every distinct wingman voice line: each template for each symbol the unit owns. */
-export function wingmanLines(): { who: UnitId; text: string }[] {
-  const out = new Map<string, { who: UnitId; text: string }>();
-  const add = (who: UnitId, text: string) => out.set(`${who}:${text}`, { who, text });
-  for (const who of ["spy_core", "sma_cross", "rsi_revert"] as UnitId[]) {
+export function wingmanLines(): { who: VoicedUnit; text: string }[] {
+  const out = new Map<string, { who: VoicedUnit; text: string }>();
+  const add = (who: VoicedUnit, text: string) => out.set(`${who}:${text}`, { who, text });
+  for (const who of ["spy_core", "sma_cross", "rsi_revert"] as VoicedUnit[]) {
     const symbols = Object.entries(OWNERS)
       .filter(([, u]) => u === who)
       .map(([s]) => s);

@@ -58,9 +58,11 @@ export type FeeActivity = {
   activity_type: "CFEE";
   date?: string;
   transaction_time?: string;
-  symbol: string;
-  qty: string;
-  price: string;
+  created_at?: string;
+  /** Missing on USD-denominated sell fees. */
+  symbol?: string;
+  qty?: string;
+  price?: string;
   net_amount?: string;
   order_id?: string;
 };
@@ -100,6 +102,19 @@ export type NewOrder = {
   /** Stocks only: attach a protective stop leg (OTO, or bracket with take_profit). */
   stop_loss?: number;
   take_profit?: number;
+};
+
+export type NewsArticle = {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  headline: string;
+  summary: string;
+  author: string;
+  source: string;
+  url: string;
+  /** Crypto pairs appear in compact form ("BTCUSD"). */
+  symbols: string[];
 };
 
 /** Format a quantity without float noise: whole numbers as-is, fractions to 9 dp (Alpaca's crypto increment). */
@@ -171,6 +186,14 @@ export const getOrder = (id: string) => trading<Order>(`/v2/orders/${id}`);
 export const cancelOrder = (id: string) => trading<null>(`/v2/orders/${id}`, { method: "DELETE" });
 export const closeAllPositions = () =>
   trading<unknown>("/v2/positions?cancel_orders=true", { method: "DELETE" });
+
+/** Change a resting order in place (used to raise a protective stop). Alpaca returns the replacement order. */
+export function replaceOrder(id: string, change: { stop_price?: number; limit_price?: number }) {
+  const body: Record<string, string> = {};
+  if (change.stop_price !== undefined) body.stop_price = change.stop_price.toFixed(2);
+  if (change.limit_price !== undefined) body.limit_price = change.limit_price.toFixed(2);
+  return trading<Order>(`/v2/orders/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+}
 
 export function submitOrder(o: NewOrder) {
   const body: Record<string, unknown> = {
@@ -268,4 +291,33 @@ export async function getCryptoBars(
     return [symbol, out] as const;
   };
   return Object.fromEntries(await Promise.all(symbols.map(one)));
+}
+
+/** News articles tagged with any of `symbols`, oldest first, following pagination. */
+export async function getNews(params: {
+  symbols: string[];
+  start: Date;
+  end?: Date;
+  /** Stop after this many pages of 50. */
+  maxPages?: number;
+}): Promise<NewsArticle[]> {
+  const out: NewsArticle[] = [];
+  let pageToken: string | undefined;
+  for (let page = 0; page < (params.maxPages ?? MAX_PAGES); page++) {
+    const q = new URLSearchParams({
+      symbols: params.symbols.join(","),
+      start: params.start.toISOString(),
+      limit: "50",
+      sort: "asc",
+      include_content: "false",
+      exclude_contentless: "false",
+    });
+    if (params.end) q.set("end", params.end.toISOString());
+    if (pageToken) q.set("page_token", pageToken);
+    const res = await data<{ news: NewsArticle[] | null; next_page_token: string | null }>(`/v1beta1/news?${q}`);
+    out.push(...(res.news ?? []));
+    if (!res.next_page_token) break;
+    pageToken = res.next_page_token;
+  }
+  return out;
 }

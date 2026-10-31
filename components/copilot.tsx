@@ -1,6 +1,6 @@
 import { connection } from "next/server";
 import { CopilotDock } from "@/components/copilot-dock";
-import { getMarketStrip, getOverview } from "@/lib/queries";
+import { getIntel, getMarketStrip, getOverview } from "@/lib/queries";
 
 /** "in 7h 12m" until the next session boundary, from the clock the bot stored. */
 function untilPhrase(iso: string | undefined) {
@@ -13,7 +13,7 @@ function untilPhrase(iso: string | undefined) {
 /** Server wrapper: gathers live data (cached queries) for JC-316; the dock picks state + line client-side. */
 export async function Copilot() {
   await connection();
-  const [o, strip] = await Promise.all([getOverview(), getMarketStrip()]);
+  const [o, strip, intel] = await Promise.all([getOverview(), getMarketStrip(), getIntel(1, 5).catch(() => null)]);
   const k = o.kpis;
   return (
     <CopilotDock
@@ -31,6 +31,7 @@ export async function Copilot() {
         bigWin: o.bigWin
           ? { symbol: o.bigWin.symbol, pnl: o.bigWin.pnl, returnPct: o.bigWin.returnPct, strategy: o.bigWin.strategy }
           : null,
+        newsBlocks: intel?.blocks.map((b) => b.symbol) ?? [],
       }}
     />
   );

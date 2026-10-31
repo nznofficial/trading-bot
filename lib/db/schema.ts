@@ -9,6 +9,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
@@ -182,4 +183,61 @@ export const chatCounters = pgTable(
     expiresAt: ts("expires_at").notNull(),
   },
   (t) => [index("chat_counters_expires_idx").on(t.expiresAt)],
+);
+
+/** Headlines from Alpaca's news feed (Benzinga and partners) for every symbol the bot tracks. */
+export const newsItems = pgTable(
+  "news_items",
+  {
+    /** Alpaca's article id. */
+    id: integer("id").primaryKey(),
+    createdAt: ts("created_at").notNull(),
+    headline: text("headline").notNull(),
+    summary: text("summary").notNull().default(""),
+    source: text("source").notNull(),
+    url: text("url"),
+    /** Every symbol the article is tagged with (not just ones the bot tracks). */
+    symbols: text("symbols").array().notNull(),
+  },
+  (t) => [index("news_items_created_idx").on(t.createdAt)],
+);
+
+/**
+ * Claude's read of one article for one tracked symbol: sentiment −1..1 for that symbol's stock,
+ * materiality 0..1 (how much it should move the price). One row per (article, symbol) pair.
+ */
+export const newsScores = pgTable(
+  "news_scores",
+  {
+    newsId: integer("news_id").notNull(),
+    symbol: text("symbol").notNull(),
+    /** Copied from the article so lookups by symbol and time need no join. */
+    createdAt: ts("created_at").notNull(),
+    sentiment: doublePrecision("sentiment").notNull(),
+    materiality: doublePrecision("materiality").notNull(),
+    category: text("category").notNull(),
+    rationale: text("rationale").notNull(),
+    model: text("model").notNull(),
+    scoredAt: ts("scored_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.newsId, t.symbol] }), index("news_scores_symbol_created_idx").on(t.symbol, t.createdAt)],
+);
+
+/** Audit trail: every action the news layer took and the headline that caused it. */
+export const newsActions = pgTable(
+  "news_actions",
+  {
+    id: serial("id").primaryKey(),
+    ts: ts("ts").notNull().defaultNow(),
+    runId: integer("run_id"),
+    newsId: integer("news_id").notNull(),
+    symbol: text("symbol").notNull(),
+    /** veto | tighten | herald_entry | herald_exit */
+    kind: text("kind").notNull(),
+    /** Unit that owns the symbol. */
+    unit: text("unit"),
+    detail: text("detail").notNull(),
+    expiresAt: ts("expires_at"),
+  },
+  (t) => [index("news_actions_ts_idx").on(t.ts), uniqueIndex("news_actions_dedupe_idx").on(t.newsId, t.symbol, t.kind)],
 );

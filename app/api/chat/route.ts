@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { CHAT_SYSTEM, buildSnapshot } from "@/lib/chat-context";
 import { CHAT_INPUT, CHAT_LIMITS, dbBump, signReply, takeChatToken, visitorId } from "@/lib/chat-limits";
-import { getMarketStrip, getOverview, getStrategies } from "@/lib/queries";
+import { getIntel, getMarketStrip, getOverview, getStrategies } from "@/lib/queries";
 
 export const maxDuration = 30;
 
@@ -58,8 +58,14 @@ export async function POST(req: Request) {
   const grant = await takeChatToken(visitorId(req), new Date(), dbBump);
   if (!grant.ok) return fail(429, DENIED[grant.scope], { "Retry-After": String(grant.retryAfterSec) });
 
-  const [o, st, strip] = await Promise.all([getOverview(), getStrategies("all"), getMarketStrip()]);
-  const snapshot = buildSnapshot({ o, st, strip, now: new Date() });
+  const [o, st, strip, intel] = await Promise.all([
+    getOverview(),
+    getStrategies("all"),
+    getMarketStrip(),
+    // The news wire is optional context; chat still works if it fails.
+    getIntel(1, 8, true).catch(() => undefined),
+  ]);
+  const snapshot = buildSnapshot({ o, st, strip, now: new Date(), intel });
 
   const client = new Anthropic();
   const stream = client.messages.stream({

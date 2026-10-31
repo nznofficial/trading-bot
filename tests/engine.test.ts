@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { formatQty } from "@/lib/alpaca";
 import { assetClassOf, normalizeSymbol } from "@/lib/config";
-import { feeUsd, isRegularSessionBar, makeClientOrderId, strategyFromClientOrderId } from "@/lib/engine";
+import { feeRow, feeUsd, isRegularSessionBar, makeClientOrderId, strategyFromClientOrderId } from "@/lib/engine";
 
 describe("client order ids", () => {
   it("round-trips the strategy and is deterministic per bar", () => {
@@ -53,5 +53,31 @@ describe("crypto symbols", () => {
   it("values crypto fees in USD", () => {
     expect(feeUsd({ qty: "-0.00001", price: "80000", net_amount: undefined })).toBeCloseTo(0.8);
     expect(feeUsd({ qty: "-0.00001", price: "80000", net_amount: "-0.75" })).toBe(0.75);
+  });
+});
+
+describe("feeRow", () => {
+  it("files USD sell fees (no symbol, no order id) under USD", () => {
+    const r = feeRow({
+      id: "x",
+      activity_type: "CFEE",
+      date: "2026-10-29",
+      created_at: "2026-10-29T13:30:21.752458Z",
+      net_amount: "-0.64",
+    });
+    expect(r).toMatchObject({ symbol: "USD", assetClass: "crypto", orderId: null, amountUsd: 0.64 });
+    expect(r.ts?.toISOString()).toBe("2026-10-29T13:30:21.752Z");
+  });
+
+  it("keeps in-kind buy fees on their coin", () => {
+    const r = feeRow({ id: "y", activity_type: "CFEE", symbol: "BTCUSD", qty: "-0.00001", price: "80000", order_id: "o1" });
+    expect(r).toMatchObject({ symbol: "BTC/USD", orderId: "o1" });
+    expect(r.amountUsd).toBeCloseTo(0.8);
+  });
+});
+
+describe("strategyFromClientOrderId", () => {
+  it("attributes Herald orders", () => {
+    expect(strategyFromClientOrderId("news_drift.buy.JPM.202610301400")).toBe("news_drift");
   });
 });

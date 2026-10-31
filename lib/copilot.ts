@@ -20,6 +20,8 @@ export type CopilotInput = {
   streak: number;
   positions: { symbol: string; unrealizedPl: number; strategy: string }[];
   bigWin: { symbol: string; pnl: number; returnPct: number; strategy: string } | null;
+  /** Symbols the news gate is blocking right now. */
+  newsBlocks?: string[];
 };
 
 export type CopilotReport = { state: CopilotState; line: string };
@@ -93,6 +95,10 @@ const LINES: Record<CopilotState, ((i: CopilotInput) => string)[]> = {
     (i) => `${i.positions.length} engagement${i.positions.length === 1 ? "" : "s"} open. Day at ${signedUsd(i.dayPnl)}.`,
     (i) => (i.streak > 1 ? `Combo at ${i.streak}. Don't get greedy; the rules don't.` : `Eyes on the board. No signal, no shot.`),
     () => `Bastion holds the line, Vanguard hunts trends, Recoil catches dips. I keep them honest.`,
+    (i) =>
+      i.newsBlocks?.length
+        ? `News gate is holding ${i.newsBlocks.join(", ")}: bad headline, no new buys. Details on Intel.`
+        : `Wire is clear. No news blocks on any target.`,
   ],
   greeting: [
     () => `JC-316 online. Welcome to the Corps, pilot.`,

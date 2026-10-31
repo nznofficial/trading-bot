@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, ne, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, like, ne, sql, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import {
   aggregateFills,
@@ -12,13 +12,14 @@ import {
   tradeStats,
   type RoundTrip,
 } from "./analytics";
-import { assetClassOf, BENCHMARKS, CORE, CRYPTO_FEES, MAX_STORED_SIM_TRADES, OWNERS, UNIVERSE, type AssetClass, type StrategyId } from "./config";
+import { assetClassOf, BENCHMARKS, CORE, CRYPTO_FEES, HERALD, MAX_STORED_SIM_TRADES, OWNERS, UNIVERSE, type AssetClass, type StrategyId } from "./config";
 import { db, schema } from "./db";
 import { matchesLive, unitHealth, type HealthTrade } from "./health";
 import type { Quote } from "./quotes";
 import type { SimTrade } from "./backtest";
 import type { SimParams } from "./simulator";
 import { buildUnits, getLiveParams } from "./live-params";
+import { activeVetoes, gateWatches, type Veto } from "./news";
 import { UNITS as UNITS_BY_ID } from "./units";
 
 export type ClassFilter = "all" | AssetClass;
@@ -43,19 +44,15 @@ export type SerializedTrade = Omit<RoundTrip, "entryTs" | "exitTs"> & { entryTs:
 
 async function loadTrades() {
   const d = db();
-  const [fillRows, orderRows, feeRows] = await Promise.all([
+  const [fillRows, orderRows] = await Promise.all([
     d.select().from(schema.fills).orderBy(asc(schema.fills.ts)),
     d.select({ id: schema.orders.id, strategy: schema.orders.strategy }).from(schema.orders),
-    d.select().from(schema.fees),
   ]);
   const strategyByOrder = new Map(orderRows.filter((o) => o.strategy).map((o) => [o.id, o.strategy!]));
   const { trades, openLots } = matchRoundTrips(aggregateFills(fillRows, strategyByOrder), CRYPTO_FEES);
-  // Fees: those attributed to closed trades (crypto fee model) plus any CFEE activities Alpaca reports
-  // (live accounts; paper accounts report none, so nothing is double counted there).
-  const fees = [
-    ...trades.filter((t) => t.fees > 0).map((t) => ({ symbol: t.symbol, assetClass: t.assetClass, amount: t.fees })),
-    ...feeRows.map((f) => ({ symbol: f.symbol, assetClass: f.assetClass as AssetClass, amount: f.amountUsd })),
-  ];
+  // Fees come from the crypto fee model, which already covers both sides of every round trip. The CFEE
+  // activities Alpaca reports (stored in `fees`) are an audit record only; adding them would double count.
+  const fees = trades.filter((t) => t.fees > 0).map((t) => ({ symbol: t.symbol, assetClass: t.assetClass, amount: t.fees }));
   return { trades, openLots, fees };
 }
 
@@ -617,5 +614,126 @@ export async function getDebrief(entryOrderId: string, exitOrderId: string) {
       indicators: s.indicators,
     })),
     bars,
+  };
+}
+
+// --- Intel (news) ----------------------------------------------------------------------------
+
+export type WireScore = { symbol: string; sentiment: number; materiality: number; category: string; rationale: string };
+export type WireAction = { kind: string; symbol: string; unit: string | null; detail: string; ts: number };
+export type WireItem = {
+  id: number;
+  createdAt: number;
+  headline: string;
+  summary: string;
+  source: string;
+  url: string | null;
+  scores: WireScore[];
+  actions: WireAction[];
+};
+
+/** Material headlines are the ones the gate and Herald can act on; "material" filters the wire to them. */
+export const WIRE_MATERIAL = 0.5;
+
+export async function getIntel(page = 1, size = 25, materialOnly = false) {
+  "use cache";
+  botCache();
+  const d = db();
+  const now = new Date();
+  const live = await getLiveParams();
+  const material = sql`exists (select 1 from ${schema.newsScores} s where s.news_id = ${schema.newsItems.id} and s.materiality >= ${WIRE_MATERIAL})`;
+  const where = materialOnly ? material : undefined;
+  const dayAgo = new Date(now.getTime() - 86_400_000);
+
+  const [articles, [{ total }], [{ day }], [{ scored }], cursor, vetoMap, actionRows, vetoedSignals] = await Promise.all([
+    d
+      .select()
+      .from(schema.newsItems)
+      .where(where)
+      .orderBy(desc(schema.newsItems.createdAt), desc(schema.newsItems.id))
+      .limit(size)
+      .offset((page - 1) * size),
+    d.select({ total: count() }).from(schema.newsItems).where(where),
+    d.select({ day: count() }).from(schema.newsItems).where(gte(schema.newsItems.createdAt, dayAgo)),
+    d.select({ scored: count() }).from(schema.newsScores).where(gte(schema.newsScores.createdAt, dayAgo)),
+    d.select().from(schema.settings).where(eq(schema.settings.key, "news_cursor")),
+    live.news.gateEnabled ? activeVetoes(now, live.news) : Promise.resolve(new Map<string, Veto>()),
+    d.select().from(schema.newsActions).orderBy(desc(schema.newsActions.ts)).limit(25),
+    d
+      .select()
+      .from(schema.signals)
+      .where(like(schema.signals.note, "skipped: news veto%"))
+      .orderBy(desc(schema.signals.ts))
+      .limit(10),
+  ]);
+
+  const ids = articles.map((a) => a.id);
+  const [scoreRows, articleActions] = ids.length
+    ? await Promise.all([
+        d.select().from(schema.newsScores).where(inArray(schema.newsScores.newsId, ids)),
+        d.select().from(schema.newsActions).where(inArray(schema.newsActions.newsId, ids)),
+      ])
+    : [[], []];
+
+  const wire: WireItem[] = articles.map((a) => ({
+    id: a.id,
+    createdAt: a.createdAt.getTime(),
+    headline: a.headline,
+    summary: a.summary,
+    source: a.source,
+    url: a.url,
+    scores: scoreRows
+      .filter((s) => s.newsId === a.id)
+      .sort((x, y) => y.materiality - x.materiality)
+      .map((s) => ({ symbol: s.symbol, sentiment: s.sentiment, materiality: s.materiality, category: s.category, rationale: s.rationale })),
+    actions: articleActions
+      .filter((r) => r.newsId === a.id)
+      .map((r) => ({ kind: r.kind, symbol: r.symbol, unit: r.unit, detail: r.detail, ts: r.ts.getTime() })),
+  }));
+
+  const blocks = [...vetoMap.values()]
+    .filter((v) => gateWatches(v.symbol, live.herald.enabled))
+    .sort((a, b) => a.expiresAt.getTime() - b.expiresAt.getTime())
+    .map((v) => ({
+      symbol: v.symbol,
+      unit: OWNERS[v.symbol] ?? null,
+      sentiment: v.sentiment,
+      materiality: v.materiality,
+      headline: v.headline,
+      newsId: v.newsId,
+      expiresAt: v.expiresAt.getTime(),
+    }));
+
+  const log = [
+    ...actionRows.map((r) => ({ ts: r.ts.getTime(), kind: r.kind, symbol: r.symbol, unit: r.unit, detail: r.detail })),
+    ...vetoedSignals.map((r) => ({
+      ts: r.ts.getTime(),
+      kind: "skip",
+      symbol: r.symbol,
+      unit: r.strategy,
+      detail: `${r.action} signal skipped: ${(r.note ?? "").replace(/^skipped: /, "")}`,
+    })),
+  ]
+    .sort((a, b) => b.ts - a.ts)
+    .slice(0, 25);
+
+  const heraldPositions = (await getPositions("us_equity")).positions.filter((p) => p.strategy === HERALD.id);
+
+  return {
+    live: { news: live.news, herald: live.herald },
+    wire,
+    total,
+    page,
+    size,
+    pages: Math.max(1, Math.ceil(total / size)),
+    stats: {
+      last24h: day,
+      scored24h: scored,
+      cursor: typeof cursor[0]?.value === "string" ? Date.parse(cursor[0].value as string) : null,
+      activeBlocks: blocks.length,
+    },
+    blocks,
+    log,
+    heraldPositions,
   };
 }

@@ -21,6 +21,13 @@ export const UNITS = {
     primary: "#ff3b4e",
     secondary: "#ffa41b",
   },
+  news_drift: {
+    code: "UNIT-03",
+    callsign: "Herald",
+    role: "Signal intercept",
+    primary: "#f5c542",
+    secondary: "#f2eee3",
+  },
 } as const;
 
 export type UnitId = keyof typeof UNITS;

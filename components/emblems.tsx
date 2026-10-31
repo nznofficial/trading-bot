@@ -1,13 +1,14 @@
 /**
  * Original unit emblems (geometric mech heads), one per strategy.
  * UNIT-00 BASTION holds the SPY core; UNIT-01 VANGUARD rides trends (SMA crossover); UNIT-02 RECOIL
- * strikes on rebounds (RSI reversion).
+ * strikes on rebounds (RSI reversion); UNIT-03 HERALD intercepts the news wire.
  */
 import { UNITS, type UnitId } from "@/lib/units";
 
 export { UNITS, unitFor, type UnitId } from "@/lib/units";
 
 export function UnitEmblem({ unit, size = 64 }: { unit: UnitId; size?: number }) {
+  if (unit === "news_drift") return <Herald size={size} />;
   return unit === "sma_cross" ? <Vanguard size={size} /> : unit === "spy_core" ? <Bastion size={size} /> : <Recoil size={size} />;
 }
 
@@ -67,6 +68,28 @@ function Recoil({ size }: { size: number }) {
       <circle cx="39" cy="32.5" r="1.8" fill={secondary} />
       {/* Grille */}
       <path d="M27 40h10M27 43h10" stroke="#0b0a10" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function Herald({ size }: { size: number }) {
+  const { primary, secondary } = UNITS.news_drift;
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Unit-03 Herald emblem">
+      <polygon points="32,2 60,18 60,46 32,62 4,46 4,18" fill="#0e0d14" stroke={primary} strokeWidth="1.5" />
+      {/* Antenna masts */}
+      <path d="M20 22 14 6M44 22 50 6" stroke={secondary} strokeWidth="2" />
+      <circle cx="14" cy="6" r="2" fill={primary} />
+      <circle cx="50" cy="6" r="2" fill={primary} />
+      {/* Rounded sensor helmet */}
+      <path d="M18 26 32 19 46 26 46 40 38 48H26L18 40Z" fill={secondary} />
+      {/* Wide sensor visor */}
+      <path d="M20 29h24v6H20Z" fill="#0b0a10" />
+      <path d="M22 31h20v2H22Z" fill={primary} />
+      {/* Ear dishes */}
+      <path d="M18 28 12 31 12 37 18 40Z M46 28 52 31 52 37 46 40Z" fill={primary} opacity="0.8" />
+      {/* Grille */}
+      <path d="M27 41h10M27 44h10" stroke="#0b0a10" strokeWidth="1.5" />
     </svg>
   );
 }
